@@ -102,3 +102,10 @@ export async function updateAuthEmail(
 `managementClient.updateUser()`がユーザ情報の更新メソッド。
 第一引数にユーザの識別子が入ったオブジェクト、第二引数に更新情報が入ったオブジェクトを指定する。
 https://auth0.github.io/node-auth0/ManagementClient.html#updateUser
+
+# 参考リンク
+
+https://dotnsf.blog.jp/archives/1081639207.html
+https://dev.classmethod.jp/articles/manage-auth0-users-using-auth0-management-api-with-nodejs/
+https://auth0.github.io/node-auth0/ManagementClient.html#updateUser
+https://qiita.com/smesh/items/ea5100f570211ffe7890
