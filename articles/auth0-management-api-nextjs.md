@@ -106,6 +106,9 @@ https://auth0.github.io/node-auth0/ManagementClient.html#updateUser
 # 参考リンク
 
 https://dotnsf.blog.jp/archives/1081639207.html
+
 https://dev.classmethod.jp/articles/manage-auth0-users-using-auth0-management-api-with-nodejs/
-https://auth0.github.io/node-auth0/ManagementClient.html#updateUser
+
+https://www.isoroot.jp/blog/4114/#second
+
 https://qiita.com/smesh/items/ea5100f570211ffe7890
