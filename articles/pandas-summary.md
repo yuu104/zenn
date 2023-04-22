@@ -30,7 +30,7 @@ df = pd.DaraFrame(data=sample_list, columns=columns)
 
 # 作成したデータフレームの操作
 
-## データフレームから各行のデータを取得
+## データフレームの値を多次元配列で取得
 
 `values` 属性を使用すると、データフレームのすべての値を含む NumPy 配列を取得できる。
 
@@ -51,6 +51,95 @@ print(array_2d)
 array([[1, 4, 7],
        [2, 5, 8],
        [3, 6, 9]])
+```
+
+## データフレームから特定の行・列を抽出
+
+### 先頭から行数指定で抽出
+
+```py
+head_df = df.head(3)
+```
+
+`head()`メソッドの引数に取得したい行数を指定する。
+何も指定しないと 5 行取得する。
+
+### 最後から行数指定で抽出
+
+```py
+tail_df = df.tail()
+```
+
+### 行・列番号を指定して抽出
+
+`iloc()`メソッドを使用する。
+
+```py
+import pandas as pd
+
+# DataFrameを作成
+df = pd.DataFrame({
+    'A': [1, 2, 3, 4],
+    'B': ['a', 'b', 'c', 'd'],
+    'C': [0.1, 0.2, 0.3, 0.4]
+})
+
+# 1行目、1列目の要素を選択
+print(df.iloc[0, 0]) # 1
+
+# 2行目から3行目、2列目から3列目の要素を選択
+print(df.iloc[1:3, 1:3])
+#    B    C
+# 1  b  0.2
+# 2  c  0.3
+
+# 特定の行と列を選択
+print(df.iloc[[0,2], [1,2]])
+#    B    C
+# 0  a  0.1
+# 2  c  0.3
+
+# 特定の行と列を選択 (ブールインデックスを使用)
+print(df.iloc[[True, False, True, False], [True, False, True]])
+#    A    C
+# 0  1  0.1
+# 2  3  0.3
+```
+
+### 行名・列名を指定して抽出
+
+`loc()`メソッドを使用する
+
+```py
+import pandas as pd
+
+# DataFrameを作成
+df = pd.DataFrame({
+    'A': [1, 2, 3, 4],
+    'B': ['a', 'b', 'c', 'd'],
+    'C': [0.1, 0.2, 0.3, 0.4]
+}, index=['row1', 'row2', 'row3', 'row4'])
+
+# 'row1'、'row2'、'row3'の'A'列と'C'列を選択
+print(df.loc[['row1', 'row2', 'row3'], ['A', 'C']])
+#       A    C
+# row1  1  0.1
+# row2  2  0.2
+# row3  3  0.3
+
+# 'row4'の'A'列を10に変更
+df.loc['row4', 'A'] = 10
+print(df)
+#       A  B    C
+# row1  1  a  0.1
+# row2  2  b  0.2
+# row3  3  c  0.3
+# row4  10 d  0.4
+
+# 'C'列の値が0.3より大きい行を選択
+print(df.loc[df['C'] > 0.3])
+#       A  B    C
+# row4  10 d  0.4
 ```
 
 ## データフレームにカラムを追加
@@ -125,3 +214,7 @@ df.to_csv('output_file.csv', index=False)
 ```py
 df.to_csv('output_file.txt', sep='\t', index=False)
 ```
+
+# 参考文献
+
+https://ai-inter1.com/pandas-dataframe_basic/#st-toc-h-18
