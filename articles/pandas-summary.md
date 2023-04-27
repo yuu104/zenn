@@ -199,6 +199,65 @@ df = pd.read_csv('text_file.txt', sep='\t', index_col=0)
 df = pd.read_csv('text_file.txt', sep='\t', header=None)
 ```
 
+### カラム名を指定してデータフレームを作成する
+
+`read_csv`関数でテキストファイルからデータフレームを作成する場合、カラム名を指定する方法は複数あります。以下にいくつかの方法を示します。
+
+**1. `header`引数を使用する方法**
+`header`引数を使用して、カラム名を指定することができます。この方法は、テキストファイルの先頭行にカラム名が含まれている場合に有効です。例えば、以下のようなテキストファイル`data.csv`があるとします。
+
+```shell
+id,name,age
+1,Alice,25
+2,Bob,30
+3,Charlie,35
+```
+
+この場合、以下のように read_csv 関数を呼び出して、カラム名を指定することができます。
+
+```py
+import pandas as pd
+
+df = pd.read_csv('data2.csv', header=None, names=['id', 'name', 'age'])
+```
+
+**2. `names`引数を使用する方法**
+`names`引数を使用して、カラム名を指定することができます。この方法は、テキストファイルの先頭行にカラム名が含まれていない場合に有効です。例えば、以下のようなテキストファイル`data2.csv`があるとします。
+
+```shell
+1,Alice,25
+2,Bob,30
+3,Charlie,35
+```
+
+この場合、以下のように`read_csv`関数を呼び出して、カラム名を指定することができます。
+
+```py
+import pandas as pd
+
+df = pd.read_csv('data2.csv', header=None, names=['id', 'name', 'age'])
+```
+
+`header=None`で先頭行をカラム名として使用しないことを指定し、`names`でカラム名を指定します。
+
+**3. `rename`メソッドを使用する方法**
+`rename`メソッドを使用して、既存のデータフレームのカラム名を変更することができます。例えば、以下のようなデータフレーム`df`があるとします。
+
+```py
+import pandas as pd
+
+data = {'id': [1, 2, 3], 'name': ['Alice', 'Bob', 'Charlie'], 'age': [25, 30, 35]}
+df = pd.DataFrame(data)
+```
+
+この場合、以下のように`rename`メソッドを使用して、カラム名を変更することができます。
+
+```py
+df = df.rename(columns={'id': 'ID', 'name': 'Name', 'age': 'Age'})
+```
+
+上記のコードでは、`id`カラムを`ID`、`name`カラムを`Name`、`age`カラムを`Age`に変更しています。
+
 ## データフレームをテキストファイルに出力
 
 `to_csv()` を使用する。
