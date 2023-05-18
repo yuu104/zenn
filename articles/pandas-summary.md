@@ -12,7 +12,9 @@ published: false
 poetry add pandas
 ```
 
-# 二次元配列からデータフレームを作成
+# データフレームの作成
+
+## 二次元配列からデータフレームを作成
 
 ```py
 import pandas as pd
@@ -26,6 +28,28 @@ sample_list = [
 columns = ['Col1', 'Col2', 'Col3']
 
 df = pd.DaraFrame(data=sample_list, columns=columns)
+```
+
+## 辞書リストからデータフレームを作成
+
+```py
+import pandas as pd
+
+data = [
+    {'名前': 'Alice', '年齢': 25, '都市': '東京'},
+    {'名前': 'Bob', '年齢': 30, '都市': '大阪'},
+    {'名前': 'Charlie', '年齢': 35, '都市': '名古屋'}
+]
+
+df = pd.DataFrame(data)
+print(df)
+```
+
+```shell
+       名前  年齢   都市
+0    Alice  25   東京
+1      Bob  30   大阪
+2  Charlie  35  名古屋
 ```
 
 # 作成したデータフレームの操作
@@ -277,3 +301,7 @@ df.to_csv('output_file.txt', sep='\t', index=False)
 # 参考文献
 
 https://ai-inter1.com/pandas-dataframe_basic/#st-toc-h-18
+
+```
+
+```
