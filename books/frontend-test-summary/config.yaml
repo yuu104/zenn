@@ -1,0 +1,14 @@
+title: "フロントエンド開発における自動テストまとめ"
+summary: "「フロントエンド開発のためのテスト入門 今からでも知っておきたい自動テスト戦略の必須知識」を基にフロントエンドテストに関することをまとめる"
+topics: [ypescript, React, Jest, nextjs, reacttestinglibrary]
+published: false
+price: 0 # 有料の場合200〜5000
+toc_depth: 3
+# 本に含めるチャプターを順番に並べましょう
+chapters:
+  - test-objectives
+  - test-type-and-scope
+  - test-classification-by-purpose
+  - test-strategy-model
+  - unit-test
+  - mock
