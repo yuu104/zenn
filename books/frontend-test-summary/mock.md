@@ -134,3 +134,53 @@ test("さよならを返す（本来の実装ではない）", () => {
 `jest.requireActual`関数は、指定したモジュールの実際の実装を返す。
 `jest.requireActual`関数を使用することで、モジュール本来の実装を代用品の実装に適用することができる。
 これにより、`sayGoodBye`関数のみ代用品に置き換えることができる。
+
+## Web API のモック基礎
+
+Web API に関連するコードは、Web API クライアントを代用品（スタブ）に置き換えることでテストを書くことができる。
+スタブは本物の API レスポンスではないが、レスポンス前後の「関連コード」を検証するには有効な手段になる。
+![](/images/frontend-test-summary/web-api-stab-by-mock-module.png)
+
+### Web API クライアント
+
+```ts:fetchers.ts
+export type Profile = {
+  id: string;
+  name?: string;
+  age?: number;
+  email: string;
+};
+
+export function getMyProfile(): Promise<Profile> {
+  return fetch("https://myapi.testing.com/my/profile").then(async (res) => {
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  });
+}
+```
+
+### テスト対象関数
+
+```ts
+import { getMyProfile } from "./fetchers";
+
+export async function getGreet() {
+  const data = await getMyProfile();
+  if (!data.name) {
+    // ①名前がなけれは、定型分を返す
+    return "Hello, anonymous user!";
+  }
+  // ②名前を含んだ挨拶を返す
+  return `Hello, ${data.name}!`;
+}
+```
+
+`getMyProfile`関数では API リクエストが発生する。
+そのため、リクエストに応える API サーバーが存在しなければ、`getGreet`関数をテストすることができない。
+そこで、`getMyProfile`関数をスタブに置き換えることにより、データ取得に関わるテストが書けるようになる。
+
+### Web API クライアントのスタブ実装

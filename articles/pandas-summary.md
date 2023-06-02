@@ -301,7 +301,3 @@ df.to_csv('output_file.txt', sep='\t', index=False)
 # 参考文献
 
 https://ai-inter1.com/pandas-dataframe_basic/#st-toc-h-18
-
-```
-
-```
