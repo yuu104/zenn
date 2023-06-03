@@ -183,4 +183,283 @@ export async function getGreet() {
 そのため、リクエストに応える API サーバーが存在しなければ、`getGreet`関数をテストすることができない。
 そこで、`getMyProfile`関数をスタブに置き換えることにより、データ取得に関わるテストが書けるようになる。
 
-### Web API クライアントのスタブ実装
+### `jest.spyOn`による Web API クライアントのスタブ実装
+
+`jest.mock`を使用したスタブ実装とは別の実装方法として、TypeScript と親和性の高い`jest.spyOn`を使用する。
+`jest.spyOn`を使用する場合、テストファイル冒頭で`jest.mock`により対象モジュールをモック化する必要がある。
+
+```ts
+import * as Fetchers from "./fetchers";
+
+jest.mock("./fetchers");
+```
+
+次に、`jest.spyOn`でモック化対象の関数を置き換える。
+
+```ts
+jest.spyOn(対象のモジュール, 対象の関数名称);
+jest.spyOn(Fetchers, "getMyProfile");
+```
+
+`対象オブジェクト`とは、`import * as`で読み込んだ`Fetcher`を指す。
+`対象の関数名称`とは、ここでは`getMyProfle`という関数名称を指す。
+もし`Fetchers`に定義されていない関数名称を指定した場合、TypeScript の型エラーとなる。
+
+###　データ取得成功を再現するテスト
+
+`mockResolvedValueOnce`によりモック化した`getMyProfile`関数に対してスタブを実装する。
+
+```ts
+jest.spyOn(Fetchers, "getMyProfile").mockResolvedValueOnce({
+  id: "xxxxxxx-123456",
+  email: "taroyamada@myapi.testing.com",
+});
+```
+
+**① 名前がなければ、定型文を返す**場合のテストは次のようになる。
+
+```ts
+test("データ取得成功時：ユーザー名がない場合", async () => {
+  // getMyProfile が resolve した時の値を再現
+  jest.spyOn(Fetchers, "getMyProfile").mockResolvedValueOnce({
+    id: "xxxxxxx-123456",
+    email: "taroyamada@myapi.testing.com",
+  });
+
+  await expect(getGreet()).resolves.toBe("Hello, anonymous user!");
+});
+```
+
+`mockResolvedValueOnce`に`name`を追加すれば **② 名前を含んだ挨拶を返す** 場合のテストになる。
+
+```ts
+test("データ取得成功時：ユーザー名がある場合", async () => {
+  jest.spyOn(Fetchers, "getMyProfile").mockResolvedValueOnce({
+    id: "xxxxxxx-123456",
+    email: "taroyamada@myapi.testing.com",
+    name: "taroyamada",
+  });
+
+  await expect(getGreet()).resolves.toBe("Hello, taroyamada!");
+});
+```
+
+### データ取得失敗を再現するテスト
+
+`getMyProfile`で呼び出している API からのレスポンス HTTP ステータスが 200〜299 の範囲外の場合（`res.ok`が falsy な場合）、関数内部で例外がスローされる。
+例外がスローされることにより、`getMyProfile`関数が返す Promise は reject される。
+
+```ts
+export function getMyProfile(): Promise<Profile> {
+  return fetch("https://myapi.testing.com/my/profile").then(async (res) => {
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  });
+}
+```
+
+`myapi.testing.com`から 200 番台以外のレスポンスは、以下のようなエラーオブジェクトが返ってくると定められている。
+つまり、上記の例外としてスローしている`data`に相当する。
+
+```ts
+export const httpError: HttpError = {
+  err: { message: "internal server error" },
+};
+```
+
+そのため、`getMyProfile`関数の reject を再現するスタブを`mockRejectedValueOnce`で以下のように実装できる。
+
+```ts
+jest.spyOn(Fetchers, "getMyProfile").mockRejectedValueOnce(httpError);
+```
+
+これで、`getMyProfile`関数がデータ取得に失敗した場合の`getGreet`関数の振る舞いをテストすることができる。
+
+```ts
+test("データ取得失敗時", async () => {
+  // getMyProfile が reject した時の値を再現
+  jest.spyOn(Fetchers, "getMyProfile").mockRejectedValueOnce(httpError);
+
+  await expect(getGreet()).rejects.toMatchObject({
+    err: { message: "internal server error" },
+  });
+});
+```
+
+例外がスローされることを検証したい場合は以下のように書くこともできる。
+
+```ts
+test("データ取得失敗時、エラー相当のデータが例外としてスローされる", async () => {
+  expect.assertions(1);
+  jest.spyOn(Fetchers, "getMyProfile").mockRejectedValueOnce(httpError);
+  try {
+    await getGreet();
+  } catch (err) {
+    expect(err).toMatchObject(httpError);
+  }
+});
+```
+
+## Web API のレスポンスデータを切り替える関数を作成してテストする
+
+先程は各テストごとに`jest.spyOn`を書いていた。
+レスポンスデータの切り替えを可能にするユーティリティ関数を使用すれば`jest.spyOn`をテストごとに書く必要がなくなる。
+
+### テスト対象の関数
+
+`getMyArticleLinksByCategory`はログインユーザが投稿した記事データから指定したカテゴリーに該当する記事のリンク及びタイトルを取得する関数。
+
+```ts
+import { getMyArticles } from "../fetchers";
+
+export async function getMyArticleLinksByCategory(category: string) {
+  // データを取得する関数
+  const data = await getMyArticles();
+  // 取得したデータのうち、指定したタグが含まれる記事に絞り込む
+  const articles = data.articles.filter((article) =>
+    article.tags.includes(category)
+  );
+  if (!articles.length) {
+    // 該当記事がない場合、null を返す
+    return null;
+  }
+  // 該当記事がある場合、一覧向けに加工したデータを返す
+  return articles.map((article) => ({
+    title: article.title,
+    link: `/articles/${article.id}`,
+  }));
+}
+```
+
+`getMyArticles`は記事データ取得の Web API クライアントで、以下の型定義にある`Articles`を返す。
+
+```ts
+export type Article = {
+  id: string;
+  createdAt: string;
+  tags: string[];
+  title: string;
+  body: string;
+};
+
+export type Articles = {
+  articles: Article[];
+};
+```
+
+この関数に対して、以下の項目をテストする。
+
+- 指定したタグを持つ記事が一件もない場合、`null`が返る
+- 指定したタグを持つ記事が一件以上ある場合、リンク及びタイトル一覧が返る
+- データ取得に失敗した場合、例外がスローされる
+
+### レスポンスを切り替える関数（モック生成関数）を実装する
+
+テスト対象の関数は Web API クライアント（`getMyArticle`関数）を利用しており、テスト時はこの関数を。
+そのため、レスポンスを再現するデータを用意する。
+このようなテスト用データを**フィクスチャー**と呼ぶ。
+
+```ts
+export const getMyArticlesData: Articles = {
+  articles: [
+    {
+      id: "howto-testing-with-typescript",
+      createdAt: "2022-07-19T22:38:41.005Z",
+      tags: ["testing"],
+      title: "TypeScript を使ったテストの書き方",
+      body: "テストを書く時、TypeScript を使うことで、テストの保守性が向上します…",
+    },
+    {
+      id: "nextjs-link-component",
+      createdAt: "2022-07-19T22:38:41.005Z",
+      tags: ["nextjs"],
+      title: "Next.js の Link コンポーネント",
+      body: "Next.js の画面遷移には、Link コンポーネントを使用します…",
+    },
+    {
+      id: "react-component-testing-with-jest",
+      createdAt: "2022-07-19T22:38:41.005Z",
+      tags: ["testing", "react"],
+      title: "Jest ではじめる React のコンポーネントテスト",
+      body: "Jest は単体テストとして、UIコンポーネントのテストが可能です…",
+    },
+  ],
+};
+
+export const httpError: HttpError = {
+  err: { message: "internal server error" },
+};
+```
+
+モック生成関数をフィクスチャーを使用して実装する。
+この関数は`getMyArticles`をスタブ化する際に必要なセットアップを、必要最小限のパラメータで切り替え可能にする。
+このユーティリティ関数を使用すれば`jest.spyOn`をテストごとに書く必要がなくなる。
+
+```ts
+function mockGetMyArticles(status = 200) {
+  if (status > 299) {
+    return jest
+      .spyOn(Fetchers, "getMyArticles")
+      .mockRejectedValueOnce(httpError);
+  }
+  return jest
+    .spyOn(Fetchers, "getMyArticles")
+    .mockResolvedValueOnce(getMyArticlesData);
+}
+```
+
+### 指定したタグを持つ記事が一件もない場合、`null`が返る
+
+```ts
+test("指定したタグをもつ記事が一件もない場合、null が返る", async () => {
+  mockGetMyArticles();
+  const data = await getMyArticleLinksByCategory("playwright");
+
+  expect(data).toBeNull();
+});
+```
+
+あらかじめ用意したフィクスチャーには`playwright`というタグが含まれた記事は存在しないため、レスポンスは`null`になる。
+
+###　指定したタグを持つ記事が一件以上ある場合、リンク及びタイトル一覧が返る
+
+```ts
+test("指定したタグをもつ記事が一件以上ある場合、リンク一覧が返る", async () => {
+  mockGetMyArticles();
+  const data = await getMyArticleLinksByCategory("testing");
+
+  expect(data).toMatchObject([
+    {
+      link: "/articles/howto-testing-with-typescript",
+      title: "TypeScript を使ったテストの書き方",
+    },
+    {
+      link: "/articles/react-component-testing-with-jest",
+      title: "Jest ではじめる React のコンポーネントテスト",
+    },
+  ]);
+});
+```
+
+フィクスチャーには`testing`というタグを含んだ記事が 2 件用意されているのでテストは成功する。
+
+### データ取得に失敗した場合、例外がスローされる
+
+```ts
+test("データ取得に失敗した場合、reject される", async () => {
+  mockGetMyArticles(500);
+
+  await getMyArticleLinksByCategory("testing").catch((err) => {
+    expect(err).toMatchObject({
+      err: { message: "internal server error" },
+    });
+  });
+});
+```
+
+`mockGetMyArticles`関数の引数に 300 以上の数値を指定することでリクエスト失敗時のレスポンスになる。
+そのため、`getMyArticleLinksByCategory`関数は reject されるのでテストは成功する
