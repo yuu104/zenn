@@ -47,7 +47,6 @@ Web API からデータを取得する場合、ネットワークエラーやサ
 
 - スパイの目的は「記録」を行うこと。
 - テスト中にオブジェクトやシステムの振る舞いや状態を監視・記録するために使用される。
-- スパイは実際のオブジェクトやシステムの一部であり、その動作やメソッド呼び出しをトラックする。
 - テストの際に、スパイはメソッドの呼び出し回数や引数、戻り値などの情報を収集し、テスト結果の評価や検証に利用される
 
 ## モックモジュールを使用したスタブ
@@ -463,3 +462,137 @@ test("データ取得に失敗した場合、reject される", async () => {
 
 `mockGetMyArticles`関数の引数に 300 以上の数値を指定することでリクエスト失敗時のレスポンスになる。
 そのため、`getMyArticleLinksByCategory`関数は reject されるのでテストは成功する
+
+## モック関数を使ったスパイ
+
+スパイとは「テスト対象にどのような入出力が生じたか？」を記録するオブジェクトであり、記録された値を検証することで、意図通りの挙動となっているかを確認する。
+
+### モック関数
+
+モック関数は、テスト中に本物の関数やメソッドを置き換えるための、テスト用の偽物の関数で、関数が呼び出されたかどうか、どのような引数で呼び出されたか、関数が返す値などの情報を記録し、検証することができる。
+
+### 関数が実行されたことを検証する
+
+`jest.fun`を使用してモック関数を作成する。
+作成したモック関数は、テストコードで関数として使用する。
+これにより、関数が期待通りに呼び出されたか、どのような引数で呼び出されたか、関数が返す値は何かを検証することができる。
+
+下記のテストでは、マッチャーの`toBeCalled`を使って検証することで、実行されたか否かを判定できる。
+
+```ts
+test("モック関数は実行された", () => {
+  const mockFn = jest.fn();
+  mockFn();
+  expect(mockFn).toBeCalled();
+});
+
+test("モック関数は実行されていない", () => {
+  const mockFn = jest.fn();
+  expect(mockFn).not.toBeCalled();
+});
+```
+
+### 実行された回数を記録する
+
+マッチャーの`toHaveBeenCalledTimes`を使って検証することで、何回実行されたかを検証できる。
+
+```ts
+test("モック関数は実行された回数を記録している", () => {
+  const mockFn = jest.fn();
+  mockFn();
+  expect(mockFn).toHaveBeenCalledTimes(1);
+  mockFn();
+  expect(mockFn).toHaveBeenCalledTimes(2);
+});
+```
+
+### 実行時引数の検証
+
+モック関数は、実行時の引数を記録している。
+モック関数を実行する`greet`関数を用意して検証してみる。
+モック関数は、関数定義の中に忍ばせることができる。
+
+```ts
+test("モック関数は関数の中でも実行できる", () => {
+  const mockFn = jest.fn();
+  function greet() {
+    mockFn();
+  }
+  greet();
+  expect(mockFn).toHaveBeenCalledTimes(1);
+});
+```
+
+`greet`関数に引数`message`を追加してみる。
+モック関数である`mockFn`は実行時に`"hello"`という引数をもって実行されたことを記録する。
+記録内容を検証するために`toHaveBeenCalledWith`というマッチャーを使用したアサーションを書く。
+
+```ts
+test("モック関数は実行時の引数を記録している", () => {
+  const mockFn = jest.fn();
+  function greet(message: string) {
+    mockFn(message); // 引数をもって実行される
+  }
+  greet("hello"); // "hello"をもって実行されたことがmockFnに記録される
+  expect(mockFn).toHaveBeenCalledWith("hello");
+});
+```
+
+### テスト対象の引数に関数がある場合のテスト
+
+以下の`greet`関数は与えられた第一引数`name`を使用し、第二引数のコールバック関数を実行している。
+
+```ts
+export function greet(name: string, callback?: (message: string) => void) {
+  callback?.(`Hello! ${name}`);
+}
+```
+
+次のようなテストを書くことで、コールバック関数の実行時引数を検証することができる。
+
+```ts
+test("モック関数はテスト対象の引数として使用できる", () => {
+  const mockFn = jest.fn();
+  greet("Jiro", mockFn);
+  expect(mockFn).toHaveBeenCalledWith("Hello! Jiro");
+});
+```
+
+### 実行時引数のオブジェクト検証
+
+文字列以外にも、配列やオブジェクトを検証できる。
+
+```ts
+const config = {
+  mock: true,
+  feature: { spy: true },
+};
+
+export function checkConfig(callback?: (payload: object) => void) {
+  callback?.(config);
+}
+
+test("モック関数は実行時引数のオブジェクト検証ができる", () => {
+  const mockFn = jest.fn();
+  checkConfig(mockFn);
+  expect(mockFn).toHaveBeenCalledWith({
+    mock: true,
+    feature: { spy: true },
+  });
+});
+```
+
+大きなオブジェクトの場合、一部だけを検証したい場合がある。
+`expect.objectContaining`を使用することで、オブジェクトの部分的な検証ができる。
+
+```ts
+test("expect.objectContaining による部分検証", () => {
+  const mockFn = jest.fn();
+  checkConfig(mockFn);
+  expect(mockFn).toHaveBeenCalledWith(
+    expect.objectContaining({
+      feature: { spy: true },
+    })
+  );
+});
+```
