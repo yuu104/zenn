@@ -33,7 +33,7 @@ Web API からデータを取得する場合、ネットワークエラーやサ
 
 ## スタブとスパイ
 
-「スタブ」「スパイ」とは、モックをそれぞれの目的に応じて分類したオブジェクトの呼称である。テストに’おいて特定の役割や機能を持っている。
+「スタブ」「スパイ」とは、モックをそれぞれの目的に応じて分類したオブジェクトの呼称である。テストにおいて特定の役割や機能を持っている。
 
 ### スタブ
 
@@ -48,6 +48,7 @@ Web API からデータを取得する場合、ネットワークエラーやサ
 - スパイの目的は「記録」を行うこと。
 - テスト中にオブジェクトやシステムの振る舞いや状態を監視・記録するために使用される。
 - テストの際に、スパイはメソッドの呼び出し回数や引数、戻り値などの情報を収集し、テスト結果の評価や検証に利用される
+- スタブとは異なり、振る舞い自体を変更することはしない
 
 ## モックモジュールを使用したスタブ
 
@@ -594,5 +595,191 @@ test("expect.objectContaining による部分検証", () => {
       feature: { spy: true },
     })
   );
+});
+```
+
+## セットアップと破棄
+
+Jest ではテストスイートやテストケースが実行される前後に特定の処理を実行するための関数として、以下の４つの関数が提供されている。
+
+### `beforeAll`
+
+- テストスイート内のすべてのテストケースが実行される前に、1 度だけ実行される関数
+- データベースの接続の確立や外部リソースのセットアップなど、テストケースが実行される前に一度だけ必要な処理を行う場合に使用され
+
+### `beforeEach`
+
+- 各テストケースが実行される前に、毎回実行される関数
+- テストケースごとに共通のセットアップが必要な場合や、テストデータの初期化が必要なときに使用される
+
+### `afterAll`
+
+- テストスイート内のすべてのテストケースが実行された後に、1 度だけ実行される関数
+- データベース接続の切断やリソースの解放など、テストスイート全体の後処理が必要な場合に使用される
+
+### `afterEach`
+
+- 各テストケースが実行された後に、毎回実行される関数
+- 各テストケースの後にクリーンアップや後処理を行うために使用される
+
+```ts
+// 前後処理の実行されるタイミング
+describe("テスト", () => {
+  beforeAll(() => console.log("1 - beforeAll"));
+  afterAll(() => console.log("1 - afterAll"));
+  beforeEach(() => console.log("1 - beforeEach"));
+  afterEach(() => console.log("1 - afterEach"));
+  test("テスト1", () => console.log("1 - test")); //テスト1
+
+  describe("ネストされたテスト", () => {
+    beforeAll(() => console.log("2 - beforeAll"));
+    afterAll(() => console.log("2 - afterAll"));
+    beforeEach(() => console.log("2 - beforeEach"));
+    afterEach(() => console.log("2 - afterEach"));
+    test("テスト2", () => console.log("2 - test")); //テスト2
+  });
+});
+```
+
+上記の実行結果は以下になる。
+
+```shell
+PASS  src/timing.test.js
+  テスト
+    ✓ テスト1 (3 ms)
+    ネストされたテスト
+      ✓ テスト2 (3 ms)
+
+  console.log
+    1 - beforeAll
+
+      at src/timing.test.js:3:27
+
+  console.log
+    1 - beforeEach
+
+      at Object.<anonymous> (src/timing.test.js:5:28)
+
+  console.log
+    1 - test
+
+      at Object.<anonymous> (src/timing.test.js:7:30)
+
+  console.log
+    1 - afterEach
+
+      at Object.<anonymous> (src/timing.test.js:6:27)
+
+  console.log
+    2 - beforeAll
+
+      at src/timing.test.js:10:29
+
+  console.log
+    1 - beforeEach
+
+      at Object.<anonymous> (src/timing.test.js:5:28)
+
+  console.log
+    2 - beforeEach
+
+      at Object.<anonymous> (src/timing.test.js:12:30)
+
+  console.log
+    2 - test
+
+      at Object.<anonymous> (src/timing.test.js:14:32)
+
+  console.log
+    2 - afterEach
+
+      at Object.<anonymous> (src/timing.test.js:13:29)
+
+  console.log
+    1 - afterEach
+
+      at Object.<anonymous> (src/timing.test.js:6:27)
+
+  console.log
+    2 - afterAll
+
+      at src/timing.test.js:11:28
+
+  console.log
+    1 - afterAll
+
+      at src/timing.test.js:4:26
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        0.47 s, estimated 1 s
+Ran all test suites matching
+```
+
+## 現在時刻に依存したテスト
+
+テスト対象が現在時刻に依存したロジックを含んでいる場合、テストの結果はテスト実行時刻に依存する。
+これは「特定の時間帯になると、CI の自動テストが失敗してしまう」といった、脆いテストにつながる。
+これを防ぐために、テスト実行環境の現在時刻は固定してしまい、いつ実行してもテスト結果が同じになるように設定する必要がある。
+
+### テスト対象の関数
+
+```ts
+export function greetByTime() {
+  const hour = new Date().getHouts();
+
+  if (hour < 12) {
+    return "おはよう";
+  } else if (hour < 18) {
+    return "こんにちは";
+  }
+  return "こんばんは";
+}
+```
+
+### 現在時刻を固定する
+
+テスト実行環境の現在時刻を任意の時刻に固定するには、以下の関数を使用する必要がある。
+
+#### `jest.useFakeTimers`
+
+- Jest に偽のタイマーを使用するように指示するための関数
+- 対象のテストが実行される前に`beforeEach`で呼び出す
+
+#### `jest.setSystemTime`
+
+- 偽のタイマーで使用される現在システム時刻を設定するための関数
+- テスト実行時に呼び出す
+
+#### `jest.useRealTimers`
+
+- Jest に真のタイマーを使用する（元に戻す）ように指示するための関数
+- 対象のテストが実行された後に`afterEach`で呼び出す
+
+```ts
+describe("greetByTime(", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  test("朝は「おはよう」を返す", () => {
+    jest.setSystemTime(new Date(2023, 4, 23, 8, 0, 0));
+    expect(greetByTime()).toBe("おはよう");
+  });
+
+  test("昼は「こんにちは」を返す", () => {
+    jest.setSystemTime(new Date(2023, 4, 23, 14, 0, 0));
+    expect(greetByTime()).toBe("こんにちは");
+  });
+
+  test("夜は「こんばんは」を返す", () => {
+    jest.setSystemTime(new Date(2023, 4, 23, 21, 0, 0));
+    expect(greetByTime()).toBe("こんばんは");
+  });
 });
 ```
