@@ -38,30 +38,30 @@ GCP プロジェクトを新規作成した後、「API ライブラリ」画面
 ### OAuth 同意画面の設定
 
 メニューから「API とサービス」を選択し、「OAuth 同意画面」を開きます。
-![](/images/use-google-calendar-with-react-native-expo/oauth-concent-screen.png =300x)
+![](https://storage.googleapis.com/zenn-user-upload/cbe8253961ec-20230611.png =300x)
 
 User Type は「外部」を選択し、作成します。
-![](/images/use-google-calendar-with-react-native-expo/oauth-concent-screen-user-type.png =500x)
+![](https://storage.googleapis.com/zenn-user-upload/1e5bd431125b-20230611.png =500x)
 
 アプリ情報、デベロッパーの連絡先情報を入力し、次へ進みます。
-![](/images/use-google-calendar-with-react-native-expo/oauth-concent-screen-app-info.png =500x)
+![](https://storage.googleapis.com/zenn-user-upload/604194a9bde7-20230611.png =500x)
 
 今回はカレンダー情報の取得のみを行うため、スコープに`https://www.googleapis.com/auth/calendar.events.readonly`を追加します。
-![](/images/use-google-calendar-with-react-native-expo/oauth-concent-screen-scope.png =400x)
+![](https://storage.googleapis.com/zenn-user-upload/70d8b0449220-20230611.png =400x)
 
 最後にテストユーザーを追加します。
-![](/images/use-google-calendar-with-react-native-expo/oauth-concent-screen-test-user.png =500x)
+![](https://storage.googleapis.com/zenn-user-upload/59d2575863f2-20230611.png =500x)
 
 ### 認証情報を作成
 
 「認証情報の作成」から「OAuth クライアント ID」を選択します。
-![](/images/use-google-calendar-with-react-native-expo/create-credentials.png =600x)
+![](https://storage.googleapis.com/zenn-user-upload/d5f6a41f4a51-20230611.png =600x)
 
 - 「アプリケーションの種類」は iOS を選択
 - 「名前」は適当に入力
 - 今回は Expo Go で実行するため、「バンドル ID」を`host.exp.exponent`に設定
 
-![](/images/use-google-calendar-with-react-native-expo/create-credentials-form.png =400x)
+![](https://storage.googleapis.com/zenn-user-upload/05ef30ccb413-20230611.png =400x)
 
 入力を確定すると、クライアント ID が発行されます。
 
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
 
 上記実装を Expo Go で動作確認してみます。
 すると、以下のようにエラーが発生しました。
-![](/images/use-google-calendar-with-react-native-expo/error-expoclientid.png =300x)
+![](https://storage.googleapis.com/zenn-user-upload/256ca539f0b7-20230611.png =300x)
 どうやら`useAuthRequest()`フックに`expoClientId`を指定しなければならないようです...
 そのため、下記リンクを参考に`expoClientId`を発行します。
 `expoClientId`の発行には Expo アカウント情報が必要なので、事前に用意してください。
@@ -236,7 +236,7 @@ expo login
 ```
 
 ログイン済みの状態でサーバーを起動し、動作確認してみます。
-![](/images/use-google-calendar-with-react-native-expo/sign-in-with-google.png =300x)
+![](https://storage.googleapis.com/zenn-user-upload/a20af93cb1ad-20230611.png =300x)
 「Sign in with Google」を押すと OAuth 認証ページが開きます。
 認証が完了し、Google アカウントのユーザ名が表示さたら成功です。
 
@@ -361,7 +361,7 @@ const response = await fetch(
 ### 動作確認
 
 画像にある 6 月の予定を取得します。
-![](/images/use-google-calendar-with-react-native-expo/schedule.png =600x)
+![](https://storage.googleapis.com/zenn-user-upload/97a9835cfd31-20230611.png =600x)
 予定の詳細は以下の通りです。
 
 - 6 月 6 日にある予定
@@ -370,7 +370,7 @@ const response = await fetch(
 
 サーバーを起動したら先ほどと同じように認証を行います。
 認証が完了すると、「Google カレンダーと連携する」と表示されるので、そのボタンを押せば 6 月の予定が表示されます。
-![](/images/use-google-calendar-with-react-native-expo/schedule-result.png =300x)
+![](https://storage.googleapis.com/zenn-user-upload/454ab561a309-20230611.png =300x)
 予定データは取得したデータの`items`プロパティにあります。
 繰り返しイベントの場合、繰り返しの最初のイベントだけ取得し、`items[i].recurrence`に繰り返しの設定が定義されています。
 
