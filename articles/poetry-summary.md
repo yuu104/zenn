@@ -72,6 +72,15 @@ poetry config virtualenvs.in-project true
 
   :::
 
+## 既存プロジェクトに poetry を導入する
+
+```shell
+poetry init
+```
+
+- あくまで `pyproject.toml` を作成してパッケージ管理するだけ
+- `test` ディレクトリやプロジェクトディレクトリなどは作成されない
+
 ## パッケージ管理
 
 ```shell
