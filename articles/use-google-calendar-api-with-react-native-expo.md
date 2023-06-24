@@ -2,7 +2,7 @@
 title: "React Native (Expo) でGoogle Calendar APIを使って予定を取得する"
 emoji: "✨"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: [reactnative, expo, googlecalendarapi]
+topics: [reactnative, expo, googlecalendar]
 published: true
 ---
 
