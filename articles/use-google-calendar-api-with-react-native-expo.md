@@ -135,7 +135,7 @@ const [request, response, promptAsync] = Google.useAuthRequest({
 
 ### 認証を行い、ユーザ情報を取得してみる
 
-以下のコードは Google OAuth 認証を行い、アクセストークンを用いてしてユーザ情報を取得し、アプリ画面に表示しています。
+以下のコードでは Google OAuth 認証を行い、アクセストークンを用いてユーザ情報を取得し、アプリ画面に表示しています。
 
 ```ts:App.ts
 import { useEffect, useState } from "react";
@@ -354,7 +354,7 @@ const response = await fetch(
 );
 ```
 
-- `https://www.googleapis.com/calendar/v3/calendars/primary/events`は Google Calendar API のエンドポイントであり、`primary`は認証ユーザのプライマリカレンダーを表しています
+- `https://www.googleapis.com/calendar/v3/calendars/primary/events`は Google Calendar API のエンドポイントであり、`primary`は認証ユーザのメインカレンダーを表しています
 - `timeMin`と`timeMax`は取得したいイベントの期間を指定するクエリパラメータです。これらの値は、指定した月の最初の日時と最後の日時を表す ISO8601 形式の文字列です
 - `Authorization` ヘッダーには、Google OAuth 認証で取得したアクセストークンを指定します
 
@@ -372,7 +372,7 @@ const response = await fetch(
 認証が完了すると、「Google カレンダーと連携する」と表示されるので、そのボタンを押せば 6 月の予定が表示されます。
 ![](https://storage.googleapis.com/zenn-user-upload/454ab561a309-20230611.png =300x)
 予定データは取得したデータの`items`プロパティにあります。
-繰り返しイベントの場合、繰り返しの最初のイベントだけ取得し、`items[i].recurrence`に繰り返しの設定が定義されています。
+繰り返しイベントの場合、繰り返しの最初のイベントだけが取得され、`items[i].recurrence`に繰り返しの設定が定義されます。
 
 ## 参考リンク
 
