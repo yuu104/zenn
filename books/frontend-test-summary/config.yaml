@@ -12,3 +12,4 @@ chapters:
   - test-strategy-model
   - unit-test
   - mock
+  - ui-component-test
