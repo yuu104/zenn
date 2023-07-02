@@ -118,7 +118,7 @@ import { greet } from "./greet";
 
 jest.mock("./greet", () => ({
   ...jest.requireActual("./greet"),
-  sayGoodBye: (name: string) => `Good bye, ${name}`,
+  sayGoodBye: (name: string) => `Good bye, ${name}.`,
 }));
 
 test("挨拶を返す", () => {
@@ -425,7 +425,7 @@ test("指定したタグをもつ記事が一件もない場合、null が返る
 
 あらかじめ用意したフィクスチャーには`playwright`というタグが含まれた記事は存在しないため、レスポンスは`null`になる。
 
-###　指定したタグを持つ記事が一件以上ある場合、リンク及びタイトル一覧が返る
+### 指定したタグを持つ記事が一件以上ある場合、リンク及びタイトル一覧が返る
 
 ```ts
 test("指定したタグをもつ記事が一件以上ある場合、リンク一覧が返る", async () => {
