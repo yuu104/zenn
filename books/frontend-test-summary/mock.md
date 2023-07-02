@@ -205,7 +205,7 @@ jest.spyOn(Fetchers, "getMyProfile");
 `対象の関数名称`とは、ここでは`getMyProfle`という関数名称を指す。
 もし`Fetchers`に定義されていない関数名称を指定した場合、TypeScript の型エラーとなる。
 
-###　データ取得成功を再現するテスト
+### データ取得成功を再現するテスト
 
 `mockResolvedValueOnce`によりモック化した`getMyProfile`関数に対してスタブを実装する。
 
