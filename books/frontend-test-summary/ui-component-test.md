@@ -152,7 +152,7 @@ test("ボタンを押下すると、イベントハンドラーが呼ばれる",
 
 ### テスト対象の UI コンポーネント
 
-```ts
+```tsx
 import { FC } from "react";
 
 type ArticleListProps = {
@@ -293,6 +293,236 @@ test("ID に紐づいたリンクが表示される", () => {
     "href",
     "/articles/howto-testing-with-typescript"
   );
+});
+```
+
+## インタラクティブな UI コンポーネントテスト
+
+フォーム UI の操作・状態チェックのテストケースについて解説する。
+
+### テスト対象の UI コンポーネント
+
+新規アカウント登録を行う UI コンポーネント。
+メールアドレスとパスワードを入力し、利用規約の同意にチェックを付けてサインアップを行う。
+
+```tsx
+import { useId, useState } from "react";
+
+export const Form = () => {
+  const [checked, setChecked] = useState(false);
+  const headingId = useId();
+  return (
+    <form aria-labelledby={headingId}>
+      <h2 id={headingId}>新規アカウント登録</h2>
+      <InputAccount />
+      <Agreement
+        onChange={(event) => {
+          setChecked(event.currentTarget.checked);
+        }}
+      />
+      <div>
+        <button disabled={!checked}>サインアップ</button>
+      </div>
+    </form>
+  );
+};
+
+const InputAccount = () => {
+  return (
+    <fieldset>
+      <legend>アカウント情報の入力</legend>
+      <div>
+        <label>
+          メールアドレス
+          <input type="text" placeholder="example@test.com" />
+        </label>
+      </div>
+      <div>
+        <label>
+          パスワード
+          <input type="password" placeholder="8文字以上で入力" />
+        </label>
+      </div>
+    </fieldset>
+  );
+};
+
+type AgreementProps = {
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+};
+
+export const Agreement: FC<AgreementProps> = ({ onChange }) => {
+  return (
+    <fieldset>
+      <legend>利用規約の同意</legend>
+      <label>
+        <input type="checkbox" onChange={onChange} />
+        当サービスの<a href="/terms">利用規約</a>を確認し、これに同意します
+      </label>
+    </fieldset>
+  );
+};
+```
+
+サインアップボタンの活性・非活性は、利用規約同意のチェクボックスにより切り替わる。
+
+![](https://storage.googleapis.com/zenn-user-upload/bd08e50c2904-20230702.png)
+
+### アクセシブルネームのテスト
+
+:::details アクセシブルネームとは？
+「アクセシブルネーム（accessible name）」は、ウェブアクセシビリティのコンテキストで使用される用語です。アクセシブルネームは、特定の要素（通常はインタラクティブな要素）に対して、その要素の目的や役割を説明するテキストのことを指します。これにより、アシスト技術を使用するユーザーが要素の目的や機能を理解しやすくなります。
+
+具体的な例として、リンク(`<a>`要素)を考えてみましょう。リンクのアクセシブルネームは、そのリンクがリンク先のコンテンツを表すテキストです。通常はリンクのテキスト自体がアクセシブルネームになります。しかし、リンクのテキストだけではリンク先の目的を十分に説明できない場合、`<a>`要素に aria-label や aria-labelledby 属性を追加してアクセシブルネームを提供することができます。
+
+アクセシブルネームは、スクリーンリーダーやブラウザのアクセシビリティ機能など、アシスト技術によって使用されます。これにより、視覚障害や認知障害を持つユーザーがウェブコンテンツをより理解しやすくなり、適切に操作することができます。
+
+アクセシブルネームの提供は、ウェブアクセシビリティの重要な側面であり、WCAG（Web Content Accessibility Guidelines）などのアクセシビリティ基準で推奨されています。
+:::
+
+:::details `<fieldset>`と`<legend>`について
+`<fieldset>`と`<legend>`は、HTML フォームの作成やグループ化に使用される要素です。
+
+`<fieldset>`要素は、関連するフォームの要素をグループ化するために使用されます。`<fieldset>`タグ内に他のフォーム要素（`<input>`、`<select>`、`<textarea>`など）を配置することができます。グループ化により、関連するフォームコントロールが視覚的に関連付けられ、ユーザーにとって理解しやすくなります。
+
+`<fieldset>`要素は、通常、`<form>`要素内に配置されますが、必須ではありません。以下に例を示します。
+
+```html
+<form>
+  <fieldset>
+    <legend>連絡先情報</legend>
+    <label for="name">名前:</label>
+    <input type="text" id="name" name="name" required />
+    <br />
+    <label for="email">メールアドレス:</label>
+    <input type="email" id="email" name="email" required />
+  </fieldset>
+</form>
+```
+
+`<legend>`要素は、`<fieldset>`のタイトルまたは説明を提供するために使用されます。`<legend>`要素は`<fieldset>`の最初の子要素として配置され、`<fieldset>`の枠内に表示されます。
+
+上記の例では、`<legend>`要素の内容である「連絡先情報」が`<fieldset>`のタイトルとして表示されます。
+
+`<fieldset>`と`<legend>`の組み合わせにより、関連するフォーム要素を視覚的にまとめることができます。これにより、フォームの利用者が情報の入力や理解を容易にすることができます。
+:::
+
+`<fieldset>`は、暗黙のロールとして`group`を持つ。
+以下のテストは、`Agreement`コンポーネントの`<legend>`に表示されている文字列が、`<fieldset>`のアクセシブルネームとして引用されていることを検証するテスト。
+`<legend>`があることで、暗黙的にこのグループのアクセシブルネームが決まっていることが検証できる。
+
+```ts
+test("fieldset のアクセシブルネームは、legend を引用している", () => {
+  render(<Agreement />);
+  expect(
+    screen.getByRole("group", { name: "利用規約の同意" })
+  ).toBeInTheDocument();
+});
+```
+
+`getByRole`の`name`オプションを使用してアクセシブルネームを指定する。
+
+以下のコンポーネントは同じ見た目であっても、適切ではない。
+なぜなら、`div`はロールを持たないため、アクセシビリティツリー上ではひとまとまりのグループとして識別できない。
+
+```tsx
+export const Agreement: FC<AgreementProps> = ({ onChange }) => {
+  return (
+    <div>
+      <h3>利用規約の同意</h3>
+      <label>
+        <input type="checkbox" onChange={onChange} />
+        当サービスの<a href="/terms">利用規約</a>を確認し、これに同意します
+      </label>
+    </div>
+  );
+};
+```
+
+つまり、テストを書く時にも、`Agreement`コンポーネントをひとまとまりのグループとして特定することが困難になる。
+このように、UI コンポーネントのテストを書くことで、アクセシビリティへ配慮する機会が増える。
+
+### アカウント情報入力のインタラクションをテストする。
+
+`InputAccount`コンポーネントは、メールアドレスとパスワードを入力する UI コンポーネント。
+それぞれの`input`要素にメールアドレスとパスワードを入力するテストを書く。
+
+#### `userEvent`で文字を入力する
+
+文字入力の再現は`fireEvent`でも可能だが、よりユーザ操作に近い再現をするには`@testing-library/user-event`の`userEvent`を使用する。
+`userEvent`を使用した文字入力操作方法は以下の通り。
+
+1. `userEvent.setup()`で API を呼び出すインスタンスを作成
+2. `screen.getByRole`で入力欄の要素を取得
+3. 取得した入力欄に対し、`type`メソッドで入力操作を行う
+
+`userEvent`を使用したインタラクションは全て、非同期処理なので`await`で入力完了を待つ必要がある。
+
+以下に、メールアドレスの入力をテストを書く。
+
+```ts
+import userEvent from "@testing-library/user-event";
+
+const user = userEvent.setup();
+
+test("メールアドレス入力欄", async () => {
+  render(<InputAccount />);
+  const textbox = screen.getByRole("textbox", { name: "メールアドレス" });
+  const value = "taro.tanaka@example.com";
+  await user.type(textbox, value);
+  expect(screen.getByDisplayValue(value)).toBeInTheDocument();
+});
+```
+
+メールアドレスと同様に、パスワードの入力もテストする。
+`<input type="password" />`は**ロールを持たない**ため、`getByRole`による要素取得ができない。
+そのため、今回は`getByPlaceholderText`で入力欄を取得する。
+
+```ts
+test("パスワード入力欄", async () => {
+  render(<InputAccount />);
+  const password = screen.getByPlaceholderText("8文字以上で入力");
+  const value = "abcd1234";
+  await user.type(password, value);
+  expect(screen.getByDisplayValue(value)).toBeInTheDocument();
+});
+```
+
+### チェックボックス・サインアップボタンのインタラクションをテストする
+
+はじめに、チェックボックス・サインアップボタンの初期状態を検証する。
+初期状態では、チェックボックスにはチェックが入っておらず、サインアップボタンは非活性になっている。
+チェックボックスの状態は`toBeChecked`マッチャーで検証できる。
+ボタンの非活性は`toBeDisabled`マッチャーで検証できる。
+
+```ts
+test("チェックボックスはチェックが入っていない", () => {
+  render(<Form />);
+  expect(screen.getByRole("checkbox")).not.toBeChecked();
+});
+
+test("「サインアップ」ボタンは非活性", () => {
+  render(<Form />);
+  expect(screen.getByRole("button", { name: "サインアップ" })).toBeDisabled();
+});
+```
+
+次に、チェックボックスにチェックを入れた後のチェックボックス・サインアップボタンの状態を検証する。
+ボタンの活性は`toBeEnabled`マッチャーで検証できる。
+チェックボタンのクリックは、`userEvent`の`click(対象要素)`メソッドで操作できる。
+
+```ts
+test("チェックボックスを押下すると、チェックが入る", () => {
+  render(<Form />);
+  const checkbox = screen.getByRole("checkbox");
+  await user.click(checkbox);
+  expect(checkbox).toBeChecked();
+});
+
+test("「利用規約の同意」チェックボックスを押下すると「サインアップ」ボタンは活性化", async () => {
+  render(<Form />);
+  await user.click(screen.getByRole("checkbox"));
+  expect(screen.getByRole("button", { name: "サインアップ" })).toBeEnabled();
 });
 ```
 
