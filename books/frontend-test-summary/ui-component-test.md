@@ -526,4 +526,356 @@ test("「利用規約の同意」チェックボックスを押下すると「�
 });
 ```
 
+## 非同期処理を含む UI コンポーネントテスト
+
+UI コンポーネント上で API 送信を行うテストケースを考える。
+
+### テスト対象のコンポーネント
+
+以下は、お届け先情報の入力フォームを表すコンポーネント。
+ログインユーザが買い物をする際の、商品のお届け先を指定する。
+ユーザは連絡先情報とお届け先情報を入力する。
+
+```tsx: RegisterAddress.tsx
+import { FC, useState } from "react";
+import { postMyAddress } from "./fetchers";
+
+export const RegisterAddress = () => {
+  const [postResult, setPostResult] = useState("");
+  return (
+    <div>
+      <Form
+        onSubmit={handleSubmit((values) => {
+          try {
+            checkPhoneNumber(values.phoneNumber);
+            postMyAddress(values)
+              .then(() => {
+                setPostResult("登録しました");
+              })
+              .catch(() => {
+                setPostResult("登録に失敗しました");
+              });
+          } catch (err) {
+            if (err instanceof ValidationError) {
+              setPostResult("不正な入力値が含まれています");
+              return;
+            }
+            setPostResult("不明なエラーが発生しました");
+          }
+        })}
+      />
+      {postResult && <p>{postResult}</p>}
+    </div>
+  );
+};
+
+export type FormProps = {
+  onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
+};
+
+const Form: FC<FormProps> = ({ onSubmit }) => {
+  return (
+    <form onSubmit={onSubmit}>
+      <h2>お届け先情報の入力</h2>
+      <ContactNumber />
+      <DeliveryAddress />
+      <hr />
+      <div>
+        <button>注文内容の確認へ進む</button>
+      </div>
+    </form>
+  );
+};
+
+const ContactNumber = () => {
+  return (
+    <fieldset>
+      <legend>連絡先</legend>
+      <div>
+        <label>
+          電話番号
+          <input type="text" name="phoneNumber" />
+        </label>
+      </div>
+      <div>
+        <label>
+          お名前
+          <input type="text" name="name" />
+        </label>
+      </div>
+    </fieldset>
+  );
+};
+
+type DeliveryAddressProps = {
+  title?: string;
+};
+
+const DeliveryAddress: FC<DeliveryAddressProps> = ({ title = "お届け先" }) => {
+  return (
+    <fieldset>
+      <legend>{title}</legend>
+      <div>
+        <label>
+          郵便番号
+          <input type="text" name="postalCode" placeholder="167-0051" />
+        </label>
+      </div>
+      <div>
+        <label>
+          都道府県
+          <input type="text" name="prefectures" placeholder="東京都" />
+        </label>
+      </div>
+      <div>
+        <label>
+          市区町村
+          <input type="text" name="municipalities" placeholder="杉並区荻窪1" />
+        </label>
+      </div>
+      <div>
+        <label>
+          番地番号
+          <input type="text" name="streetNumber" placeholder="00-00" />
+        </label>
+      </div>
+    </fieldset>
+  );
+};
+
+function handleSubmit(callback: (values: any) => Promise<void> | void) {
+  return (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const values: { [k: string]: unknown } = {};
+    formData.forEach((value, key) => (values[key] = value));
+    return callback(values);
+  };
+}
+
+class ValidationError extends Error {}
+
+function checkPhoneNumber(value: any) {
+  if (!value.match(/^[0-9\-]+$/)) {
+    throw new ValidationError();
+  }
+}
+
+```
+
+上記コンポーネントにより以下の UI が構築される。
+![](https://storage.googleapis.com/zenn-user-upload/f6a227048ed5-20230702.png)
+
+以下は、API クライアントのコード。
+HTTP ステータスが 300 台以上の場合、例外をスローする。
+
+```ts:fetchers/index.ts
+const headers = {
+  Accept: "application/json",
+  "Content-Type": "application/json",
+};
+
+export function postMyAddress(values: unknown): Promise<{result: string}> {
+  return fetch(host("https://myapi.testing.com/my/address"), {
+    method: "POST",
+    body: JSON.stringify(values),
+    headers,
+  }).then((res) => {
+    const data = await res.json();
+    if (!res.ok) {
+      throw data;
+    }
+    return data;
+  });
+}
+```
+
+このコンポーネントでは、`Form`コンポーネントの「注文内容の確認へ進む」ボタンをクリックした時に API を呼び出して POST 処理を行い、レスポンスに応じて`RegisterAddress`コンポーネントの`postResult`の表示が変わる。
+`Form`コンポーネントの`onSubmit`イベントが発生したとき、次の処理が行われる。
+
+1. `handleSubmit`関数 : `<form>`で送信される値をオブジェクト`values`に整形
+2. `checkPhoneNumber`関数 : 送信される電話番号の値のバリデーションを実施
+3. `postMyAdress`関数 : Web API クライアント呼び出し
+
+### テストケース
+
+お届け先情報の入力フォームコンポーネントのテスト観点は、入力内容と API レスポンスによって出し分けられる、4 パターンのメッセージの表示検証になる。具体的には以下の 4 パターンをテストする。
+
+- POST 処理が成功し、「登録しました」が表示される
+- POST 処理が失敗し、「登録に失敗しました」が表示される
+- 電話番号のバリデーションエラーで失敗し、「不正な入力値が含まれています」が表示される
+- 不明なエラーが発生し、「不明なエラーが発生しました」と表示される
+
+### Web API クライアントのモック関数を用意する
+
+```ts
+import * as Fetchers from ".";
+
+export function mockPostMyAddress(status = 201) {
+  if (status > 299) {
+    return jest.spyOn(Fetchers, "postMyAddress").mockRejectedValueOnce({
+      err: { message: "internal server error" },
+    });
+  }
+  return jest
+    .spyOn(Fetchers, "postMyAddress")
+    .mockResolvedValueOnce({ result: "ok" });
+}
+```
+
+### 連絡先情報・お届け先情報の入力を行うユーティリティ関数を用意する
+
+4 つのテストケースを書く上で、連絡先情報・お届け先情報の入力を行うコードは共通している。
+そのため、各テストケース毎に同じコードを書かなくて済むように、ユーティリティ関数を用意する。
+この関数は、入力値のオブジェクト`inputValues`を返す。
+
+```ts
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+// 連絡先情報の入力を行う関数
+export async function inputContactNumber(
+  inputValues = {
+    name: "田中 太郎",
+    phoneNumber: "000-0000-0000",
+  }
+) {
+  await user.type(
+    screen.getByRole("textbox", { name: "電話番号" }),
+    inputValues.phoneNumber
+  );
+  await user.type(
+    screen.getByRole("textbox", { name: "お名前" }),
+    inputValues.name
+  );
+  return inputValues;
+}
+
+// お届け先情報の入力を行う関数
+export async function inputDeliveryAddress(
+  inputValues = {
+    postalCode: "167-0051",
+    prefectures: "東京都",
+    municipalities: "杉並区荻窪1",
+    streetNumber: "00-00",
+  }
+) {
+  await user.type(
+    screen.getByRole("textbox", { name: "郵便番号" }),
+    inputValues.postalCode
+  );
+  await user.type(
+    screen.getByRole("textbox", { name: "都道府県" }),
+    inputValues.prefectures
+  );
+  await user.type(
+    screen.getByRole("textbox", { name: "市区町村" }),
+    inputValues.municipalities
+  );
+  await user.type(
+    screen.getByRole("textbox", { name: "番地番号" }),
+    inputValues.streetNumber
+  );
+  return inputValues;
+}
+```
+
+### テストを書く
+
+`fillValuesAndSubmit()`, `fillInvalidValuesAndSubmit()`は、連絡先・お届け先を入力し、「注文内容の確認へ進む」ボタンをクリックして POST 処理を呼び出すまでの処理をまとめた関数。
+`fillInvalidValuesAndSubmit()`は電話番号がバリデーションエラーになるようにしている。
+
+モックモジュールを使用するテストであるため、テストファイル冒頭で`jest.mock(モジュールパス)`を記述する。
+
+また、各テストケースでモックをリセットするために、`jest.resetAllMocks()`を記述する。
+
+```ts
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { RegisterAddress } from "./RegisterAddress";
+import { inputContactNumber, inputDeliveryAddress } from "./testingUtils";
+
+jest.mock("./fetchers");
+
+const user = userEvent.setup();
+
+async function fillValuesAndSubmit() {
+  const contactNumber = await inputContactNumber();
+  const deliveryAddress = await inputDeliveryAddress();
+  const submitValues = { ...contactNumber, ...deliveryAddress };
+  await user.click(
+    screen.getByRole("button", { name: "注文内容の確認へ進む" })
+  );
+  return submitValues;
+}
+
+async function fillInvalidValuesAndSubmit() {
+  const contactNumber = await inputContactNumber({
+    name: "田中 太郎",
+    phoneNumber: "abc-defg-hijkl",
+  });
+  const deliveryAddress = await inputDeliveryAddress();
+  const submitValues = { ...contactNumber, ...deliveryAddress };
+  await user.click(
+    screen.getByRole("button", { name: "注文内容の確認へ進む" })
+  );
+  return submitValues;
+}
+
+beforeEach(() => {
+  jest.resetAllMocks();
+});
+```
+
+### POST 処理が成功したときのテスト
+
+`mockPostMyAddress()`を使用することで、Web API クライアントのレスポンスが置き換わる。
+
+```ts
+test("成功時「登録しました」が表示される", async () => {
+  const mockFn = mockPostMyAddress();
+  render(<RegisterAddress />);
+  const submitValues = await fillValuesAndSubmit();
+  expect(mockFn).toHaveBeenCalledWith(expect.objectContaining(submitValues));
+  expect(screen.getByText("登録しました")).toBeInTheDocument();
+});
+```
+
+### POST 処理が失敗したときのテスト
+
+API レスポンスの reject を再現するため、モック関数の引数に 500 を設定する。
+
+```ts
+test("失敗時「登録に失敗しました」が表示される", async () => {
+  const mockFn = mockPostMyAddress(500);
+  render(<RegisterAddress />);
+  const submitValues = await fillValuesAndSubmit();
+  expect(mockFn).toHaveBeenCalledWith(expect.objectContaining(submitValues));
+  expect(screen.getByText("登録に失敗しました")).toBeInTheDocument();
+});
+```
+
+### バリデーションエラー時のテスト
+
+```ts
+test("バリデーションエラー時「不正な入力値が含まれています」が表示される", async () => {
+  render(<RegisterAddress />);
+  await fillInvalidValuesAndSubmit();
+  expect(screen.getByText("不正な入力値が含まれています")).toBeInTheDocument();
+});
+```
+
+### 不明なエラー時のテスト
+
+モック関数が実行されていないテストでは、API リクエストを処理することができない。
+そのため、これをそのまま不明なエラーの発生状況の再現として使用する。
+
+```ts
+test("不明なエラー時「不明なエラーが発生しました」が表示される", async () => {
+  render(<RegisterAddress />);
+  await fillValuesAndSubmit();
+  expect(screen.getByText("不明なエラーが発生しました")).toBeInTheDocument();
+});
+```
+
 ## クエリー（要素取得 API の優先順位）
