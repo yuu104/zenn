@@ -16,7 +16,7 @@ published: false
 
 ## 解析速度について
 
-形態素・係り受け解析ライブラリの Chabocha と比べると結構遅くなる。
+形態素・係り受け解析ライブラリの Cabocha と比べると結構遅くなる。
 他のライブラリとの速度比較の詳細は下記リンクを参照。
 https://qiita.com/suzuki_sh/items/69fd5b9bb0b8b7c7f720#%E3%81%BE%E3%81%A8%E3%82%81
 
