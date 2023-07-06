@@ -900,4 +900,107 @@ UI コンポーネントに予期せずリグレッションが発生してい�
    - 一致する場合はテストをパスする
    - 不一致の場合はテストが失敗する。必要に応じてスナップショットを確認し、スナップショットの更新を行う
 
+### スナップショットテストを実装する
+
+React には、スナップショットテストをサポートするいくつかのツールがある。
+その中でも最も一般的なのは Jest の`toMatchSnapshot`メソッドで、これを使用すると、コンポーネントの出力をスナップショットとしてキャプチャし、比較することができる。
+
+以下は`toMatchSnapshot`を使用したスナップショットテストの例になる。
+
+```tsx
+import React from "react";
+
+export const Button = ({ label }: { label: string }) => {
+  return <button>{label}</button>;
+};
+```
+
+```tsx
+test("ボタンに「Clock me」が表示される", () => {
+  const { container } = render(<Button label="Click me" />);
+
+  expect(container).toMatchSnapshot();
+});
+```
+
+このテストでは、`Button`コンポーネントの出力をスナップショットとしてキャプチャし、次回のテスト実行時に保存されたスナップショットと比較する。
+初回実行時はテストファイルと同階層に`__snapshots__`が作成され、テストファイルと同じ名称の`.snap`ファイルが出力される。
+ファイルは以下のような内容となっており、HTML 文字列化された UI コンポーネントが確認できる。
+
+```snap
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ボタンに「Clock me」が表示される 1`] = `
+<div>
+  <button>
+    Click me
+  </button>
+</div>
+`;
+```
+
+この`.snap`ファイルは自動出力されるファイルだが、git 管理対象としてコミットする。
+2 回目以降のスナップショットテストは、初回実装時に作成されたスナップショットと現在のコンポーネントの出力とを比較する。
+比較が成功すると、テストは成功し、次のテストに進む。
+
+### リグレッションを発生させてみる
+
+2 回目以降のテストで、対象ファイルのコミット済み`.snap`ファイルと、現時点のスナップショットを比較し、差分がある場合にテストを失敗させることがスナップショットテストの基本である。
+前述のテストが失敗するよう、`Button`コンポーネントに渡す Props の`label`を`Click`に変更してみる。
+
+```tsx
+test("ボタンに「Clock me」が表示される", () => {
+  const { container } = render(<Button label="Click" />);
+
+  expect(container).toMatchSnapshot();
+});
+```
+
+テストを実行すると、変更を加えた箇所に差分が発生し、テストが失敗する。
+
+```shell
+
+$ jest src/sample/Button.test.tsx
+ FAIL  src/sample/Button.test.tsx
+  ✕ ボタンに「Click me」が表示される (14 ms)
+
+  ● ボタンに「Click me」が表示される
+
+    expect(received).toMatchSnapshot()
+
+    Snapshot name: `ボタンに「Click me」が表示される 1`
+
+    - Snapshot  - 1
+    + Received  + 1
+
+      <div>
+        <button>
+    -     Click me
+    +     Click
+        </button>
+      </div>
+
+      5 |   const { container } = render(<Button label="Click" />);
+      6 |
+    > 7 |   expect(container).toMatchSnapshot();
+        |                     ^
+      8 | });
+      9 |
+
+      at Object.<anonymous> (src/sample/Button.test.tsx:7:21)
+
+ › 1 snapshot failed.
+📦 report is created on: /Users/toyoshimayusei/practice-programing/unittest/__reports__/jest.html
+Snapshot Summary
+ › 1 snapshot failed from 1 test suite. Inspect your code changes or run `yarn test -u` to update them.
+```
+
+### スナップショットを更新する
+
+失敗したテストを成功させるためには、コミット済みのスナップショットを更新する。
+テスト実行時に`--updateSnapshot`または`-u`オプションを付与することで、スナップショットは新しい内容に書き変わる。
+
+スナップショットを記録した後も、機能追加や変更により、UI コンポーネントの HTML 出力内容は変わり続けるものである。
+発生した差分が意図通りの場合は「変更を許可したもの」として、スナップショットの新しい内容をコミットする。
+
 ## クエリー（要素取得 API の優先順位）
