@@ -28,6 +28,7 @@ https://qiita.com/suzuki_sh/items/69fd5b9bb0b8b7c7f720#%E3%81%BE%E3%81%A8%E3%82%
 - 固有表現抽出
 - 文節抽出
 - 類似度算出
+- テキスト分類
 
 ## ライブラリをインストール
 
@@ -133,7 +134,7 @@ https://spacy.io/api/doc
 - `tag_` : トークンの詳細な品詞情報
 - `dep_` : トークンの係り受け関係を示すラベル
 - `head` : トークンの係先となるトークンの`Token`オブジェクト
-- `is_stop` : トークンがストップワードかどうかを示す真偽値
+- `is_stop` : トークンがストップワードかどうかを示す真偽値（[ストップワード一覧](https://github.com/explosion/spaCy/blob/3ddb799f27578d3eed39ded12fc812609106b26c/spacy/lang/ja/stop_words.py)）
 
 これらの属性を使用することで、各トークンのテキストや形態素解析によって得られた情報にアクセスすることができる。
 
@@ -222,3 +223,5 @@ https://chantastu.hatenablog.com/entry/2023/01/20/210757
 https://zenn.dev/mizuiro__sakura/articles/b9de1291fb816d
 
 https://github.com/poyo46/ginza-examples
+
+https://note.com/npaka/n/nc608b9392300
