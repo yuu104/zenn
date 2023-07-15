@@ -137,3 +137,6 @@ JavaScript を非同期 (async/defer) にした場合、外部参照の JavaScri
 
 https://zenn.dev/ak/articles/c28fa3a9ba7edb
 https://zenn.dev/kamy112/articles/2651aa92cc33fd
+https://coliss.com/articles/build-websites/operation/work/how-the-browser-renders-a-web-page.html
+https://www.sunapro.com/browser-rendering/
+https://milestone-of-se.nesuke.com/sv-basic/web-tech-basic/html-javascript-dom-parse-rendering/
