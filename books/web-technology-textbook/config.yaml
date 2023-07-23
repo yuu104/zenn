@@ -1,0 +1,9 @@
+title: "図解即戦力 Web技術がこれ1冊でしっかりわかる教科書"
+summary: "https://www.amazon.co.jp/%E5%9B%B3%E8%A7%A3%E5%8D%B3%E6%88%A6%E5%8A%9B-Web%E6%8A%80%E8%A1%93%E3%81%8C%E3%81%93%E3%82%8C1%E5%86%8A%E3%81%A7%E3%81%97%E3%81%A3%E3%81%8B%E3%82%8A%E3%82%8F%E3%81%8B%E3%82%8B%E6%95%99%E7%A7%91%E6%9B%B8-%E9%B6%B4%E9%95%B7-%E9%8E%AE%E4%B8%80/dp/4297123096/ref=sr_1_7?keywords=web%E6%8A%80%E8%A1%93&qid=1690120676&sprefix=webgi%2Caps%2C197&sr=8-7"
+topics: [web]
+published: false
+price: 0 # 有料の場合200〜5000
+# 本に含めるチャプターを順番に並べましょう
+chapters:
+  - faster-and-larger-scale-web-systems
+  - example2
