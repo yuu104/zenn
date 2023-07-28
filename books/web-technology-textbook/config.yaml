@@ -7,3 +7,4 @@ price: 0 # 有料の場合200〜5000
 chapters:
   - faster-and-larger-scale-web-systems
   - proxy-server
+  - client-side-caching
