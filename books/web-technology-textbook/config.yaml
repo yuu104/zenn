@@ -9,3 +9,4 @@ chapters:
   - proxy-server
   - client-side-caching
   - server-side-caching
+  - load-balancer
