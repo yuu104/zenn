@@ -110,6 +110,48 @@ export default function App() {
 
 ## バリデーション設定（Zod）
 
+- Zod はバリデーションライブラリ（React Hook Form 専用ではない）
+- スキーマを定義し、バリデーションの設定を行うことができる
+- 定義したスキーマから TypeScript の型を生成できる
+
+先ほどのフォームに対し、バリデーションを実装してみる。
+仕様は以下の通り。
+
+- 「Email」はメールアドレス形式で、入力必須
+- 「Password」は英大文字 or 英小文字 or 数字を使って 8 文字以上 20 文字以下で、入力必須
+
+まずは、Zod を使用してバリデーションのスキーマを定義する。
+「スキーマ」とは、フォームデータのバリデーションルールを定義するためのオブジェクトのこと。
+スキーマはデータの構造や制約を定義し、そのデータが特定の条件を満たしているかどうかを確認する役割を持つ。
+
+```ts
+import { z } from "zod";
+
+export const Schema = z.object({
+  email: z
+    .string()
+    .email()
+    .min(8, "8文字以上入力してください。")
+    .max(20, "20文字以下で入力してください。"),
+  password: z
+    .string()
+    .string()
+    .min(8, "8文字以上入力してください。")
+    .max(20, "20文字以下で入力してください。")
+    .regex(/^[a-zA-Z0-9]+$/, {
+      message: "英大文字、英小文字、数字で入力してください",
+    }),
+});
+
+export type SchemaType = z.infer<typeof Schema>;
+```
+
+- `z.object({})` でスキーマを定義する
+- 各プロパティは `register`の第一引数で設定した名前と対応させる
+- `z.string()` は文字列であること、`z.min(8)`は 8 文字以上であることを定義できる
+- `z.string().min(1)`といったように、関数をつなぐことでバリデーションルールを設定できる
+- `z.infer<typeof スキーマ名>` とすることで、スキーマから型を生成できる
+
 ## バリデーションの設定（Yup）
 
 ### ライブラリをインストール
@@ -289,3 +331,5 @@ const emailField = watch("email");
 ## 参考リンク
 
 https://tech-o-proch.com/programing/react/579#index_id0
+
+https://qiita.com/y-suzu/items/952d417f0853341a97df
