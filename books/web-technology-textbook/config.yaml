@@ -10,3 +10,4 @@ chapters:
   - client-side-caching
   - server-side-caching
   - load-balancer
+  - cdn
