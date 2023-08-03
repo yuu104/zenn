@@ -11,3 +11,4 @@ chapters:
   - server-side-caching
   - load-balancer
   - cdn
+  - virtual_cloud
