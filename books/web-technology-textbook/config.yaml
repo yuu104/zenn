@@ -11,4 +11,5 @@ chapters:
   - server-side-caching
   - load-balancer
   - cdn
-  - virtual_cloud
+  - virtualization-technology
+  - cloud-service
