@@ -21,7 +21,7 @@ HTML には複数のバージョンが存在し、バージョンごとに使え
 
 `<!DOCTYPE ...>` はブラウザで解釈され、レンダリングの方法を決定する。
 
-文書型宣言の詳細は[こちら]()
+文書型宣言の詳細は[こちら](https://zenn.dev/yuu104/books/web-technology-textbook/viewer/dtd)
 
 ## ヘッダー
 
