@@ -21,3 +21,4 @@ chapters:
   - websocket
   - what-is-http
   - http=requests-response
+  - stateless-protocol
