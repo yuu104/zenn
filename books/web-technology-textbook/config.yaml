@@ -20,3 +20,4 @@ chapters:
   - json
   - websocket
   - what-is-http
+  - http=requests-response
