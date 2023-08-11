@@ -5,6 +5,12 @@ published: false
 price: 0 # 有料の場合200〜5000
 # 本に含めるチャプターを順番に並べましょう
 chapters:
+  - what-is-http
+  - http=requests-response
+  - stateless-protocol
+  - http-requests-response
+  - http-message
+  - http-transfer-efficiency
   - faster-and-larger-scale-web-systems
   - proxy-server
   - client-side-caching
@@ -19,8 +25,3 @@ chapters:
   - xml
   - json
   - websocket
-  - what-is-http
-  - http=requests-response
-  - stateless-protocol
-  - http-requests-response
-  - http-message
