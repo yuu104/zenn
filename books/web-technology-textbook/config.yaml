@@ -22,3 +22,5 @@ chapters:
   - what-is-http
   - http=requests-response
   - stateless-protocol
+  - http-requests-response
+  - http-message
