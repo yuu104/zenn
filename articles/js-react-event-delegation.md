@@ -2,7 +2,7 @@
 title: "React・JavaScriptのEvent Delegationについて今更ながらに理解したのでまとめる"
 emoji: "😸"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: [javascript, react, dom]
+topics: [javascript, typescript, react, フロントエンド]
 published: false
 ---
 
@@ -88,7 +88,7 @@ const Popup = ({ handleCloseModal }: PopupProps) => {
 上記の実装では、**React17 未満**だと正常に動作します。
 しかし、**React17 以降**だと正常に動作しません。
 
-その原因は、React17 未満と以降で event delegation（イベント移譲）の変更が行われたことにあります。
+その原因は、React17 未満と以降で Event Delegation（イベント移譲）の変更が行われたことにあります。
 
 ## ざっくり用語解説
 
@@ -120,7 +120,7 @@ DOM 操作でよくやる `addEventListener()` のこと。
 
 ## イベント伝播（Event Propagation）
 
-Event Delegation を理解する前に、イベント伝播について知る必要があるので解説します。
+イベント伝播は、イベント周りの制御を適切に行うための重要な概念です。
 
 イベント伝播とは、任意の要素でイベントが発生すると、イベントがその要素自身だけでなく、祖先要素や子孫要素にも伝わっていく仕組みのことです。
 
@@ -147,6 +147,8 @@ Event Delegation を理解する前に、イベント伝播について知る必
 - イベントリスナを設定した要素（`<ul>` タグ）は `e.currentTarget`
 
 で取得することができます。
+
+このように、複数の要素に同じイベントハンドラを設定せずに、共通の親要素に 1 つのイベントリスナ・イベントハンドラを設定し、子要素で発生するイベントを捕捉する方法を**Event Delegation**と呼びます。
 
 ### イベント伝播の流れ
 
@@ -275,3 +277,48 @@ li キャプチャリング
 li バブリング
 ul バブリング
 ```
+
+## Event Delegation（イベント移譲）
+
+イベント伝播のところでも書きましたが、改めて解説します。
+
+Event Delegation とは、複数の要素に同じイベントハンドラを設定せずに、共通の親要素に 1 つのイベントリスナ・イベントハンドラを設定し、子要素で発生するイベントを捕捉する方法のことです。
+これは、イベント伝播の仕組みを利用して実現することができます。
+
+Event Delegation の何が嬉しいのでしょうか？
+例えば、6 つの `<li>` タグのいずれかがクリックされたことを検知するようにしたい場合、単純に実装するとしたら以下のように一つずつ `onclick` 属性を付与します。
+
+```html
+<ul>
+  <li onclick="console.log('item1')">1つ目のliタグです。</li>
+  <li onclick="console.log('item2')">2つ目のliタグです。</li>
+  <li onclick="console.log('item3')">3つ目のliタグです。</li>
+  <li onclick="console.log('item4')">4つ目のliタグです。</li>
+  <li onclick="console.log('item5')">5つ目のliタグです。</li>
+  <li onclick="console.log('item6')">6つ目のliタグです。</li>
+</ul>
+```
+
+しかし、まったく同じ処理を都度設定するのは手間です。
+そこで、Event Delegation により全ての `<li>` タグに `onclick` 属性を割り当てるのではなく、`<ul>` でイベントをキャッチして関数を実行するように設定します。
+
+```html
+<body>
+  <ul id="ul">
+    <li id="item1">1つ目のliタグです。</li>
+    <li id="item2">2つ目のliタグです。</li>
+    <li id="item3">3つ目のliタグです。</li>
+    <li id="item4">4つ目のliタグです。</li>
+    <li id="item5">5つ目のliタグです。</li>
+    <li id="item6">6つ目のliタグです。</li>
+  </ul>
+
+  <script type="text/javascript">
+    document
+      .getElementById("ul")
+      .addEventListener("click", (e) => console.log(e.target.id));
+  </script>
+</body>
+```
+
+これにより、`<li>` タグに都度イベントハンドラを設定する必要がなくなりました。
