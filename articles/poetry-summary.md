@@ -94,6 +94,11 @@ poetry remove <package-name>
 poetry install
 ```
 
+## 依存パッケージのバージョンを変更する
+
+1. `pyproject.toml` をに記載されているバージョンを直接編集する
+2. `poetry update <パッケージ名>`
+
 ## 仮想環境に使う python バージョンの指定
 
 ```shell
