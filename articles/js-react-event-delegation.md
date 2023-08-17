@@ -189,3 +189,89 @@ Event Delegation を理解する前に、イベント伝播について知る必
 先ほどの例で言うと、キャプチャリングフェーズによる伝播が `<li>` タグに伝わったときのことを指します。
 
 キャプチャリングフェーズから発生源であるターゲットフェーズまでイベントが伝播すると、次はバブリングフェーズに移ります。
+
+### バブリングフェーズ
+
+イベントが対象要素からルート要素に向かって伝播するフェーズです。
+キャプチャリングフェーズの説明と同様、`<li>` タグをクリックした場合、バブリングフェーズでは以下の順でイベントが伝播します。
+![](https://storage.googleapis.com/zenn-user-upload/fcc2f7020cdf-20230817.png =150x)
+イベント伝播は通常、キャプチャリングフェーズから始まり、ターゲットフェーズを経てバブリングフェーズへと進行します。
+`addEventListener()` や　 React の `onClick`, `onChange` などで設定するイベントリスナ・イベントハンドラは、バブリングフェーズで発火します。
+
+### コードを書いて検証してみる
+
+イベント伝播の各フェーズの流れを把握するために、以下のコードでコンソール出力を確認してみます。
+
+```html
+<body>
+  <ul id="ul">
+    <li>1つ目のliタグです。</li>
+    <li>2つ目のliタグです。</li>
+    <li id="li">3つ目のliタグです。</li>
+    <li>4つ目のliタグです。</li>
+    <li>5つ目のliタグです。</li>
+    <li>6つ目のliタグです。</li>
+  </ul>
+
+  <script type="text/javascript">
+    console.log("hello");
+    const ul = document.getElementById("ul");
+    const li = document.getElementById("li");
+
+    ul.addEventListener("click", () => console.log("ul バブリング"));
+    li.addEventListener("click", () => console.log("li バブリング"));
+
+    ul.addEventListener(
+      "click",
+      () => console.log("ul キャプチャリング"),
+      true
+    );
+    li.addEventListener(
+      "click",
+      () => console.log("li キャプチャリング"),
+      true
+    );
+  </script>
+</body>
+```
+
+出力結果からも分かる通り、キャプチャリングフェーズ -> ターゲットフェーズ -> バブリングフェーズ の順に登録したイベントリスナが発火しています。
+
+```shell
+ul キャプチャリング
+li キャプチャリング
+li バブリング
+ul バブリング
+```
+
+React のコードでも確認してみます。
+
+```tsx
+export default function App() {
+  return (
+    <ul
+      onClick={() => console.log("ul バブリング")}
+      onClickCapture={() => console.log("ul キャプチャリング")}
+    >
+      <li>1つ目のliタグです。</li>
+      <li>2つ目のliタグです。</li>
+      <li
+        onClick={() => console.log("li バブリング")}
+        onClickCapture={() => console.log("li キャプチャリング")}
+      >
+        3つ目のliタグです。
+      </li>
+      <li>4つ目のliタグです。</li>
+      <li>5つ目のliタグです。</li>
+      <li>6つ目のliタグです。</li>
+    </ul>
+  );
+}
+```
+
+```shell
+ul キャプチャリング
+li キャプチャリング
+li バブリング
+ul バブリング
+```
