@@ -1,5 +1,5 @@
 ---
-title: "React・JavaScriptのEvent Delegationについて今更ながらに理解したのでまとめる"
+title: "React・JavaScriptのイベント伝播について今更ながらに理解したのでまとめる"
 emoji: "😸"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [javascript, typescript, react, フロントエンド]
@@ -8,87 +8,8 @@ published: false
 
 ## これは何？
 
-React でポップアップの UI 実装を行った際、event delegation の理解が足りておらず、苦戦しました。
-これを機に、改めて React・JavaScript の event delegation について学習したので、備忘録としてまとめます。
-
-## ポップアップ UI の実装デモ
-
-ポップアップ UI の仕様は以下の通りです。
-
-- `open` ボタンをクリックすると、ポップアップが開く
-- 開いている状態でポップアップの範囲外（`open` ボタンを含む）をクリックすると、ポップアップが閉じる
-- ポップアップ内の `close` ボタンをクリックすると、ポップアップが閉じる
-
-@[codesandbox](https://codesandbox.io/embed/react-v17wei-man-niokeruibentoderigesiyonnojian-zheng-q93pw8?fontsize=14&hidenavigation=1&theme=dark)
-
-実装コードについて解説します。
-まずは `App` コンポーネントです。
-
-```tsx
-export const App = () => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handleOpenModal = () => {
-    setIsOpen(true);
-  };
-
-  const handleCloseModal = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
-  return (
-    <div className="App">
-      <h1>Hello</h1>
-      <button onClick={handleOpenModal}>open</button>
-
-      {isOpen && <Popup handleCloseModal={handleCloseModal} />}
-    </div>
-  );
-};
-```
-
-ポップアップの表示・非表示の状態を `useState` で管理しています。
-また、ステートを更新するハンドラー関数もここで定義しています。
-
-次に、`Popuup` コンポーネントです。
-
-```tsx
-type PopupProps = {
-  handleCloseModal: () => void;
-};
-
-const Popup = ({ handleCloseModal }: PopupProps) => {
-  const modalContentsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickDocument = (e: MouseEvent) => {
-      e.preventDefault();
-      if (!modalContentsRef.current?.contains(e.target as any)) {
-        handleCloseModal();
-      }
-    };
-
-    document.addEventListener("click", handleClickDocument);
-
-    return () => document.removeEventListener("click", handleClickDocument);
-  }, [handleCloseModal]);
-
-  return (
-    <div className="contents" ref={modalContentsRef}>
-      <button onClick={handleCloseModal}>閉じる</button>
-    </div>
-  );
-};
-```
-
-このコンポーネントは、Props として ポップアップを非表示にする関数を受け取ります。
-`modalContentsRef` にポップアップを表示する DOM への参照を保存しています。
-`useEffect` 内で `document` にポップアップを閉じるためのイベントリスナーを設定しています。
-
-上記の実装では、**React17 未満**だと正常に動作します。
-しかし、**React17 以降**だと正常に動作しません。
-
-その原因は、React17 未満と以降で Event Delegation（イベント移譲）の変更が行われたことにあります。
+React でポップアップの UI 実装を行った際、イベント伝播の理解が足りておらず、苦戦しました。
+これを機に、改めて React・JavaScript のイベント伝播や Event Delegation について学習したので、備忘録としてまとめます。
 
 ## ざっくり用語解説
 
@@ -322,3 +243,111 @@ Event Delegation の何が嬉しいのでしょうか？
 ```
 
 これにより、`<li>` タグに都度イベントハンドラを設定する必要がなくなりました。
+
+## React におけるイベントハンドラ登録の仕組み
+
+React では、`onClick` などで各要素に対してイベントリスナを設定することができますが、実際はその対象の要素にイベントハンドラを設定しているわけではありません。
+対象要素ではなく別の場所にイベントハンドラを設定し、Event Delegation により イベントの発火を検知しています。
+
+それではどこでイベントハンドラを設定しているのでしょうか？
+それは React v17 未満と React v17 以降で異なります。
+![](https://storage.googleapis.com/zenn-user-upload/2b3bb10ef9b2-20230818.png)
+_公式ブログから引用_
+
+上記の画像からも分かる通り、React v16 までは document オブジェクトで全てのイベントをハンドリングしていました。
+しかし、React v17 からは `ReactDOM.render()` の第二引数で指定した要素上でイベントをハンドリングします。
+
+React におけるイベント伝播・Event Delegation の詳しい挙動については、下記リンクがとても参考になります。
+https://qiita.com/kyntk/items/b273760c6d27e08bf53a#%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%83%87%E3%83%AA%E3%82%B2%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6
+
+<!-- ## ポップアップ UI の実装例で React v17 未満と React v17 以降での挙動の違いを理解する
+
+ポップアップ UI の仕様は以下の通りです。
+
+- `open` ボタンをクリックすると、ポップアップが開く
+- 開いている状態でポップアップの範囲外（`open` ボタンを含む）をクリックすると、ポップアップが閉じる
+- ポップアップ内の `close` ボタンをクリックすると、ポップアップが閉じる
+
+@[codesandbox](https://codesandbox.io/embed/react-v17wei-man-niokeruibentoderigesiyonnojian-zheng-q93pw8?fontsize=14&hidenavigation=1&theme=dark)
+
+実装コードについて解説します。
+まずは `App` コンポーネントです。
+
+```tsx
+export const App = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleOpenModal = () => {
+    setIsOpen(true);
+  };
+
+  const handleCloseModal = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  return (
+    <div className="App">
+      <h1>Hello</h1>
+      <button onClick={handleOpenModal}>open</button>
+
+      {isOpen && <Popup handleCloseModal={handleCloseModal} />}
+    </div>
+  );
+};
+```
+
+ポップアップの表示・非表示の状態を `useState` で管理しています。
+また、ステートを更新するハンドラー関数もここで定義しています。
+
+次に、`Popuup` コンポーネントです。
+
+```tsx
+type PopupProps = {
+  handleCloseModal: () => void;
+};
+
+const Popup = ({ handleCloseModal }: PopupProps) => {
+  const modalContentsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickDocument = (e: MouseEvent) => {
+      e.preventDefault();
+      if (!modalContentsRef.current?.contains(e.target as any)) {
+        handleCloseModal();
+      }
+    };
+
+    document.addEventListener("click", handleClickDocument);
+
+    return () => document.removeEventListener("click", handleClickDocument);
+  }, [handleCloseModal]);
+
+  return (
+    <div className="contents" ref={modalContentsRef}>
+      <button onClick={handleCloseModal}>閉じる</button>
+    </div>
+  );
+};
+```
+
+このコンポーネントは、Props として ポップアップを非表示にする関数を受け取ります。
+`modalContentsRef` にポップアップを表示する DOM への参照を保存しています。
+`useEffect` 内では `document` にポップアップを閉じるためのイベントリスナーを設定しています。
+
+上記の実装では、React v17 未満だと正常に動作します。
+しかし、React v17 以降だと正常に動作しません。
+React v17 以降では、`open` ボタンをクリックしてもポップアップが開きません。
+
+### `open` ボタンをクリックしたときのイベントフロー
+
+React v17 未満の場合、ボタンクリックした際のイベントフローは以下になります。
+
+1. `useEffect` 内で設定した `document.addEventListener("click", handleClickDocument)` が発火する
+2. `<button onClick={handleOpenModal}>open</button>` が発火する
+
+React v17 未満の場合、`onClick` は document でイベントをハンドリングします。
+そして、`useEffect` 内で設定したイベントリスナも document でイベントをハンドリングします。 -->
+
+## 参考リンク
+
+https://ja.legacy.reactjs.org/blog/2020/10/20/react-v17.html
