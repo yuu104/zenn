@@ -3,7 +3,7 @@ title: "React・JavaScriptのイベント伝播について今更ながらに理
 emoji: "😸"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [javascript, typescript, react, フロントエンド]
-published: false
+published: true
 ---
 
 ## これは何？
