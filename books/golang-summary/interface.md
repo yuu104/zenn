@@ -75,7 +75,6 @@ func (v *Sopu) Cut() {
   fmt.Printf("%v : 具材を切ります", v.Name)
 }
 
-
 func main() {
   var cook Cooking
   soup := Soup{"スープA"}
@@ -84,10 +83,48 @@ func main() {
 }
 ```
 
+`soup` は `Cooking` インターフェースを実装した型を持つ変数ではない。
+`func (v *Soup) Cut()` はポインタレシーバであるため、このメソッドは `Soup` ではなく `*Soup` の定義であるため。
+
+- `soup` の型は `Soup`
+- `func (v *Sopu) Cut()` は `*Soup` 型のメソッド
+
+したがって、以下の代入はエラーにならない。
+
+```go
+cook = &sopu // `&soup` は `*Soup` 型のメソッドを持つ
+```
+
 ## Interface の値
 
-下記のように、インターフェースの値は、値と具体的な型のタプルのように考えることができます:
+```go
+package main
 
+import "fmt"
+
+type I interface {
+  M()
+}
+
+type S struct {
+  Name string
+}
+func (s *S) M() {
+  fmt.Printf("hello, %s", s.Name)
+}
+
+func main() {
+  var i I
+  i = &S{"Taro"}
+
+  fmt.Printf("%v, %T\n", i, i)
+}
 ```
-(value, type)
+
+`fmt.Printf("%v, %T\n", i, i)` の結果は以下。
+
+```shell
+&{Taro}, main.T
 ```
+
+変数 `i` はインターフェース型 `I` であるが、`i = &S{"Taro"}` により、`i` の実体は `&S{"Taro"}` となる。
