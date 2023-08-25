@@ -4,9 +4,9 @@ title: "Interface"
 
 ## Interface とは
 
-- メソッドの集合を表す型
+https://qiita.com/rtok/items/46eadbf7b0b7a1b0eb08#%E3%82%A4%E3%83%B3%E3%82%BF%E3%83%BC%E3%83%95%E3%82%A7%E3%83%BC%E3%82%B9%E3%81%AE%E5%AE%9F%E8%A3%85
 
-### 定義する
+- メソッドの集合を表す型
 
 以下は、`Cooking`（料理）という名のインターフェースを実装した例。
 
@@ -128,3 +128,126 @@ func main() {
 ```
 
 変数 `i` はインターフェース型 `I` であるが、`i = &S{"Taro"}` により、`i` の実体は `&S{"Taro"}` となる。
+
+## interface はどんな型でも受け入れる
+
+interface を使うとどんな型でも受け入れることができます。
+例えば以下のコードは `do` という関数に interface 型の引数と返り値を取っています。
+
+```go
+package main
+
+import (
+  "fmt"
+)
+
+// 引数と返り値の型はなんでもOK
+func do(any interface{}) interface{} {
+  return any
+}
+
+func main() {
+  fmt.Println(do(100))    // => 100
+  fmt.Println(do("test")) // => test
+  fmt.Println(do(true))   // => true
+}
+```
+
+## interface と nil
+
+```go
+type I interface {
+  M()
+}
+
+type T struct {
+  S string
+}
+
+func (t *T) M() {
+  if t == nil {
+    fmt.Println("<nil>")
+    return
+  }
+  fmt.Println(t.S)
+}
+
+func main() {
+  var i I
+  var t *T
+
+  i = t
+  printf("%v, %T\n", i, i) // <nil>, *main.T
+  i.M() // <nil>
+}
+```
+
+## 型アサーション
+
+型アサーションにより、実体の型が何であるかを動的にチェックできる。
+
+https://zenn.dev/shinkano/articles/4779726fb964d9
+
+```go
+x interface{} := "hello"
+
+s, ok := x.(float64)
+fmt.Println(s, ok) // 0, false
+
+f := x.(float64) // panicになる
+fmt.Println(f)
+```
+
+型アサーションを記述した返り値の 2 番目の変数 `ok` を書かなかった場合、チェックした型情報が間違っていてば panic を引き起こす。
+
+## 型 switch
+
+型スイッチ（Type Switch）は、Go 言語の特徴の一つであり、インターフェースの値の内部に格納されている具体的な型を判定するための仕組み。
+型スイッチは主に switch 文の中で使用され、インターフェースが実装している具体的な型を特定して、それに応じて処理を行うために使用される。
+
+型スイッチ（Type Switch）は、Go 言語の特徴の一つであり、インターフェースの値の内部に格納されている具体的な型を判定するための仕組みです。型スイッチは主に `switch` 文の中で使用され、インターフェースが実装している具体的な型を特定して、それに応じて処理を行うために使用されます。
+
+型スイッチの一般的な構文は以下の通りです：
+
+```go
+switch value := interfaceVariable.(type) {
+case Type1:
+    // Type1 に対する処理
+case Type2:
+    // Type2 に対する処理
+// 他の型に対する処理...
+default:
+    // 上記のいずれにも該当しない場合の処理
+}
+```
+
+ここで `interfaceVariable` はインターフェース型の変数であり、`Type1`、`Type2` などは具体的な型です。`interfaceVariable.(type)` の部分で、インターフェース内に格納されている具体的な型がどれかを判定しています。
+
+例を挙げて説明しましょう：
+
+```go
+package main
+
+import "fmt"
+
+func printType(i interface{}) {
+    switch v := i.(type) {
+    case int:
+        fmt.Printf("This is an int: %d\n", v)
+    case string:
+        fmt.Printf("This is a string: %s\n", v)
+    default:
+        fmt.Printf("Unknown type: %T\n", v)
+    }
+}
+
+func main() {
+    printType(42)       // This is an int: 42
+    printType("Hello")  // This is a string: Hello
+    printType(3.14)     // Unknown type: float64
+}
+```
+
+この例では、`printType` 関数がインターフェース型の引数を受け取り、その中に格納されている具体的な型に基づいて適切なメッセージを出力します。型スイッチを使用して、`i.(type)` の部分で具体的な型を判定しています。
+
+型スイッチは、ランタイム時にインターフェースがどの具体的な型を持っているかを判断し、それに合わせた処理を行う場合に非常に便利です。
