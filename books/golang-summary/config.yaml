@@ -9,3 +9,4 @@ chapters:
   - interface
   - print
   - stringer
+  - error
