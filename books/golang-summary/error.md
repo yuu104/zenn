@@ -16,6 +16,7 @@ try {
 
 その代わりに、Go はエラーを表現するための `error` インターフェース型を標準で提供しています。
 エラーインターフェースには `Error()` メソッドがあり、エラーメッセージを文字列で返します。
+(`error` は小文字であるが、組み込みのインターフェースであるため、どのパッケージからでも使用可能)
 
 ```go
 type error interface {
@@ -61,6 +62,29 @@ func ReadFile() ([]byte, error) {
 ```
 
 Go では、関数から返されたエラー値を確認し、そのエラー値に基づいてエラー処理を行います。
-Go ではエラーを単なる**値**として考えることが重要です。
 
-## カスタムエラー
+:::message
+Go ではエラーを `error` 型のインターフェースを満たした単なる**値**として考えることが重要
+:::
+
+`error` インターフェースを実装した値を `fmt` パッケージで出力すると、`Error` メソッドで定義した文字列が出力される。
+
+```go
+package main
+
+import "fmt"
+
+type NetworkError struct {
+  message string
+}
+
+func (err *NetworkError) Error() string {
+  return fmt.Sprintf("Network Error: %s", err.message)
+}
+
+func main() {
+  err := &NetworkError{"ネットワークの不具合により、通信に失敗しました"}
+
+  fmt.Println(err) // Network Error: ネットワークの不具合により、通信に失敗しました
+}
+```
