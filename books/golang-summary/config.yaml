@@ -10,3 +10,4 @@ chapters:
   - print
   - stringer
   - error
+  - byte-type
