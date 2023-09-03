@@ -12,3 +12,4 @@ chapters:
   - stringer
   - error
   - byte-type
+  - io-reader
