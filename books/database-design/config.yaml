@@ -9,3 +9,4 @@ chapters:
   - constraints
   - normalized-form
   - er-diagram
+  - table-column-names
