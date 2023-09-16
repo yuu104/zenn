@@ -43,3 +43,12 @@ title: "3層スキーマ"
 - 概念スキーマは、外部スキーマと内部スキーマの間に位置することで、両者の変更が互いに影響し合わないための、緩衝材の役割を果たす
 
 ![](https://storage.googleapis.com/zenn-user-upload/efedbaa725e0-20230916.png)
+
+## DB 設計とスキーマ
+
+- DB 設計は、大きく論理設計（概念スキーマ）と物理設計（内部スキーマ）に分けられる
+- 論理設計は物理設計に先立つ
+
+![](https://storage.googleapis.com/zenn-user-upload/abef6a75b0b2-20230916.png)
+
+- **論理設計は物理設計に依存しない**
