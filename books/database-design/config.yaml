@@ -9,6 +9,7 @@ chapters:
   - logical-design
   - physical-design
   - backup
+  - recovery
   - key
   - constraints
   - normalized-form
