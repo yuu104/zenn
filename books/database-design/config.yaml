@@ -8,6 +8,7 @@ chapters:
   - three-layer-schema
   - logical-design
   - physical-design
+  - backup
   - key
   - constraints
   - normalized-form
