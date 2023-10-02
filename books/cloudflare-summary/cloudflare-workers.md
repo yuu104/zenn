@@ -1,5 +1,5 @@
 ---
-title: "CloudFlare Workers"
+title: "Cloudflare Workers"
 ---
 
 ## 概要
@@ -88,7 +88,7 @@ https://www.cloudflare.com/ja-jp/learning/serverless/glossary/function-as-a-serv
 - **リプレイスが困難**
   サーバレスアーキテクチャはベンダーごとにやり方が異なる。
 
-## CloudFlare Workers の特徴
+## Cloudflare Workers の特徴
 
 - JS のコードをデプロイするだけでサーバサイド機能が構築できる
 - 負荷に応じて自動的にスケーリングされ、常に安定して処理される
@@ -97,7 +97,7 @@ https://www.cloudflare.com/ja-jp/learning/serverless/glossary/function-as-a-serv
 
 上記のように、従来の FaaS と同様な部分もありつつ、似て非なる点もいくつかある。
 
-以下は CloudFlare Workers の大きな特徴。
+以下は Cloudflare Workers の大きな特徴。
 
 ### 全世界の CDN エッジで実行される
 
@@ -130,18 +130,18 @@ https://www.cloudflare.com/ja-jp/learning/serverless/glossary/function-as-a-serv
 
 ### Node.js ではない JavaScript の実行環境
 
-- CloudFlare Workers の実行環境は、JavaScript の実行エンジにである V8
+- Cloudflare Workers の実行環境は、JavaScript の実行エンジにである V8
 - これにより、従来の FaaS で問題になっていたコールドスタートが短くなり、安定して高速な応答ができるようになる
 - V8 のアップデートは頻繁に行われるため、いつでも最新の JavaScript が使用できる
 -
 
-<!-- ## 開発環境の構築
+## 開発環境の構築
 
 まずは、node.js をインストールする
 `v16.13.0` より新しいバージョンの node が必要になる
 
 ```shell
-& node --version
+node --version
 v18.17.0
 ```
 
@@ -149,9 +149,251 @@ v18.17.0
 
 https://workers.cloudflare.com/
 
-- CloudFlare のアカウントを作成する
+- Cloudflare のアカウントを作成する
 - 無料で使える Free プランが用意されている
-- クレジットカードの登録は不要 -->
+- クレジットカードの登録は不要
+
+## プロジェクトの初期化とデプロイ
+
+```shell
+$ yarn create cloudflare
+```
+
+コマンドを実行すると、いくつか質問される。
+
+1. In which directory do you want to create your application? also used as application name
+   - アプリケーションを作成するディレクトリを指定する。プロジェクトの名前を兼ねる。
+   - ここでは、`hello` と入力する
+2. What type of application do you want to create?
+   - 作成するアプリケーションの種類を選ぶ
+   - ここでは `"Hello World" Worker` を選択する
+3. Do you want to use TypeScript? Yes / No
+   - 実装言語として TypeScript を利用するか選ぶ
+4. Do you want to use git for version control?
+   - git をバージョン管理として利用するかを選択する
+5. Do you want to deploy your application? Yes / No
+   - 今すぐアプリケーションをデプロイするか選ぶ
+
+以上でプロジェクトの初期化とデプロイは完了する。
+
+コマンドの実行が成功すると、以下のメッセージが出力される。
+同時に、`hello` ディレクトリが作成される。
+
+```shell
+SUCCESS  View your deployed application at https://hello.yusei8171.workers.dev
+```
+
+## 動作確認
+
+すでに Worker はデプロイされて、インターネットからアクセス可能になっている。
+以下のコマンドを実行して確認してみる。
+
+```shell
+$ curl http://hello.example.yusei8171.workers.dev
+Hello, World!
+```
+
+## ローカル環境で動作確認
+
+```shell
+$ npx wrangler dev
+```
+
+デフォルトでは `http://localhost:8787` でリクエストを待ち受ける。
+
+```shell
+$ curl http://localhost:8787
+Hello World!
+```
+
+## デプロイ方法
+
+デプロイは以下のコードを実行するだけ。
+
+```ts
+$ npx wrangler deploy
+```
+
+通常、デプロイは数秒で完了する。
+
+## `src/index.ts`
+
+```ts
+/**
+ * Welcome to Cloudflare Workers! This is your first worker.
+ *
+ * - Run `npm run dev` in your terminal to start a development server
+ * - Open a browser tab at http://localhost:8787/ to see your worker in action
+ * - Run `npm run deploy` to publish your worker
+ *
+ * Learn more at https://developers.cloudflare.com/workers/
+ */
+
+export interface Env {
+  // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
+  // MY_KV_NAMESPACE: KVNamespace;
+  //
+  // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
+  // MY_DURABLE_OBJECT: DurableObjectNamespace;
+  //
+  // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
+  // MY_BUCKET: R2Bucket;
+  //
+  // Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
+  // MY_SERVICE: Fetcher;
+  //
+  // Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
+  // MY_QUEUE: Queue;
+}
+
+export default {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext
+  ): Promise<Response> {
+    return new Response("Hello World!");
+  },
+};
+```
+
+- 冒頭のブロックコメントは Cloudflare Workers の紹介文
+- `Env` インターフェースは Cloudflare の様々なサービスと Worker を連携する際に使用する
+- `export default` で定義している `fetch()` は Worker のエントリーポイント
+
+### ライフサイクル
+
+`fetch()` で実行される処理の流れは以下の通り。
+
+1. HTTP リクエストを受け取る
+2. 何らかの処理を行う
+3. HTTP レスポンスを返す
+
+- Worker は `fetch()` の実行単位
+- Cloudflare のサーバにリクエストが完了すると、その都度 Worker が作成されて `fetch()` が実行される
+- `fetch()` の実行が完了すると Worker は削除される
+
+### リクエストとレスポンスの型
+
+- `fetch()` の引数 `Request` と戻り値の `Response` は JavaScript 標準 API で定義されたインターフェースに準拠している
+  - [Request - Cloudflare Workers docs](https://developers.cloudflare.com/workers/runtime-apis/request/)
+  - [Response - Cloudflare Workers docs](https://developers.cloudflare.com/workers/runtime-apis/response/)
+- レスポンスのヘッダーをカスタマイズしたい場合は、`Response` コンストラクタの第 2 引数に `Headers` のインスタンスを指定する
+
+  ```ts
+  // Content-Lengthヘッダーは自動的に設定されます。手作業で設定する必要はありません。
+  const headers = new Headers({
+    "Content-Type": "application/json",
+  });
+
+  return new Response("{values: [1, 2, 3]}", { headers });
+  ```
+
+### JSON を返す
+
+```ts
+const headers = new Headers({
+  "Content-Type": "application/json",
+});
+
+const data = { name: "yuu", age: 22 };
+
+return new Response(JSON.stringify(data), { headers });
+```
+
+```shell
+$ curl http://localhost:8787
+{"name":"yuu","age":22}
+```
+
+### HTML を戻す
+
+```ts
+const headers = new Headers({
+  "Content-Type": "text/html",
+});
+
+const html = `
+		<html>
+		<body>
+		<h1>Hello World</h1>
+		</body>
+		</html
+		`;
+
+return new Response(html, { headers });
+```
+
+![](https://storage.googleapis.com/zenn-user-upload/53e37622233c-20231002.png)
+
+### Request: `cf` プロパティ
+
+- JS 標準の `Request` に加え、Cloudflare が独自に定義したプロパティ
+- リクエストが来た国や都市などの情報が含まれている
+
+https://developers.cloudflare.com/workers/runtime-apis/request/#incomingrequestcfproperties
+
+## グローバル変数に依存した処理は行わない
+
+```ts
+export interface Env {
+  // ...
+}
+
+// 説明を簡単にするためcount変数のロックは考慮していません。
+var count = 0;
+
+export default {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext
+  ): Promise<Response> {
+    count += 1;
+
+    return new Response(count);
+  },
+};
+```
+
+- 上記はアクセスカウンター
+- リクエストを受け取る度にグローバル変数 `count` がインクリメントされる
+
+### ローカルで Worker を動作させた場合
+
+```shell
+$ curl http://localhost:8787
+1
+
+$ curl http://localhost:8787
+2
+
+$ curl http://localhost:8787
+3
+```
+
+### Cloudflare のサーバーで Worker を動作させた場合
+
+```shell
+$ curl https://hello.example.workers.dev
+1
+
+$ curl https://hello.example.workers.dev
+1
+
+$ curl https://hello.example.workers.dev
+1
+```
+
+- Cloudflare のサーバーで Worker を動作させると、レスポンスとして常に 1 が返されている
+- Cloudflare のサーバーで実行される Worker は冗長化されている
+- つまり、上記の例で 1 番目・2 番目・3 番目のリクエストを受け取った Worker インスタンスはそれぞれ異なる
+- 一見すると正しくインクリメントされていないように見えるが、それぞれの Worker インスタンスでは正しくインクリメントされている
+- そのため、偶然に同じ Worker インスタンスが使い回されるとレスポンスとして 2 や 3 が返ってくる可能性はある
+
+- 何にせよ、グローバル変数に依存した処理を実装するべきではない
+- Cloudflare のドキュメントにも Worker インスタンスがどのタイミングで破棄されるのか言及がない
+- 基本的には、リクエストのたびに作成されて、処理の完了と同時に破棄されると考えて処理を実装するべき
 
 ## ユースケース
 
