@@ -359,7 +359,7 @@ export default {
 - 上記はアクセスカウンター
 - リクエストを受け取る度にグローバル変数 `count` がインクリメントされる
 
-### ローカルで Worker を動作させた場合
+#### ローカルで Worker を動作させた場合
 
 ```shell
 $ curl http://localhost:8787
@@ -372,7 +372,7 @@ $ curl http://localhost:8787
 3
 ```
 
-### Cloudflare のサーバーで Worker を動作させた場合
+#### Cloudflare のサーバーで Worker を動作させた場合
 
 ```shell
 $ curl https://hello.example.workers.dev
@@ -385,7 +385,7 @@ $ curl https://hello.example.workers.dev
 1
 ```
 
-- Cloudflare のサーバーで Worker を動作させると、レスポンスとして常に 1 が返されている
+- Cloudflare のサーバーで Worker を動作させると、レスポンスとして常に `1` が返されている
 - Cloudflare のサーバーで実行される Worker は冗長化されている
 - つまり、上記の例で 1 番目・2 番目・3 番目のリクエストを受け取った Worker インスタンスはそれぞれ異なる
 - 一見すると正しくインクリメントされていないように見えるが、それぞれの Worker インスタンスでは正しくインクリメントされている
@@ -394,6 +394,12 @@ $ curl https://hello.example.workers.dev
 - 何にせよ、グローバル変数に依存した処理を実装するべきではない
 - Cloudflare のドキュメントにも Worker インスタンスがどのタイミングで破棄されるのか言及がない
 - 基本的には、リクエストのたびに作成されて、処理の完了と同時に破棄されると考えて処理を実装するべき
+
+- 従って、グローバル変数を扱う場合や、異なる Worker 同士で処理を共有する場合は Cloudflare KV、処理の結果を永続化する場合は Cloudflare R2 などの別サービスと連携する必要がある
+
+## リソースの制限
+
+https://zenn.dev/moutend/articles/97c98a277f4bae#%E3%83%AA%E3%82%BD%E3%83%BC%E3%82%B9%E3%81%AE%E5%88%B6%E9%99%90
 
 ## ユースケース
 
