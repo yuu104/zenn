@@ -431,3 +431,5 @@ https://qiita.com/sakupa80/items/8ccb4e4e4c0f7846ab5c
 https://zenn.dev/moutend/articles/97c98a277f4bae#cli%E3%83%84%E3%83%BC%E3%83%AB
 
 https://reffect.co.jp/html/cloudflare-workers/
+
+https://future-architect.github.io/articles/20230427a/
