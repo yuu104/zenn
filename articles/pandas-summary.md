@@ -226,6 +226,112 @@ print(df_reset)
 
 ```
 
+### データフレームの要素内に関数を適用する
+
+- `apply()` メソッドを使用する
+- 要素ごとに関数を適用して新しいシリーズやデータフレームを生成できる
+- データの変換、処理、計算、フィルタリングなど、様々なデータ操作に使用できる
+
+#### 任意の列の値を 2 倍にする
+
+```py
+import pandas as pd
+
+# サンプルのデータを作成
+data = {'A': [1, 2, 3, 4], 'B': [5, 6, 7, 8]}
+df = pd.DataFrame(data)
+
+# 関数を定義
+def double(x):
+    return x * 2
+
+# シリーズに関数を適用
+df['A'] = df['A'].apply(double)
+
+print(df)
+
+```
+
+この例では、`double()` が各要素に適用され、`A` 列の値が 2 倍になる。
+
+#### 既存列から新規の列を作成する
+
+```py
+import pandas as pd
+
+# サンプルのデータを作成
+data = {'A': [1, 2, 3, 4], 'B': [5, 6, 7, 8]}
+df = pd.DataFrame(data)
+
+# 関数を定義
+def sum_row(row):
+    return row['A'] + row['B']
+
+# データフレームの各行に関数を適用
+df['Sum'] = df.apply(sum_row, axis=1)
+
+print(df)
+
+```
+
+この例では、`sum_row()` が各行に適用され、`A` 列と `B` 列の合計値が計算された `Sum` 列が生成される。
+
+#### `axis`
+
+- `axis` は、処理の対象となる軸方向を指定するためのパラメータ
+- 2 種類のオプションがある
+
+1. **`axis=0`**（デフォルト値）
+   - 操作が列方向に適用される
+   - つまり、各列に対して関数が適用される
+2. **`axis=1`**
+   - 操作が行方向に適用される
+   - つまり、各行に対して関数が適用される
+
+**具体例**
+
+```py
+import pandas as pd
+
+# サンプルのデータを作成
+data = {'A': [1, 2, 3, 4], 'B': [5, 6, 7, 8]}
+df = pd.DataFrame(data)
+
+# 関数を定義して各列に適用 (列ごとに2倍にする)
+def double_column(column):
+    return column * 2
+
+result_column = df.apply(double_column, axis=0)
+
+# 関数を定義して各行に適用 (行ごとに2倍にする)
+def double_row(row):
+    return row * 2
+
+result_row = df.apply(double_row, axis=1)
+
+print("列ごとに2倍:")
+print(result_column)
+
+print("行ごとに2倍:")
+print(result_row)
+```
+
+```shell
+列ごとに2倍:
+   A   B
+0  2  10
+1  4  12
+2  6  14
+3  8  16
+
+行ごとに2倍:
+   A   B
+0  2  10
+1  4  12
+2  6  14
+3  8  16
+```
+
 `reset_index`メソッドは、オプションとして`drop`引数を受け取る。
 デフォルトでは`drop=False`で、`drop=True`と設定すると、元のインデックスは削除され、新しい連番の整数インデックスが作成される。
 
