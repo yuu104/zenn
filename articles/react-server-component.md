@@ -54,7 +54,107 @@ RSC をレンダリングする時には、以下のような流れになる。
 ![](https://storage.googleapis.com/zenn-user-upload/696bc3a781a8-20230924.png)
 クライアント側から見ると、SC は「コンポーネントツリーの好きな場所で、**サーバへリクエストを送ると、仮想 DOM が返ってくるもの**」になる。
 
-## RSC の特徴
+## RSC の制約
+
+### ルートコンポーネントは必ず RSC
+
+- RSC を使用する場合、レンダリングの一部はサーバが行う必要がある
+- そのため、ページのレンダリングは必ずサーバで始まる
+- したがって、「ルート」コンポーネントは必ず SC である必要がある
+
+### CC は SC をインポートできない
+
+SC はブラウザ上で実行できず、ブラウザ上では機能しないコードが含まれる可能性がある。
+したがって、以下のように CC 上で SC をインポートしてレンダリングすることはできない。
+
+```tsx
+"use client";
+
+// You cannot import a Server Component into a Client Component.
+import ServerComponent from "./Server-Component";
+
+export default function ClientComponent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [count, setCount] = useState(0);
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+
+      <ServerComponent />
+    </>
+  );
+}
+```
+
+しかし、SC を CC の props として渡すことはできる。
+
+```tsx
+"use client";
+
+import { useState } from "react";
+
+export default function ClientComponent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [count, setCount] = useState(0);
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+      {children}
+    </>
+  );
+}
+```
+
+```tsx
+// This pattern works:
+// You can pass a Server Component as a child or prop of a
+// Client Component.
+import ClientComponent from "./client-component";
+import ServerComponent from "./server-component";
+
+// Pages in Next.js are Server Components by default
+export default function Page() {
+  return (
+    <ClientComponent>
+      <ServerComponent />
+    </ClientComponent>
+  );
+}
+```
+
+### その他の制約
+
+- インタラクティブ機能とイベントリスナーを使用できない
+- 状態や
+- ブラウザ専用の API を使用できない
+
+## RSC レンダリングの流れ
+
+https://zenn.dev/msy/articles/a042024e12fca1
+
+## Next.js における RSC のレンダリングプロセス
+
+Next.js の公式ドキュメントによると、Next.js における SC のレンダリング手法は以下の通り。
+
+**サーバ側**
+
+1. React がサーバ側で RSC ペイロード形式にレンダリング
+2. Next.js が RSC ペイロードと CC の js 命令を使用し、サーバ上で HTML を生成する
+
+**クライアント側**
+
+1. サーバで生成した HTML を高速で表示する（非インタラクティブなプレビュー）
+2. RSC ペイロードがクライアントとサーバのコンポーネントツリーを調整し、DOM を更新する
+3. クライアントが HTML を使用して非インタラクティブなページを表示する
+4. js ファイルを実行し、CC をハイドレートし、アプリケーションをインタラクティブにする
 
 ## 何のための技術なのか
 
@@ -88,6 +188,58 @@ SC は、「**サーバで生成できるコードはクライアントに送ら
 - サーバでレンダリングされたコンポーネントのキャッシュを行う
 - これにより、レンダリング時間やデータフェッチ量が削減され、リクエストから表示までが高速になる
 
+### 設計面のメリット
+
+「**データの取得処理とそのデータを用いた DOM の表現が簡潔になる**」
+
+これまでは、データフェッチは以下のような実装を行う必要があった。
+
+```tsx
+const Component = (id) => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    axios.get(`/endpoints/${id}`).then((result) => {
+      setData(result.data);
+    });
+  }, []);
+
+  return data ? <div>Hello {data.name}</div> : null;
+};
+```
+
+上記では、データ取得 → 表示までに
+
+- 状態（`useState`）
+- 副作用（`useEffect`）
+
+という二つの概念を意識して実装する必要がある。
+
+また、このコードはブラウザで実行されるため、
+
+- DB へ直接アクセスできない
+- 故に、API を用意してアクセスする必要がある
+
+という問題がある。
+
+SC ではこの「データアクセス → 　 DOM を構築」というプロセスをより簡潔かつコンポーネントという単位に閉じた実装が可能になる。
+
+```tsx: Server Componentの実装
+const ServerComponent = async ({ id }) => {
+  const { data } = await axios.get(`/endpoints/${id}`)
+
+  return(
+    <ClientComponent data={data} />
+  )
+}
+```
+
+```tsx: Client Componentの実装
+const ServerComponents = ({ data }) => {
+  return <div>Hello {data.name}</div>;
+};
+```
+
 ## SSR との違い
 
 SSR と RSC は根本的が概念が異なるが、ブラウザ側からみると、
@@ -100,19 +252,11 @@ SSR と RSC は根本的が概念が異なるが、ブラウザ側からみる�
 - SSR はページ単位でデータ取得
 - RSC はコンポーネント単位でデータ取得
 
-## Next.js における RSC のレンダリングプロセス
-
-Next.js の公式ドキュメントによると、Next.js における SC のレンダリング手法は以下の通り。
-
-1. React がサーバ側で RSC ペイロード形式にレンダリング
-2. Next.js が RSC ペイロードと CC の js 命令を使用し、サーバ上で HTML を生成する
-3. HTML と js ファイルをクライアントに送信する
-4. クライアントが HTML を使用して非インタラクティブなページを表示する
-5. js ファイルを実行し、CC をハイドレートする
-
 ## 使用ケース
 
-SC と CC の使い分けの判断基準は、**サーバで処理した方が効率が良いコンポーネントかどうか？**という部分になる。
+SC と CC の使い分けの判断基準は、
+**サーバで処理した方が効率が良いコンポーネントかどうか？**
+という部分になる。
 ![](https://storage.googleapis.com/zenn-user-upload/6451055ce774-20230924.png)
 
 それぞれのざっくりな役割は
