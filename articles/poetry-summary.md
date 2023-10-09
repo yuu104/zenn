@@ -169,3 +169,9 @@ pyenv local 3.8.3
 ```shell
 poetry env use python
 ```
+
+`.venv` フォルダ内の Python バージョンが変わらない場合、以下を試す。
+
+```shell
+poetry env use <バージョン（3.9.5など）>
+```
