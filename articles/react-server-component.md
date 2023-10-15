@@ -40,23 +40,24 @@ published: false
 - 以下のように、1 つのページに SC と CC が混在するようになる
   ![](https://storage.googleapis.com/zenn-user-upload/e93e24d24658-20230924.png)
 
+## サーバ側でレンダリング？？
+
 サーバ側でレンダリングするとはどういうことなのか？
-まずは、従来のクライアント側でレンダリングする CC のレンダリングプロセスのついて理解する。
+それは、サーバ側で React 要素を生成することである。
+サーバはクライアントからの HTTP リクエストをもとに、サーバコンポーネント関数を呼び出し、`React.createElement()` で React 要素を生成する。
+そして、生成した React 要素から React ツリーを構築し、クライアントに送信する。
+クライアントは受け取った React 要素とクライアントコンポーネントで React ツリーを再構築し、DOM へ反映させる。
 
-## CC のレンダリングプロセス
-
-- バンドルされた JS ファイルで `React.createElement` により
+![](https://storage.googleapis.com/zenn-user-upload/c65e803902b8-20231015.png)
 
 ## SC のレンダリングプロセス
 
 RSC をレンダリングする時には、以下のような流れになる。
 
 1. サーバがレンダリングリクエストを受け取る
-2. サーバが仮想 DOM を構築し、**RSC ペイロード**と呼ばれる特別なデータ形式にシリアライズする
-   ![](https://storage.googleapis.com/zenn-user-upload/a39fb2114fe6-20230926.png)
-   - 「RSC ペイロード」は、Next.js の公式ドキュメントに記載されている名称
-3. RSC ペイロードをクライアントにレスポンスする
-4. クライアント側で RSC ペイロードをパースして処理する
+2. サーバが React 要素を生成し、React ツリーを構築する
+3. 構築した React ツリーをシリアライズしてクライアントへ送信する
+4. クライアントが React ツリーを再構築する
 
 ### 1. サーバがレンダリングリクエストを受け取る
 
@@ -67,15 +68,101 @@ RSC をレンダリングする時には、以下のような流れになる。
 - このリクエストは通常、特定の URL でページリクエストの形で届く
 - URL 内のパスやクエリ文字列が props に対応する
 
-### 2. サーバがコンポーネント要素をシリアライズする
+### 2. サーバが React 要素を生成し、React ツリーを構築する
 
-サーバがリクエストを受け取り、レスポンスを返すまでの流れは以下の通り。
+`React.createElement()` により生成されるのは React 要素を構成するオブジェクトである。
+`type` には、文字列なら `"div"` のような HTML タグ名が、関数なら React コンポーネントのインスタンスが入る。
 
-1. `React.createElement` により
+```tsx
+// <div>oh my</div> を返す場合
+> React.createElement("div", { title: "oh my" })
+{
+  $$typeof: Symbol(react.element),
+  type: "div",
+  props: { title: "oh my" },
+  ...
+}
 
-これが、「サーバでコンポーネントを実行する」の意味。
-![](https://storage.googleapis.com/zenn-user-upload/696bc3a781a8-20230924.png)
-クライアント側から見ると、SC は「コンポーネントツリーの好きな場所で、**サーバへリクエストを送ると、仮想 DOM が返ってくるもの**」になる。
+// <MyComponent>oh my</MyComponent> を返す場合
+> function MyComponent({children}) {
+    return <div>{children}</div>;
+  }
+> React.createElement(MyComponent, { children: "oh my" });
+{
+  $$typeof: Symbol(react.element),
+  type: MyComponent   // MyComponent 関数への参照 function
+  props: { children: "oh my" },
+  ...
+}
+```
+
+`type` に HTML タグではなくコンポーネントを指定した場合、`type`はコンポーネントとして定義した関数を参照する。
+しかし、**関数はシリアライズできない**。
+そのため、`type` で指定された値がコンポーネント関数である場合、シリアライズ可能な文字列に変換する。
+
+具体的には、`type` に指定された値に対し、以下の処理を行う。
+
+- **HTML タグの場合**
+  `type` には `"div"` のような文字列が入っているため、既にシリアライズ可能であり、特別な処理は必要ない。
+- **SC の場合**
+  `type` に指定されている SC 関数とその props を呼び出し、ただの HTML に変換する。
+  これは、実質的に SC のレンダリングに相当する。
+- **CC の場合**
+  CC はサーバではレンダリングされないため、、`type` にはコンポーネント関数ではなく、**モジュール参照オブジェクト**が格納されている。
+  これはシリアライズ可能であるため、特別な処理は必要ない。
+
+#### モジュール参照オブジェクトとは？
+
+RSC では、`React.createElement()` により React 要素を生成する際、 `type` フィールドに「**モジュール参照オブジェクト**」と呼ばれるオブジェクトを導入できる。
+これは、コンポーネント関数の代わりに、コンポーネント関数へシリアライズ可能な「**参照**」を渡す。
+例えば、`ClientComponent` という要素は以下のようになる。
+
+```tsx
+{
+  $$typeof: Symbol(react.element),
+  // type フィールドが、実際のコンポーネント関数の代わりに参照オブジェクトを持つようになりました
+  type: {
+    $$typeof: Symbol(react.module.reference),
+    // ClientComponent は以下のファイルから default export されます
+    name: "default",
+    // ClientComponent を default export しているファイルのパス
+    filename: "./src/ClientComponent.client.js"
+  },
+  props: { children: "oh my" },
+}
+```
+
+モジュール参照オブジェクトの変換はバンドラーが行なっている。
+SC が CC をインポートする際、実際のインポート対象を取得する代わりに、そのファイル名とエクスポート名が含まれたモジュール参照オブジェクトだけを取得している。
+
+これにより、シリアライズ可能な React ツリーがサーバ側で構築される。
+このツリーは、**HTML タグとクライアントコンポーネントへの参照**で構成されている。
+![](https://storage.googleapis.com/zenn-user-upload/9213030c02b4-20231015.png)
+引用：https://postd.cc/how-react-server-components-work/
+
+### 3. 構築した React ツリーをシリアライズしてクライアントへ送信する
+
+サーバ側で構築した React ツリーは以下のような形式でシリアライズされる。
+詳しくは[こちら](https://postd.cc/how-react-server-components-work/#11)の記事を参照。
+
+```
+M1:{"id":"./src/ClientComponent.client.js","chunks":["client1"],"name":""}
+J0:["$","@1",null,{"children":["$","span",null,{"children":"Hello from server land"}]}]
+```
+
+### 4. クライアントが React ツリーを再構築する
+
+クライアントはシリアライズ結果を受け取り、ブラウザでレンダリングするために React ツリーの再構築を行う。
+`type` がモジュール参照である要素に遭遇したら、それを実際のクライアントコンポーネント関数への参照に置き換える。
+
+この置き換え処理は、バンドラーが行なっている。
+バンドラーを用いてサーバ上でクライアントコンポーネントをモジュール参照に置き換えたように、逆の変換もバンドラーが行う。
+
+React ツリーが再構築されると、以下のような純粋な HTML タグとクライアントコンポーネントが混合した状態になる。
+![](https://storage.googleapis.com/zenn-user-upload/1382ecbd6311-20231015.png)
+引用：https://postd.cc/how-react-server-components-work/
+
+あとは、普段通りこのツリーをレンダリングし、DOM をコミットするだけ。
 
 ## RSC の制約
 
@@ -150,6 +237,18 @@ export default function Page() {
       <ServerComponent />
     </ClientComponent>
   );
+}
+```
+
+### props は全てシリアライズ可能であること
+
+- SC はシリアライズされるため、子コンポーネントや HTML タグに渡す props もシリアライズ可能でなければならない
+- つまり、SC からイベントハンドラを props として渡すことはできない
+
+```tsx
+// 悪い例: サーバーコンポーネントは props として子孫コンポーネントに関数を渡すことができません。なぜなら関数はシリアライズできないからです。
+function SomeServerComponent() {
+  return <button onClick={() => alert("OHHAI")}>Click me!</button>;
 }
 ```
 
@@ -287,12 +386,14 @@ SC と CC の使い分けの判断基準は、
 
 https://qiita.com/naruto/items/c17c79ec5c2a0c7c4686
 
-https://zenn.dev/sumiren/articles/f39a151e7320d5#1.-server-components%E3%81%AE%E7%9B%AE%E7%9A%84
+https://zenn.dev/sumiren/articles/f39a151e7320d5
 
 https://postd.cc/how-react-server-components-work/
 
 https://zenn.dev/uhyo/articles/react-server-components-multi-stage
 
-https://qiita.com/getty104/items/74d975ff02bdf4fa9b2b#js%E3%81%AE%E3%83%90%E3%83%B3%E3%83%89%E3%83%AB%E3%82%B5%E3%82%A4%E3%82%BA%E3%81%AE%E5%89%8A%E6%B8%9B
+https://qiita.com/getty104/items/74d975ff02bdf4fa9b2b
 
 https://zenn.dev/izumin/articles/bc47e189e25874
+
+https://nextjs.org/docs/app/building-your-application/rendering/server-components
