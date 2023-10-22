@@ -17,3 +17,4 @@ chapters:
   - table-column-names
   - logical-design-performance
   - db-performance
+  - index
