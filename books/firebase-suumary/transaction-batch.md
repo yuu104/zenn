@@ -29,4 +29,3 @@ https://zenn.dev/sgr_ksmt/articles/b5fa4f8b9e0a33ccf609
 ## 参考リンク
 
 https://zenn.dev/shtk0119/articles/f0401ba8016822
-https://zenn.dev/sgr_ksmt/articles/b5fa4f8b9e0a33ccf609
