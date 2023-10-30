@@ -7,3 +7,4 @@ price: 0 # 有料の場合200〜5000
 chapters:
   - transaction-batch
   - firestore-security-rule
+  - cloud-functions
