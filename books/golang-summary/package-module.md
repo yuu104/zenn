@@ -4,7 +4,7 @@ title: "パッケージ・モジュール"
 
 ## イメージ図
 
-![](https://storage.googleapis.com/zenn-user-upload/4b6a859c1b92-20230917.png)
+![](https://storage.googleapis.com/zenn-user-upload/ae0fb8418066-20231102.png)
 
 ## パッケージ
 
@@ -40,7 +40,7 @@ go mod init <モジュール名>
 - モジュール名を公開しない場合は `moduleA` でも良い
 - 上記コマンドによりプロジェクトフォルダに `go.mod` が作成され、プロジェクトディレクトリ以下が「モジュール」扱いになる
 
-  ```mod
+  ```mod:go.mod
   module moduleA
 
   go 1.20
@@ -237,7 +237,7 @@ go mod edit -replace "example.com/calc=/home/go/calc"
 
 ### 外部モジュール使用のイメージ図
 
-![](https://storage.googleapis.com/zenn-user-upload/2ae9cbcd6a90-20230918.png)
+![](https://storage.googleapis.com/zenn-user-upload/52b58e7bd744-20231102.png)
 
 ## 参考リンク
 
