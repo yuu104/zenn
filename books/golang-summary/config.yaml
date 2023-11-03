@@ -13,6 +13,10 @@ chapters:
   - conditional-branch
   - loop
   - defer
+  - pointers
+  - pass-by-value-ref
+  - structs
+  - arrays
   - copy
   - map
   - interface
