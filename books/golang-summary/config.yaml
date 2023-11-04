@@ -16,7 +16,7 @@ chapters:
   - pointers
   - pass-by-value-ref
   - structs
-  - arrays
+  - arrays-slices
   - copy
   - map
   - interface
