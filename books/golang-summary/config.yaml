@@ -17,8 +17,9 @@ chapters:
   - pass-by-value-ref
   - structs
   - arrays-slices
-  - copy
   - map
+  - make
+  - copy
   - interface
   - stringer
   - error
