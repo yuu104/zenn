@@ -175,3 +175,7 @@ poetry env use python
 ```shell
 poetry env use <バージョン（3.9.5など）>
 ```
+
+## 外部ファイルの読み込み
+
+https://qiita.com/siida36/items/b171922546e65b868679#%E3%81%A9%E3%81%86%E3%81%99%E3%82%8C%E3%81%B0%E3%81%84%E3%81%84%E3%81%AE%E3%81%8B
