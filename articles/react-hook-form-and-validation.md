@@ -367,7 +367,7 @@ register("username", {
 
 :::
 
-## エラーの表示
+## バリデーションエラーの表示
 
 - バリデーションのエラーを表示するには `useForm()` から取得できる `formState` を利用する
 - `formState` はフォームの現在の状態に関する情報を持つオブジェクト
@@ -411,24 +411,69 @@ console.log(errors.email);
 }
 ```
 
-### 1 つのフィールドに対し複数のバリデーションを実装する
+## 1 つのフィールドに対し複数のバリデーションを実装する
 
-以下のようにバリデーションを実装する。
+### バリデーションルールの設定
 
 ```tsx
 <input
-  id="email"
-  {...register("email", {
-    required: {
-      value: true,
-      message: "入力が必須の項目です。",
+  id="password"
+  {...register("password", {
+    required: { value: true, message: "入力必須です" },
+    pattern: {
+      value: /^[A-Za-z]+$/,
+      message: "アルファベットのみ入力してください。",
+    },
+    minLength: {
+      value: 9,
+      message: "9文字以上入力してください。",
     },
   })}
-/>;
+  type="password"
+/>
+```
+
+### `criteriaMode` の設定
+
+- デフォルトの設定では、`formState.errors` は 1 つのフィールドに対して 1 つのエラー情報しか持たない
+- 複数のバリデーションエラーを取得するためには、`useForm` の引数で `criteriaMode` の設定を行う必要がある
+- デフォルトだと `criteriaMode: "firstError"` で一つのエラー情報しか持たないので、`criteriaMode: "all"` で複数のエラー情報を持つように設定する
+
+```tsx
+const {
+  register,
+  handleSubmit,
+  formState: { errors },
+} = useForm({
+  criteriaMode: "all",
+});
+```
+
+`all` を設定すると、`errors` オブジェクトに対し新たに `types` プロパティが追加され複数のバリデーションエラーが保持される。
+
+![](https://storage.googleapis.com/zenn-user-upload/9d5d3853b337-20231118.png)
+
+エラーメッセージの表示は以下のように記述する。
+
+```tsx
 {
-  errors.email?.message && <div>{errors.email.message}</div>;
+  errors.password?.types?.required && (
+    <div className={styles.error}>{errors.password.types.required}</div>
+  );
+}
+{
+  errors.password?.types?.pattern && (
+    <div className={styles.error}>{errors.password.types.pattern}</div>
+  );
+}
+{
+  errors.password?.types?.minLength && (
+    <div className={styles.error}>{errors.password.types.minLength}</div>
+  );
 }
 ```
+
+![](https://storage.googleapis.com/zenn-user-upload/81bfa58c92da-20231118.png)
 
 ## バリデーション設定（Zod）
 
@@ -554,6 +599,7 @@ const {
 });
 ```
 
+- バリデーションが最初にいつトリガーされるかを指定する
 - デフォルト値は `onSubmit`
 - `onBlur`, `onChange`, `onTouched`, `all` に変更可能
 - 再レンダリングが行われるタイミングはバリデーションメッセージの表示・非表示が切り替わる瞬間
@@ -573,6 +619,7 @@ const {
   register,
   handleSubmit,
   formState: { errors },
+  trigger
 } = useForm<Field>({
   resolver: yupResolver(schema),
 });
@@ -585,19 +632,128 @@ const {
 </button>
 ```
 
-- バリデーションボタンをクリックするとバリデーションが実行される
+- 「バリデーション」ボタンをクリックするとバリデーションが実行される
 - 引数に何も指定しない場合、すべてのフィールドに対してバリデーションが実行される
 - 引数にフィールドの `name` を指定すると、そのフィールドに対してのみバリデーションが実行される
 
-## `useForm()`の戻り値一覧
+## 可変長の入力フィールドを作成する
 
-:::details register
-:::
+以下のように、商品情報を入力するフィールドを実装する。
+同じタイプな可変長のフィールドを実装するには `useFieldArray()` を使用する。
+
+![](https://storage.googleapis.com/zenn-user-upload/b68c76551f58-20231118.png)
+
+- `useFieldArray()` は可変長のフィールド（フォーム内の動的なフィールドセット）を扱うためのフック
+- `useFieldArray()` から取得できるオブジェクトのプロパティを使用することで、フィールドの配列を効率的に追加、削除、更新することができる
+
+```tsx
+import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
+import styles from "@/styles/App.module.scss";
+
+type FormData = {
+  items: { name: string; price: number }[];
+};
+
+const defaultValues: FormData = {
+  items: [{ name: "", price: 0 }],
+};
+
+function Items() {
+  const { register, handleSubmit, control } = useForm<FormData>({
+    criteriaMode: "all",
+    defaultValues,
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items",
+  });
+
+  const onSubmit: SubmitHandler<FormData> = (data) => {
+    console.log(data);
+  };
+
+  return (
+    <div className={styles.container}>
+      <h1>商品登録</h1>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        {fields.map((field, index) => (
+          <div key={field.id} className={styles.itemField}>
+            <div>
+              <label htmlFor={`items.${index}.name`}>商品名</label>
+              <input type="text" {...register(`items.${index}.name`)} />
+            </div>
+            <div>
+              <label htmlFor={`items.${index}.price`}>単価</label>
+              <input type="text" {...register(`items.${index}.price`)} />
+            </div>
+            <button type="button" onClick={() => remove(index)}>
+              削除
+            </button>
+          </div>
+        ))}
+        <button type="button" onClick={() => append({ name: "", price: 0 })}>
+          追加
+        </button>
+        <button type="submit">登録</button>
+      </form>
+    </div>
+  );
+}
+
+export default Items;
+```
+
+#### `FormData`
+
+商品情報フィールドは商品名を表す `name` と 単価を表す `price` のフィールドを持っている。
+`name` と　`price`の 2 つで 1 つのフィールドでありかつ可変長であるため、オブジェクト配列で定義する。
+
+#### `control`
+
+- `useForm` フックから返される `control` オブジェクト
+- フィールド配列の状態管理と更新を担う
+- `useFieldArray()` のオブジェクト引数に `control` を指定することで、フィールド配列の管理が `useForm()` の管理下に統合される
+
+#### `name`
+
+- フィールド配列の名前
+- この名前は `useForm()` で定義されるフィールドの名前と一致する必要がある
+
+#### `fields`
+
+- 現在のフィールド配列の状態を表す
+- 配列の各要素には、フィールド固有の識別子（`id`）やフィールド値が格納されている
+
+```tsx
+console.log(fields);
+// [
+//   {
+//     id: "142b52e3-4d4a-4f56-a6c6-632a765c97be",
+//     name: "",
+//     price: 0,
+//   },
+// ]
+```
+
+- `map()` 関数を使用して各フィールド要素をレンダリングする
+- **`map()` でレンダリングする際の `key` は `id` を使用する**
+
+#### `register`
+
+#### `append`
+
+- 新しいフィールドを配列の末尾に追加する
+- 追加する際は引数に初期値を指定する
+
+#### `remove`
+
+- 指定したインデックスのフィールドを配列から削除する
+- 引数には削除するフィールドのインデックスを指定する
+
+## その他 `useForm()` の戻り値一覧
 
 :::details unregister
-:::
-
-:::details formState
 :::
 
 :::details watch
@@ -611,12 +767,6 @@ const emailField = watch("email");
 <input {...register("email")} />;
 ```
 
-:::
-
-:::details handleSubmit
-:::
-
-:::details reset
 :::
 
 :::details resetFeild
