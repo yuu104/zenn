@@ -681,7 +681,7 @@ function Items() {
           <div key={field.id} className={styles.itemField}>
             <div>
               <label htmlFor={`items.${index}.name`}>商品名</label>
-              <input type="text" {...register(`items.${index}.name`)} />
+              <input type="text" {...register(`items.${index}.name` as)} />
             </div>
             <div>
               <label htmlFor={`items.${index}.price`}>単価</label>
@@ -704,23 +704,29 @@ function Items() {
 export default Items;
 ```
 
-#### `FormData`
+:::details type FormData
 
 商品情報フィールドは商品名を表す `name` と 単価を表す `price` のフィールドを持っている。
 `name` と　`price`の 2 つで 1 つのフィールドでありかつ可変長であるため、オブジェクト配列で定義する。
 
-#### `control`
+:::
+
+:::details control
 
 - `useForm` フックから返される `control` オブジェクト
 - フィールド配列の状態管理と更新を担う
 - `useFieldArray()` のオブジェクト引数に `control` を指定することで、フィールド配列の管理が `useForm()` の管理下に統合される
 
-#### `name`
+:::
+
+:::details name
 
 - フィールド配列の名前
 - この名前は `useForm()` で定義されるフィールドの名前と一致する必要がある
 
-#### `fields`
+:::
+
+:::details fields
 
 - 現在のフィールド配列の状態を表す
 - 配列の各要素には、フィールド固有の識別子（`id`）やフィールド値が格納されている
@@ -739,17 +745,114 @@ console.log(fields);
 - `map()` 関数を使用して各フィールド要素をレンダリングする
 - **`map()` でレンダリングする際の `key` は `id` を使用する**
 
-#### `register`
+:::
 
-#### `append`
+:::details register
+
+`useFieldArra()` を使用して動的なフィールドリストを扱う場合、各フィールドは配列の一部として管理される。
+これらのフィールドを正しく登録するためには、以下のように `register()` 関数に配列のインデックスを含むフィールド名を指定する必要がある。
+
+```tsx
+register(`items.${index}.name`);
+```
+
+- `items` はフィールド配列の名前
+- `index` は配列内の特定のフィールドのインデックス
+- `name` はフィールド内の特定の属性
+
+TypeScript の場合は、以下のように `as const` でキャストして文字列リテラル型として扱うことを明示する。
+
+```tsx
+register(`items.${index}.name` as const);
+```
+
+:::
+
+:::details append
 
 - 新しいフィールドを配列の末尾に追加する
 - 追加する際は引数に初期値を指定する
 
-#### `remove`
+:::
+
+:::details remove
 
 - 指定したインデックスのフィールドを配列から削除する
 - 引数には削除するフィールドのインデックスを指定する
+
+:::
+
+## 非同期でフィールドの初期値を設定する
+
+- 初期値の設定には `defaultValues` を使用できる
+- しかし、API レスポンスなどから非同期に渡される値を設定する場合は `defaultValues` に直接セットしても正しく動作しない
+- `defaultValues` は `useForm()` の初期化時のみに設定され、その後は直接変更することはできない
+
+```tsx
+type FormData = {
+  email: string;
+  password: string;
+};
+
+function App() {
+
+  const [formData, setFormData] = useState<FormData>();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    defaultValues: formData // `undefined`
+  });
+
+
+  useEffect(() => {
+    // ここでデータをフェッチする
+    const fetchData = { email: "sample@gmail.com", password: "password" }
+
+    // `formData`を更新して再レンダリングしても`defaultValues`の値は更新されず`undefiend`
+    setFormData(fetchData);
+  }, []);
+
+```
+
+- 非同期でデータを取得してフィールド値を更新する場合、`useEffect()` 内で `reset()` 関数を使用する
+- `reset()` はフィールド値をリセットするために使用する
+- この関数は `useForm()` から提供され、フィールドを指定した値にリセットしたり、完全にクリアしたりする際に便利
+
+引数にオブジェクトを渡すことで、フィールドをそのオブジェクトの値にリセットできる。
+
+```tsx
+reset({ email: "sample@gmail.com", password: "password" });
+```
+
+よって、非同期でデータを取得し `reset()` によりフィールド値を更新する場合の実装は以下のようになる。
+
+```tsx
+type FormData = {
+  email: string;
+  password: string;
+};
+
+function App() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<FormData>();
+
+
+  useEffect(() => {
+    // ここでデータをフェッチする
+    const fetchData = { email: "sample@gmail.com", password: "password" }
+
+    // `formData`を更新して再レンダリングしても`defaultValues`の値は更新されず`undefiend`
+    reset(fetchData);
+  }, [reset]);
+
+```
 
 ## その他 `useForm()` の戻り値一覧
 
@@ -802,8 +905,8 @@ const emailField = watch("email");
 
 ## 参考リンク
 
-https://tech-o-proch.com/programing/react/579#index_id0
+https://reffect.co.jp/react/react-hook-form-ts/
 
 https://qiita.com/y-suzu/items/952d417f0853341a97df
 
-https://reffect.co.jp/react/react-hook-form-ts/
+https://react-hook-form.com/docs/usefieldarray
