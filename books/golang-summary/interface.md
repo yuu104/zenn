@@ -124,7 +124,7 @@ func main() {
 `fmt.Printf("%v, %T\n", i, i)` の結果は以下。
 
 ```shell
-&{Taro}, main.T
+&{Taro}, *main.S
 ```
 
 変数 `i` はインターフェース型 `I` であるが、`i = &S{"Taro"}` により、`i` の実体は `&S{"Taro"}` となる。

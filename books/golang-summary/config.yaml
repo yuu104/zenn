@@ -16,6 +16,7 @@ chapters:
   - pointers
   - pass-by-value-ref
   - structs
+  - type-keyword
   - arrays-slices
   - map
   - make
