@@ -17,11 +17,11 @@ chapters:
   - pass-by-value-ref
   - structs
   - type-keyword
+  - interface
   - arrays-slices
   - map
   - make
   - copy
-  - interface
   - stringer
   - error
   - byte-type

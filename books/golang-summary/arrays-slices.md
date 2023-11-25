@@ -87,8 +87,9 @@ for i := 0; i < len(matrix); i++ {
 - ポイントは、型名が `[4]int` の固定長データであること
 - 配列の型や数が異なれば異なる型として扱われる
 - また、配列は「**値**」である
+- `[4]int` であれば、`int` が 4 つ並んだ「値」として考える
 - つまり、同じ型であれば `==` 演算子で同値性の評価ができる
-  - 異なる型同士は評価できない
+- 異なる型同士は評価できない
 
 ```go
 func main() {
@@ -104,7 +105,6 @@ func main() {
 ```
 
 - 配列は「**値**」であるため、`:=` 等による代入構文で内容も含めてインスタンスのコピーが発生する
-- `[4]int` であれば、`int` が 4 つ並んだ「値」として考える
 - 関数の引数に配列を指定した場合も同様にコピーが渡される
 
 ```go
@@ -286,7 +286,7 @@ func main() {
 - `displaySliceByte()` の引数として受け取った Slice と渡す前の Slice は異なるインスタンス
   - つまり、値渡し
 - このように、Slice は「配列への参照のように振る舞う」だけで、本当の意味での「参照」ではない
-- しかし、引数の Slice は同じ array を参照するため、関数内で要素を変更すれば元の Slice も変化する
+- しかし、引数の Slice は同じ Array を参照するため、関数内で要素を変更すれば元の Slice と Array も変化する
 
 ```go
 func displaySliceByte(slc []byte) {
@@ -300,7 +300,7 @@ func main() {
     displaySliceByte(slc1)
 
     fmt.Println(ary1) // [9 1 2 3 4]
-	  fmt.Println(slc1) // [9 1 2 3 4]
+    fmt.Println(slc1) // [9 1 2 3 4]
 }
 ```
 
@@ -457,13 +457,13 @@ func main() {
 
 - 「長さ（length）」は Slice に含まれる要素の数
 - 「容量（capacity）」は、Slice に割り当てられているバッファのサイズ
-  - Slice の最初の要素から数えて、元となる配列に要素数でもある
+  - Slice の最初の要素から数えて、元となる配列の要素数でもある
 - Slice `s` の長さと容量は、`len(s)` と `cap(s)` を使用して得ることができる
 
 ### capacity の増加
 
 - Slice は可変長であることから、length と capacity の値も変化する
-- `append()` により要素を追加する際、capacity を超えて値の追加を試みると、
+- `append()` により要素を追加する際、capacity を超えて値の追加を試みると、ランタイム上で新しいメモリ領域（新しい Array）を割り当てて Slice の capacity を自動で増やす
 
 ## Slice の空チェック
 
@@ -491,7 +491,7 @@ func isEmpty(s []string) bool {
 - 「長さ」でチェックしないと漏れが発生する
 - ポイントは
   - Slice を空で宣言しても宣言の仕方によって nil Slice か empty Slice になる
-  - nil Slice と empty Slice ともに len と cap が 0
+  - nil Slice と empty Slice ともに `len` と `cap` が 0
 
 #### 空で宣言しても宣言の仕方によって nil Slice か empty Slice になる
 

@@ -56,6 +56,32 @@ fmt.Println("Last Name:", p.LastName)
 fmt.Println("Age:", p.Age)
 ```
 
+## 構造体のゼロ値
+
+- 構造体の宣言時に初期値を定義しなかった場合、各フィールドはゼロ値で初期化される
+- 数値型（`int` `float64`など）のゼロ値は`0`
+- 文字列型（`string`）のゼロ値は空文字列`""`
+- ブール型（`bool`）のゼロ値は`false`
+- ポインタ スライス マップ チャネル 関数 インターフェイスのゼロ値は`nil`
+- 明示的な初期化がなくても変数はデフォルト値で初期化されるため予期せぬ`null`や`undefined`のエラーを避けることができる
+
+```go
+package main
+
+import "fmt"
+
+type MyStruct struct {
+    Number int
+    Text   string
+    Flag   bool
+}
+
+func main() {
+    var s MyStruct
+    fmt.Println(s) // {0  false}
+}
+```
+
 ## 構造体とポインタ
 
 - 構造体のフィールドは、ポインタを通してアクセス可能
@@ -76,8 +102,8 @@ p := Person{
 pPtr := &p
 
 // 下記2行は同じ意味
-(*p).Age = 10
-p.Age = 10
+(*pPtr).Age = 10
+pPtr.Age = 10 // コンパイラが暗黙的に `(*pPtr).Age` に変換する
 ```
 
 ## メソッド
@@ -131,7 +157,7 @@ func (p Person) hello() {
 }
 
 // レシーバにポインタを使用する
-func (p *Person) increment {
+func (p *Person) increment() {
   p.Age++
 }
 
@@ -149,6 +175,73 @@ func main() {
 ```
 
 - `(p *Person)` のように、値ではなくポインターで渡す
+- `p.hello()` は `(&p).hello()` へ暗黙的に変換される
+
+## レシーバの変数を使用しない場合は記述しなくても良い
+
+```go
+type Person struct{ name string }
+
+
+func (*Person) Shout(msg string) {
+    fmt.Printf("%s!!!\n", msg)
+}
+```
+
+## `struct` 型のポインタ変数がゼロ値の場合
+
+- ポインタ変数がゼロ値の場合、その値は `nil` になる
+- そのため、ゼロ値のポインタ変数に対して構造体のフィールドへアクセスしようとすると、ランタイムパニックが発生する
+
+```go
+package main
+
+import "fmt"
+
+type MyStruct struct {
+    Field int
+}
+
+func main() {
+    var s *MyStruct // `MyStruct` 型のポインタ変数
+
+    fmt.Printf("%v, %T\n", s, s) // <nil>, *main.MyStruct
+    fmt.Println(s.Field) // ランタイムパニックが発生する
+}
+```
+
+- ポインタレシーバを使うメソッドを呼び出すことは可能
+- ただし、メソッド内で構造体のフィールドへアクセスするとランタイムパニックになる
+- よって、そのメソッド内でポインタが `nil` であるかどうかをチェックする必要がある
+
+```go
+package main
+
+import "fmt"
+
+type MyStruct struct {
+    Field int
+}
+
+func (m *MyStruct) DoSomething() {
+    if m == nil {
+        fmt.Println("nil receiver")
+        return
+    }
+    fmt.Println("Field:", m.Field)
+}
+
+func main() {
+    var m *MyStruct // この時点で `m` は `nil`
+    m.DoSomething() // nil receiver
+}
+```
+
+## 値レシーバ vs ポインタレシーバ
+
+- レシーバの値を変更したい場合はポインタレシーバ
+- 統一性の観点から、一つでもポインタレシーバを使用する場合は値の変更有無にかかわらず全てポインタレシーバにする
+-
 
 ## 構造体の埋め込み
 

@@ -129,10 +129,69 @@ func main() {
 
 変数 `i` はインターフェース型 `I` であるが、`i = &S{"Taro"}` により、`i` の実体は `&S{"Taro"}` となる。
 
+## interface と nil
+
+### interface 型の変数はデフォルトで `nil`
+
+```go
+package main
+
+import "fmt"
+
+type MyInterface interface {
+    DoSomething()
+}
+
+func main() {
+    var i MyInterface
+
+    fmt.Println(i == nil) // true
+    fmt.Printf("%v, %T\n", i, i) // <nil>, <nil>
+
+    i.M() // ランタイムパニック
+}
+```
+
+- interface が型の変数が宣言されると、その初期値は `nil` になる
+- `nil` インターフェースの値は、値も型も保持しない
+- `nil` インターフェースに対し、メソッドを実行したらランタイムパニックが発生する
+
+### インターフェース自体の中にある具体的な値が `nil` の場合
+
+```go
+package main
+
+import "fmt"
+
+type I interface {
+	M()
+}
+
+type T struct {
+	S string
+}
+
+func main() {
+	var i I
+  var t *T
+  i = t
+
+  fmt.Printf("%v, %T\n", i, i) // <nil>, *main.T
+
+  i = &T{"hello"}
+  fmt.Printf("%v, %T\n", i, i) // &{hello}, *main.T
+}
+```
+
 ## interface はどんな型でも受け入れる
 
-interface を使うとどんな型でも受け入れることができます。
-例えば以下のコードは `do` という関数に interface 型の引数と返り値を取っています。
+- ゼロ値のメソッドを指定されたインターフェース型は、空のインターフェースと呼ばれる
+
+```go
+interface{}
+```
+
+- 空インターフェースを使うとどんな型でも受け入れることができる
 
 ```go
 package main
@@ -153,38 +212,18 @@ func main() {
 }
 ```
 
-## interface と nil
-
-```go
-type I interface {
-  M()
-}
-
-type T struct {
-  S string
-}
-
-func (t *T) M() {
-  if t == nil {
-    fmt.Println("<nil>")
-    return
-  }
-  fmt.Println(t.S)
-}
-
-func main() {
-  var i I
-  var t *T
-
-  i = t
-  printf("%v, %T\n", i, i) // <nil>, *main.T
-  i.M() // <nil>
-}
-```
-
 ## 型アサーション
 
 型アサーションにより、実体の型が何であるかを動的にチェックできる。
+
+```go
+value, ok := i.(T)
+```
+
+- `i` はインターフェイス型の変数
+- `T` はアサートしたい型
+- `i` が内部的に `T` 型の値を持っている場合、その値を `value` に割り当て、`ok` に `true` を設定する
+- `i` が `T` 型の値を持っていない場合、`value` は `T` 型のゼロ値になり、`ok` には `false` が設定される
 
 https://zenn.dev/shinkano/articles/4779726fb964d9
 
@@ -202,12 +241,9 @@ fmt.Println(f)
 
 ## 型 switch
 
-型スイッチ（Type Switch）は、Go 言語の特徴の一つであり、インターフェースの値の内部に格納されている具体的な型を判定するための仕組み。
-型スイッチは主に switch 文の中で使用され、インターフェースが実装している具体的な型を特定して、それに応じて処理を行うために使用される。
-
-型スイッチ（Type Switch）は、Go 言語の特徴の一つであり、インターフェースの値の内部に格納されている具体的な型を判定するための仕組みです。型スイッチは主に `switch` 文の中で使用され、インターフェースが実装している具体的な型を特定して、それに応じて処理を行うために使用されます。
-
-型スイッチの一般的な構文は以下の通りです：
+- インターフェースの値の内部に格納されている具体的な型を判定するための仕組み
+- `switch` 文の中で使用される
+- インターフェースが実装している具体的な型を特定して、それに応じて処理を行うために使用される
 
 ```go
 switch value := interfaceVariable.(type) {
@@ -221,9 +257,9 @@ default:
 }
 ```
 
-ここで `interfaceVariable` はインターフェース型の変数であり、`Type1`、`Type2` などは具体的な型です。`interfaceVariable.(type)` の部分で、インターフェース内に格納されている具体的な型がどれかを判定しています。
-
-例を挙げて説明しましょう：
+- `interfaceVariable` はインターフェース型の変数
+- `Type1`、`Type2` などは具体的な型
+- `interfaceVariable.(type)` の部分で、インターフェース内に格納されている具体的な型がどれかを判定する
 
 ```go
 package main
@@ -248,6 +284,6 @@ func main() {
 }
 ```
 
-この例では、`printType` 関数がインターフェース型の引数を受け取り、その中に格納されている具体的な型に基づいて適切なメッセージを出力します。型スイッチを使用して、`i.(type)` の部分で具体的な型を判定しています。
+`printType()` がインターフェース型の引数を受け取り、その中に格納されている具体的な型に基づいて適切なメッセージを出力する。型スイッチを使用して、`i.(type)` の部分で具体的な型を判定している。
 
-型スイッチは、ランタイム時にインターフェースがどの具体的な型を持っているかを判断し、それに合わせた処理を行う場合に非常に便利です。
+型スイッチは、ランタイム時にインターフェースがどの具体的な型を持っているかを判断し、それに合わせた処理を行う場合に非常に便利。
