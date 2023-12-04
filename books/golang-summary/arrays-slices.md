@@ -19,6 +19,11 @@ var fruits [5]string
 fruits := [5]string{"apple", "baana", "orange", "straberry", "grape"}
 ```
 
+```go
+// 要素数に `...` を指定した場合、初期値の要素数が自動的に反映される
+fruits := [...]string{"apple", "baana", "orange", "straberry", "grape"}
+```
+
 - 配列の長さは型の一部
 - 配列のサイズを変えることはできない
 
@@ -312,6 +317,7 @@ func main() {
 ```go
 var slc []int
 slc = append(slc, 1) // [1]
+slc = append(slc, 2, 3, 4) // [1, 2, 3, 4]
 ```
 
 - しかし、slice は固定長の Array を参照しているオブジェクトである
@@ -340,6 +346,23 @@ func main() {
 - しかし、`[0 1 2]` → `[0 1 2 3]` の `append` は `&slc[0]` が変化していない
 - よく見ると、capacity も `4` のままで変化していない
 - つまり、参照先 Array 用に割り当てた容量が足りなくなった際、それを増やすために新規の Array が確保されている
+
+## Slice のマージ
+
+```go
+slice1 := []int{1, 2, 3}
+slice2 := []int{4, 5, 6}
+
+// スライスをマージ
+merged := append(slice1, slice2...)
+
+fmt.Println(merged) // 出力: [1 2 3 4 5 6]
+```
+
+- `append()` の第二引数に `slice2...` を渡す
+- これはの `slice2` の各要素を個別の引数として `append()` に渡している
+
+- 複数の Slice をマージ
 
 ## Slice の複製
 

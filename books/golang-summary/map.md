@@ -22,10 +22,19 @@ fmt.Println(nameScore) // map[ryo:11 taro:45]
 
 ### 空のマップ作成
 
-マップは動的である。
-
 ```go
 nameScore := make(map[string]int)
+fmt.Println(nameScore, nameScoew == nil) // map[] false
+```
+
+```go
+var nameScore map[string]int
+fmt.Println(nameScore, nameScore == nil) // map[] true
+```
+
+```go
+nameScore := map[string]int{}
+fmt.Println(nameScore, nameScore == nil) // map[] nil
 ```
 
 ## 項目の追加

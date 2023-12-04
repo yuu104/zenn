@@ -23,6 +23,24 @@ func main() {
 }
 ```
 
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	s1 := make([]int, 0, 2)
+	fmt.Printf("%v, %v, %v\n", s1, len(s1), cap(s1)) // [], 0, 2
+	fmt.Println(s1 == nil) // false
+
+	s2 := make([]int, 3)
+	fmt.Printf("%v, %v, %v\n", s2, len(s2), cap(s2)) // [0 0 0], 3, 3
+}
+
+```
+
 - **第一引数**
   - 型を指定する
 - **第二引数**
