@@ -77,6 +77,36 @@ func split(sum int) (x, y int) {
 
 https://zenn.dev/yuyu_hf/articles/c7ab8e435509d2
 
+## 無名関数
+
+### 基本的な構文
+
+```go
+func(arguments) {
+    // 関数の本体
+}
+
+```
+
+### 即時実行
+
+```go
+func() {
+    fmt.Println("この無名関数は即時実行されます")
+}()
+
+```
+
+### 変数への割り当て
+
+```go
+myFunc := func() {
+    fmt.Println("この無名関数は後で呼び出されます")
+}
+
+myFunc() // 関数を呼び出す
+```
+
 ## 可変長引数
 
 ### 概要

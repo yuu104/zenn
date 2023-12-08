@@ -57,3 +57,34 @@ i := 42           // int
 f := 3.142        // float64
 g := 0.867 + 0.5i // complex128
 ```
+
+## `any`
+
+- Go 1.18 で導入された
+- 任意の型の値を受け入れることができる
+- `interface{}` と同じ
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    var value any
+
+    // any型にintを格納
+    value = 42
+    fmt.Println(value)
+
+    // any型にstringを格納
+    value = "Hello World"
+    fmt.Println(value)
+
+    // any型にスライスを格納
+    value = []int{1, 2, 3}
+    fmt.Println(value)
+}
+
+```
