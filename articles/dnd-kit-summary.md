@@ -1,5 +1,5 @@
 ---
-title: "【dnd kit】"
+title: "dnd kit"
 emoji: "👻"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [react, nextjs, typescript]
@@ -8,7 +8,7 @@ published: false
 
 ## dnd kit とは？
 
-React 用の高度なドラッグ＆ドロップツールキット。
+React 用の高度な D＆D ツールキット。
 dnd kit には複数のパッケージが含まれている。
 
 1. **`@dnd-kit/core`**
@@ -30,7 +30,8 @@ dnd kit には複数のパッケージが含まれている。
 
 ## D&D を実装してみる
 
-まずは、以下のようにメンバーを D&D により各グループ間を移動できるような UI を実装してみる。
+D&D によりメンバーが各グループ間を移動できるような UI を実装する。
+![](https://storage.googleapis.com/zenn-user-upload/83cab4ed1cfa-20231214.gif)
 
 ### グループデータの用意
 
@@ -173,45 +174,47 @@ const GroupItem = ({ group }: GroupItemProps) => {
 
 1. **`active`**
    - ドラッグされていた要素に関する情報
-   - `active.id` は `useDraggable` で指定したもの
+   - `active.id` は `useDraggable` で指定した `id`
 2. **`over`**
    - ドロップされた要素に関する情報
-   - `over.id` は `useDroppable` で指定したもの
+   - `over.id` は `useDroppable` で指定した `id`
    - ドロップ可能領域でない場合、`over` は `null` になる
 
 ```tsx
 import { DragEndEvent } from "@dnd-kit/core";
 
-const handleDragEnd = (e: DragEndEvent) => {
-  const { active, over } = e;
-  if (!over) return;
+export const DndKit = () => {
+  // 省略
 
-  const draggedId = active.id as string;
-  const droppedId = over.id as string;
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over) return;
 
-  setGroups((prev) => {
-    return prev.map((group) => {
-      const isDroppedSameGroup =
-        group.members.some((member) => member.name === draggedId) &&
-        droppedId === group.id;
-      if (isDroppedSameGroup) return group;
+    const draggedId = active.id as string;
+    const droppedId = over.id as string;
 
-      const newMembers = group.members.filter(
-        (member) => member.name !== draggedId
-      );
+    setGroups((prev) => {
+      return prev.map((group) => {
+        const isDroppedSameGroup =
+          group.members.some((member) => member.name === draggedId) &&
+          droppedId === group.id;
+        if (isDroppedSameGroup) return group;
 
-      if (droppedId === group.id) newMembers.push({ name: draggedId });
+        const newMembers = group.members.filter(
+          (member) => member.name !== draggedId
+        );
 
-      return { ...group, members: newMembers };
+        if (droppedId === group.id) newMembers.push({ name: draggedId });
+
+        return { ...group, members: newMembers };
+      });
     });
-  });
-};
+  };
 
-return (
-  <DndContext onDragEnd={handleDragEnd}>
-    {/* ドラッグ＆ドロップ要素をここに配置 */}
-  </DndContext>
-);
+  return (
+    // 省略
+  );
+};
 ```
 
 ### D&D まとめ
@@ -339,6 +342,8 @@ const MemberItem = ({ member }: MemberItemProps) => {
 
 次はグループを D&D 操作で並び替えできるようにする。
 
+![](https://storage.googleapis.com/zenn-user-upload/cda34286e53f-20231214.gif)
+
 ### 並び替えのためのパッケージをインストール
 
 並び替えを行うには `@dnd-kit/core` に加えて `@dnd-kit/sortable` をインストールする。
@@ -347,13 +352,13 @@ const MemberItem = ({ member }: MemberItemProps) => {
 yarn add @dnd-kit/sortable
 ```
 
-### `SortableContext`
+### SortableContext
 
 `DndContext` に加えて、`SortableContext` をセットアップする。
 `SortableContext` は並び替え可能なアイテムの状態を管理し、ドラッグ操作に応じてアイテムの順序を更新するために使用する。
 `SortableContext` は `DndContext` 内に設置する。
 
-`SortableContext` の Props は以下の通り。
+props は以下の通り。
 
 1. **`items`**
    - 並び替えるアイテムの ID 配列を与える
@@ -361,12 +366,24 @@ yarn add @dnd-kit/sortable
    - `string[]` の場合は各要素が 識別子となり、`{ id: string }[]` の場合は各要素の `id` プロパティが識別子となる
    - `items` に指定する識別子は後に使用する `useSortable` の引数に指定する `id` と一致させる必要がある
 2. **`strategy`**（Optional）
-   - アイテムを並び替える時のレイアウト戦略を定義する
+   - アイテムを並び替える時のレイアウトと動作を定義する
+   - D&D 操作におけるアイテムの移動方法を決定する
+   - `rectSortingStrategy`: デフォルトの戦略。一般的なリストやグリッドに適している。仮想化リストには非対応。
+   - `verticalListSortingStrategy`: 垂直リストに最適化。仮想化リストに対応。
+   - `horizontalListSortingStrategy`: 水平リストに最適化。仮想化リストに対応。
+   - `rectSwappingStrategy`: アイテムの位置を直接交換（スワップ）。特定のケースに適している。
 3. **`id`**（Optional）
+   - `id` の指定がない場合は自動生成される
+   - この prop は高度なユースケースのためのもの
 
 ```tsx
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+
 export const DndKit = () => {
-  // ロジック
+  // 省略
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
@@ -385,3 +402,271 @@ export const DndKit = () => {
   );
 };
 ```
+
+### `GroupItem` コンポーネントを並び替え可能な要素に設定する
+
+`useSortable` フックを使用する。
+このフックの返り値を使用することで、任意の要素を並び替え可能にする。
+
+- `setActivatorNodeRef`: ドラッグする際のつまみ部分の ref に指定する
+- `attributes`, `listeners` もつまみ部分の要素に指定する
+- `setNodeRef` は移動対象となる DOM に指定する
+
+```tsx
+const GroupItem = ({ group }: GroupItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: group.id });
+
+  const style: CSSProperties | undefined = transform
+    ? {
+        transform: CSS.Translate.toString(transform),
+        transition,
+      }
+    : undefined;
+
+  // 省略
+
+  return (
+    <div ref={setSortableNodeRef} style={style} className={styles.groupItem}>
+      <div
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
+        className={styles.groupHead}
+      >
+        {group.id}
+      </div>
+      <div ref={setDroppableNodeRef} className={styles.groupBody}>
+        {group.members.map((member) => (
+          <MemberItem key={member.name} member={member} />
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+### ドラッグ終了時のイベントハンドラを設定する
+
+- `DndContext` の `onDragEnd` にロジックを記述する
+- `handleDragEnd` 関数に追記する
+- 関数内で、ドラッグ操作がメンバーの移動 or グループの並び替えかによって処理を分岐させる必要がある
+- そのため、`active.id` と `over.id` でドラッグ操作がメンバーの移動 or グループの並び替えを判断できるように工夫する
+- `active.id` と `over.id` が `member_` で始まれば、メンバーの移動
+- `group_` で始まれば、グループの並び替えとなるようにする
+
+下記コンポーネントの `useDropppable` はメンバーの移動に使用するものなので、`id` を `member_${group.id}` に変更する。
+
+```diff tsx
+  const GroupItem = ({ group, isGroupDragging }: GroupItemProps) => {
+    // 省略
+
+    const { setNodeRef: setDroppableNodeRef } = useDroppable({
++     id: `member_${group.id}`,
+      disabled: isGroupDragging,
+    });
+
+    return (
+      // 省略
+    );
+  };
+```
+
+`handleDragEnd` は以下の通り。
+
+```diff tsx
+ const handleDragEnd = (e: DragEndEvent) => {
+   const { active, over } = e;
+
+   if (!over) return;
+
+   const draggedId = active.id as string;
+   const droppedId = over.id as string;
+
++  if (draggedId.startsWith("member_") && droppedId.startsWith("member_")) {
+     setGroups((prev) => {
+       return prev.map((group) => {
+         const isDroppedSameGroup =
+           group.members.some((member) => member.name === draggedId) &&
+           droppedId === group.id;
+         if (isDroppedSameGroup) return group;
+
+         const newMembers = group.members.filter(
+           (member) => member.name !== draggedId
+         );
+
+         if (droppedId === group.id) newMembers.push({ name: draggedId });
+
+         return { ...group, members: newMembers };
+       });
+     });
++  } else if (draggedId.startsWith("group_") && droppedId.startsWith("group_")) {
++    setGroups((prev) => {
++      const prevIndex = prev.findIndex((group) => group.id === draggedId);
++      const newIndex = prev.findIndex((group) => group.id === droppedId);
++
++      return arrayMove(prev, prevIndex, newIndex);
++    });
++  }
+ };
+```
+
+:::details arrayMove
+
+- 配列内の要素を新しい位置に移動するために使用されるユーティリティ関数
+
+```ts
+arrayMove(array: T[], from: number, to: number): T[]
+```
+
+- `array` : 並び替え対象の配列
+- `from` : 対象アイテムアイテムのドラッグ開始時のインデックス
+- `to` : 対象アイテムアイテムのドラッグ終了時のインデックス
+
+:::
+
+これで、グループの並び替えができるようになった。
+
+## `useSortable` と `useDroppable` の競合
+
+現状だと、グループのドラッグ中にバグが出る。
+
+![](https://storage.googleapis.com/zenn-user-upload/33f8622e510e-20231214.gif)
+
+`useSortable` が管理する要素のドラッグ操作中に、`useDroppable` で定義されたドロップ領域に入ると、バグが生じる。
+
+### `useSortable` の仕組み
+
+`useSortable` は、`useDraggable` と `useDroppable` を抽象化したフックで、これらを組み合わせて要素を並び替え可能にしている。
+
+![](https://storage.googleapis.com/zenn-user-upload/a8255e54bfcc-20231214.webp)
+_引用：https://docs.dndkit.com/presets/sortable_
+
+### 原因
+
+原因は、`GroupItem` コンポーネントにおいて、 `useSortable` と `useDroppable` のドロップ領域が競合していることにある。
+
+```tsx
+const GroupItem = ({ group }: GroupItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: group.id });
+
+  const { setNodeRef: setDroppableNodeRef } = useDroppable({
+    id: `member_${group.id}`,
+  });
+
+  const style: CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setSortableNodeRef} style={style} className={styles.groupItem}>
+      <div
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
+        className={styles.groupHead}
+      >
+        {group.id}
+      </div>
+      <div ref={setDroppableNodeRef} className={styles.groupBody}>
+        {group.members.map((member) => (
+          <MemberItem key={member.name} member={member} />
+        ))}
+      </div>
+    </div>
+  );
+};
+```
+
+上記コードの場合、`GroupItem` コンポーネントは以下のようになっている。
+
+![](https://storage.googleapis.com/zenn-user-upload/894fac85a585-20231214.png)
+
+- `useSortable` が管理するドラッグ操作中に、`useDroppable({id: 'member_xxxx'})` で定義されたドロップ領域に入ると、衝突検出アルゴリズムが `useDroppable` の `{id: 'member_xxxx'}` を検出する
+- `useDroppable({id: 'group_xxxx'})` と `useDroppable({id: 'member_xxxx'})` は領域が被る部分があるが、子要素である `id: 'member_xxxx'` が優先される
+- これが、`useSortable` のドラッグ操作に影響を与える可能性がある
+- `{id: 'member_xxxx'}` は `useSortable` で定義した `id` と一致するものが存在しないため、ソート処理を行えない
+
+### 解決策
+
+**グループの並び替え中は `useDroppable` を無効にする**
+
+- `useDroppable` の引数には `disabled` が存在する
+- `disabled` に `true` を指定することで、競合していたドロップ領域を無効にする
+
+複数ある `useSortable` のどれかがドラッグ状態になったとき、全ての `useDroppable` を無効にしたいので、ステートによる管理を行う。
+
+```diff tsx
+  export const DndKit = () => {
+    // 省略
+
++   const [isGroupDragging, setIsGroupDragging] = useState(false);
+
++   const handleDragStart = (e: DragStartEvent) => {
++     const { active } = e;
++     const draggedId = active.id as string;
+
++     if (draggedId.startsWith("group_")) setIsGroupDragging(true);
++   };
+
+    const handleDragEnd = (e: DragEndEvent) => {
++     setIsGroupDragging(false);
+
+      // 省略
+    };
+
+    return (
++     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <SortableContext items={groups} strategy={horizontalListSortingStrategy}>
+          <div className={styles.groupContainer}>
+            {groups.map((group) => (
+              <GroupItem
+                key={group.id}
+                group={group}
++               isGroupDragging={isGroupDragging}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    );
+  };
+
+　type GroupItemProps = {
+　  group: Group;
++  isGroupDragging: boolean;
+　};
+
++ const GroupItem = ({ group, isGroupDragging }: GroupItemProps) => {
+　  // 省略
+
+　  const { setNodeRef: setDroppableNodeRef } = useDroppable({
+　    id: `member_${group.id}`,
++    disabled: isGroupDragging,
+　  });
+
+　  // 省略
+　};
+```
+
+これでバグが消える。
+
+![](https://storage.googleapis.com/zenn-user-upload/4669a01a7bab-20231214.gif)
