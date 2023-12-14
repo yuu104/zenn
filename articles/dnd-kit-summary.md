@@ -210,11 +210,11 @@ const GroupItem = ({ group }: GroupItemProps) => {
 +        });
 +      });
 +    };
-+
-+    return (
-+      // 省略
-+    );
-+  };
+
+    return (
+      // 省略
+    );
+  };
 ```
 
 ### D&D まとめ
