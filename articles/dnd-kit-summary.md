@@ -35,7 +35,7 @@ D&D によりメンバーが各グループ間を移動できるような UI を
 
 ### グループデータの用意
 
-今回の例では、複数のグループが存在し、各グループには複数のメンバーが含まれている。
+複数のグループが存在し、各グループには複数のメンバーが含まれている。
 
 ```tsx
 type Group = {
@@ -54,7 +54,7 @@ export const DndKit = () => {
     { id: "group_3", members: [{ name: "member_4" }, { name: "member_5" }] },
   ]);
 
-  // その他のコード...
+  // 省略
 };
 ```
 
@@ -64,7 +64,7 @@ export const DndKit = () => {
 yarn add @dnd-kit/core
 ```
 
-### `DnDContext`
+### DnDContext
 
 D&D 機能を実装するために、まず `DndContext` をセットアップする。
 これは、D＆D イベントの管理や状態の保持を行う。
@@ -96,7 +96,7 @@ function DndKit() {
 4. **`transform`**
    - ドラッグ操作中の要素の位置変化を表すオブジェクト
    - アイテムがドラッグされ始めると、アイテムを画面上で移動させるために必要な座標が入力される
-   - `transform` オブジェクト形式は `{x: number, y: number, scaleX: number, scaleY: number}`
+   - オブジェクト形式は `{x: number, y: number, scaleX: number, scaleY: number}`
    - `transform` を使用することにより、ドラッグ中の要素のスタイルを動的に更新する
 5. **`isDragging`**
    - アイテムがドラッグ中であるかのフラグ
@@ -125,10 +125,10 @@ const MemberItem = ({ member }: MemberItemProps) => {
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className={styles.member}
       {...attributes}
       {...listeners}
+      style={style}
+      className={styles.member}
     >
       {member.name}
     </div>
@@ -140,7 +140,7 @@ const MemberItem = ({ member }: MemberItemProps) => {
 
 `useDropable` を使用する。
 このフックの返り値を使用することで、任意の要素をドロップ可能なエリアにする。
-引数には、`useDraggable` と同様、ユニークな `id` を指定する。
+引数には `useDraggable` と同様、ユニークな `id` を指定する。
 返り値で `setNodeRef` を受け取り、ドロップ可能要素の `ref` に指定する。
 
 ```tsx
@@ -168,7 +168,7 @@ const GroupItem = ({ group }: GroupItemProps) => {
 
 ### ドラッグ終了時のイベントハンドラを設定する
 
-`onDragEnd` はユーザがユーザーがドラッグした要素を離したときに呼び出される。
+`onDragEnd` はユーザがドラッグした要素を離したときに呼び出される。
 ドラッグ操作の最終的な結果を処理するために使用され、ドラッグされた要素の新しい位置や状態の更新などを行う。
 `onDragEnd` に渡されるイベントオブジェクトには、ドラッグ操作に関する以下の情報が含まれている。
 
@@ -180,41 +180,41 @@ const GroupItem = ({ group }: GroupItemProps) => {
    - `over.id` は `useDroppable` で指定した `id`
    - ドロップ可能領域でない場合、`over` は `null` になる
 
-```tsx
-import { DragEndEvent } from "@dnd-kit/core";
+```diff tsx
++  import { DragEndEvent } from "@dnd-kit/core";
 
-export const DndKit = () => {
-  // 省略
+   export const DndKit = () => {
+     // 省略
 
-  const handleDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e;
-    if (!over) return;
-
-    const draggedId = active.id as string;
-    const droppedId = over.id as string;
-
-    setGroups((prev) => {
-      return prev.map((group) => {
-        const isDroppedSameGroup =
-          group.members.some((member) => member.name === draggedId) &&
-          droppedId === group.id;
-        if (isDroppedSameGroup) return group;
-
-        const newMembers = group.members.filter(
-          (member) => member.name !== draggedId
-        );
-
-        if (droppedId === group.id) newMembers.push({ name: draggedId });
-
-        return { ...group, members: newMembers };
-      });
-    });
-  };
-
-  return (
-    // 省略
-  );
-};
++    const handleDragEnd = (e: DragEndEvent) => {
++      const { active, over } = e;
++      if (!over) return;
++
++      const draggedId = active.id as string;
++      const droppedId = over.id as string;
++
++      setGroups((prev) => {
++        return prev.map((group) => {
++          const isDroppedSameGroup =
++            group.members.some((member) => member.name === draggedId) &&
++            droppedId === group.id;
++          if (isDroppedSameGroup) return group;
++
++          const newMembers = group.members.filter(
++            (member) => member.name !== draggedId
++          );
++
++          if (droppedId === group.id) newMembers.push({ name: draggedId });
++
++          return { ...group, members: newMembers };
++        });
++      });
++    };
++
++    return (
++      // 省略
++    );
++  };
 ```
 
 ### D&D まとめ
@@ -377,30 +377,26 @@ props は以下の通り。
    - この prop は高度なユースケースのためのもの
 
 ```tsx
-import {
-  SortableContext,
-  horizontalListSortingStrategy,
-} from "@dnd-kit/sortable";
++  import {
++    SortableContext,
++    horizontalListSortingStrategy,
++  } from "@dnd-kit/sortable";
 
-export const DndKit = () => {
-  // 省略
+   export const DndKit = () => {
+     // 省略
 
-  return (
-    <DndContext onDragEnd={handleDragEnd}>
-      <SortableContext items={groups} strategy={horizontalListSortingStrategy}>
-        <div className={styles.groupContainer}>
-          {groups.map((group) => (
-            <GroupItem
-              key={group.id}
-              group={group}
-              isGroupDragging={isGroupDragging}
-            />
-          ))}
-        </div>
-      </SortableContext>
-    </DndContext>
-  );
-};
+     return (
+       <DndContext onDragEnd={handleDragEnd}>
++        <SortableContext items={groups} strategy={horizontalListSortingStrategy}>
+           <div className={styles.groupContainer}>
+             {groups.map((group) => (
+               <GroupItem key={group.id} group={group} />
+             ))}
+           </div>
++        </SortableContext>
+       </DndContext>
+     );
+   };
 ```
 
 ### `GroupItem` コンポーネントを並び替え可能な要素に設定する
@@ -412,54 +408,52 @@ export const DndKit = () => {
 - `attributes`, `listeners` もつまみ部分の要素に指定する
 - `setNodeRef` は移動対象となる DOM に指定する
 
-```tsx
-const GroupItem = ({ group }: GroupItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef: setSortableNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: group.id });
+```diff tsx
+  const GroupItem = ({ group }: GroupItemProps) => {
++   const {
++     attributes,
++     listeners,
++     setNodeRef: setSortableNodeRef,
++     setActivatorNodeRef,
++     transform,
++     transition,
++     isDragging,
++   } = useSortable({ id: group.id });
 
-  const style: CSSProperties | undefined = transform
-    ? {
-        transform: CSS.Translate.toString(transform),
-        transition,
-      }
-    : undefined;
++   const style: CSSProperties = {
++     transform: CSS.Translate.toString(transform),
++     transition,
++   };
 
-  // 省略
+    // 省略
 
-  return (
-    <div ref={setSortableNodeRef} style={style} className={styles.groupItem}>
-      <div
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        style={{ cursor: isDragging ? "grabbing" : "grab" }}
-        className={styles.groupHead}
-      >
-        {group.id}
+    return (
++     <div ref={setSortableNodeRef} style={style} className={styles.groupItem}>
++       <div
++         ref={setActivatorNodeRef}
++         {...attributes}
++         {...listeners}
++         style={{ cursor: isDragging ? "grabbing" : "grab" }}
++         className={styles.groupHead}
++       >
+          {group.id}
+        </div>
++       <div ref={setDroppableNodeRef} className={styles.groupBody}>
+          {group.members.map((member) => (
+            <MemberItem key={member.name} member={member} />
+          ))}
+        </div>
       </div>
-      <div ref={setDroppableNodeRef} className={styles.groupBody}>
-        {group.members.map((member) => (
-          <MemberItem key={member.name} member={member} />
-        ))}
-      </div>
-    </div>
-  );
-};
+    );
+  };
 ```
 
 ### ドラッグ終了時のイベントハンドラを設定する
 
 - `DndContext` の `onDragEnd` にロジックを記述する
-- `handleDragEnd` 関数に追記する
+- `handleDragEnd()` に追記する
 - 関数内で、ドラッグ操作がメンバーの移動 or グループの並び替えかによって処理を分岐させる必要がある
-- そのため、`active.id` と `over.id` でドラッグ操作がメンバーの移動 or グループの並び替えを判断できるように工夫する
+- そのため、`active.id` と `over.id` でドラッグ操作がメンバーの移動 or グループの並び替えかを判断できるように工夫する
 - `active.id` と `over.id` が `member_` で始まれば、メンバーの移動
 - `group_` で始まれば、グループの並び替えとなるようにする
 
@@ -534,6 +528,7 @@ arrayMove(array: T[], from: number, to: number): T[]
 :::
 
 これで、グループの並び替えができるようになった。
+と思いきや並び替え中にバグが...
 
 ## `useSortable` と `useDroppable` の競合
 
