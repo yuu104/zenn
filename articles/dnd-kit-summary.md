@@ -670,3 +670,13 @@ const GroupItem = ({ group }: GroupItemProps) => {
 これでバグが消える。
 
 ![](https://storage.googleapis.com/zenn-user-upload/4669a01a7bab-20231214.gif)
+
+## 参考リンク
+
+https://docs.dndkit.com/
+
+https://zenn.dev/castingone_dev/articles/dndkit20231031
+
+https://zenn.dev/kodaishoituki/articles/0e1c6109ae838e#sortablecontext
+
+https://zenn.dev/wintyo/articles/d39841c63cc9c9
