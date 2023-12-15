@@ -6,7 +6,7 @@ title: "ユニットテスト"
 Go 言語では、標準ライブラリの testing パッケージを使用してユニットテストを書くことができる。
 以下の `Add()` と `Divide()` についてユニットテストを行う。
 
-```go
+```go: main.go
 func Add(x, y int) int {
 	return x + y
 }
@@ -24,8 +24,6 @@ func Divide(x, y int) float32 {
 - テストファイルは通常、テスト対象のファイルと同じディレクトリに置き、ファイル名は `_test.go` で終わる
 - 例えば、`math.go` に Add と Divide 関数があるなら、テストファイルは `math_test.go` と名付ける
 
-![](https://storage.googleapis.com/zenn-user-upload/0c4c581f63b8-20231210.png)
-
 ## テスト関数の書き方
 
 - テスト関数は Go の標準ライブラリ `testing` パッケージを使用して実行される
@@ -33,7 +31,7 @@ func Divide(x, y int) float32 {
 - `t.Errorf` または `t.Fatalf` を使用して、期待する結果と実際の結果が異なる場合にエラーメッセージを出力する
 - `Errorf` はテストを続行させるが、`Fatalf` はテスト関数を即座に終了させる
 
-```go
+```go: main_test.go
 package main
 
 import "testing"
@@ -48,6 +46,39 @@ func TestAdd(t *testing.T) {
 ```
 
 ## VSCode でテストファイル・コードを自動生成する
+
+テストを作成したい関数で右クリックし、`Go: Generate Unit Tests For Function` を選択する。
+![](https://storage.googleapis.com/zenn-user-upload/0c4c581f63b8-20231210.png)
+
+すると、テストファイルとコードの骨組みが自動で生成される。
+
+```go: main_test.go
+func TestAdd(t *testing.T) {
+	type args struct {
+		x int
+		y int
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Add(tt.args.x, tt.args.y); got != tt.want {
+				t.Errorf("Add() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+```
+
+- `test` スライスにテストケースを記述していく
+- `name` : テストケースの名前
+- `args` : テスト対象の関数（`Add`）の引数
+- `want` : テストの期待値
 
 ## テストの実行
 
