@@ -29,3 +29,4 @@ chapters:
   - generics
   - io-reader
   - unit-test
+  - logger
