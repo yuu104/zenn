@@ -56,6 +56,13 @@ Go の `log` パッケージはシンプルで使いやすい。基本的な使�
    defer file.Close()
 
    logger := log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+   logger.Println("カスタムロガー")
+   ```
+
+   - `log.New` で作成したカスタムロガーを `Println` などで実行すると、`app.log` が生成され、ログが記録される
+
+   ```log: app.log
+   INFO: 2023/12/16 11:33:44 logger.go:26: カスタムロガー
    ```
 
 3. **ログレベル**:
