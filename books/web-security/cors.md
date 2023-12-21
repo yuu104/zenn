@@ -180,3 +180,46 @@ fetch("https://api.example.com/data", {
 ```
 
 ## 認証情報を含むリクエスト
+
+デフォルトでは xhr や fetch はクロスオリジンへのリクエストに cockie を送信しない。
+例えば、`a.com` という js のページを開いた状態で `b.com` へリクエストを送る際に b.com の Cookie も含めてリクエストを送りたいという場合、デフォルトでは異なるオリジンに対して Cookie は送信されない。
+オリジンをまたいだリクエストで Cookie を送りたい場合、
+Cookie の送受信を許可するために、クライアントサイド・サーバーサイドに実装が必要になる。
+
+### クライアントサイドの実装
+
+#### XHR を使う場合
+
+```js
+const xhr = new XMLHttpRequest();
+xhr.withCredentials = true; // ここを追加。
+```
+
+#### Fetch API を使う場合
+
+```js
+fetch("https://trusted-api.co.jp", {
+  mode: "cors",
+  credentials: "include", // ここを追加。
+});
+```
+
+#### axios を使う場合
+
+```js
+axios.get("https://trusted-api.co.jp", {
+  withCredentials: true,
+});
+
+axios.defaults.withCredentials = true; // global に設定してしまう場合
+```
+
+### サーバサイドの実装
+
+- レスポンスヘッダに `Access-Control-Allow-Credentials: true` をつける
+- 認証情報を含むリクエストを許可したい場合、`Access-Control-Allow-Origin` で `*` (ワイルドカード)を指定するのは NG
+- そのため、`Access-Control-Allow-Origin` は明示的に指定する
+
+## 参考リンク
+
+https://qiita.com/att55/items/2154a8aad8bf1409db2b#xhr-%E3%82%92%E4%BD%BF%E3%81%86%E5%A0%B4%E5%90%88
