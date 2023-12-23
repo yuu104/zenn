@@ -9,3 +9,5 @@ chapters:
   - active-and-passive-attacks
   - same-origin-policy
   - cors
+  - web-app-features-and-vulnerability-responses
+  - input-processing-and-security
