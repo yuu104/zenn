@@ -11,3 +11,4 @@ chapters:
   - cors
   - web-app-features-and-vulnerability-responses
   - input-processing-and-security
+  - xss
