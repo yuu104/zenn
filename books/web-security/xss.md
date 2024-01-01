@@ -2,6 +2,8 @@
 title: "XSS（クロスサイト・スクリプティング）"
 ---
 
+## 概要
+
 - **ユーザーが Web ページにアクセスすることで不正なスクリプトが実行されてしまう脆弱性または攻撃手法**
 - Web アプリケーションには外部からの入力などに応じて表示が変化する箇所がある
 - この部分の HTML 生成の実装に問題があると、XSS という脆弱性が生じる
@@ -83,7 +85,7 @@ title: "XSS（クロスサイト・スクリプティング）"
 </html>
 ```
 
-- 各 `<input />` の `valuse` 属性には、以下のようにユーザの入力が反映されている
+各 `<input />` の `valuse` 属性には、以下のようにユーザの入力が反映されている。
 
 ```php
 value="<?php echo @$_POST['name']; ?>"
@@ -94,10 +96,10 @@ value="<?php echo @$_POST['num']; ?>"
 ```
 
 - ユーザーがフォームに入力したデータが PHP の echo ステートメントを通じてそのまま HTML に出力されている
-- この実装において、ユーザーの入力が適切にサニタイズされていないため、XSS 攻撃が可能にな
+- この実装において、ユーザーの入力が適切にサニタイズされていないため、XSS 攻撃が可能になる
 
 - 以下の HTML は「〇〇市粗大ゴミ受付センター」サイトへの XSS 攻撃の罠サイト
-- この画面は JavaScript えお使用しない XSS の攻撃例を兼ねており、攻撃用 `form` の `submit` ボタンをリンクに見せかけるようスタイル指定している
+- この画面は JavaScript を使用しない XSS の攻撃例を兼ねており、攻撃用 `form` の `submit` ボタンをリンクに見せかけるようスタイル指定している
 
 ```html
 <html>
@@ -234,3 +236,131 @@ value="<?php echo @$_POST['num']; ?>"
 - 持続型 XSS は、Web メールや SNS（SocialNetworkingService）などが典型的な攻撃ターゲット
 - 持続型 XSS は罠サイトに利用者を誘導する手間がかからないことと、注意深い利用者でも被害にあう可能性が高いことが、攻撃者にとっての「メリット」になる
 - 持続型 XSS も、HTML を生成している箇所に原因があることには変わりない
+
+## 脆弱性が生まれる原因
+
+- XSS 脆弱性が生じる原因は、HTML 生成の際に、**メタ文字**を正しく扱っていないこと
+- これにより、開発者の意図しない形で HTML や JavaScript を注入・変形される現象が XSS
+
+:::details 　メタ文字とは？
+
+- HTML の文法上、特別な意味を持ち、HTML の解釈や表示に影響を与える文字列
+- メタ文字は、通常のテキストとして表示されるのではなく、HTML マークアップの一部として処理される
+
+#### HTML における主なメタ文字
+
+1. **`<` と `>`**
+   - HTML タグを定義するために使用される
+   - 例：`<div></div>`
+2. **`&`**
+   - HTML エンティティを始めるために使用される
+   - 例: `&nbsp;`（空白を表す）, `&lt;`（`<` を表す）
+3. **`"` と `'`**
+   - 属性値を囲むために使用される
+   - 例: `<a href="https://example.com">`, `<input type='text'>`
+
+:::
+
+- メタ文字の持つ特別な意味を打ち消し、文字そのものとして扱うためには、**エスケープ**という処理を行う
+- HTML のエスケープは、XSS 解消のためには非常に重要
+
+### HTML エスケープの概要
+
+- HTML で「`<`」という文字を表示させたい場合は、文字参照により「`&lt;`」と記述（エスケープ）する
+- それを怠り、「`<`」のまま HTML を生成すると、ブラウザは「`<`」をタグの開始と解釈してしまう
+- これを悪用する攻撃が XSS
+- HTML のデータは、構文上の場所に応じてエスケープすべきメタ文字も変化する
+
+以下の「要素内容」と属性値についてのエスケープ方法を説明する。
+
+![](https://storage.googleapis.com/zenn-user-upload/41bf1cfd40d6-20240101.png)
+
+それぞれ、パラメータが置かれた場所ごとのエスケープ方法は以下の通り。
+
+![](https://storage.googleapis.com/zenn-user-upload/b4bc016c7795-20240101.png)
+
+### 「要素内容」の XSS
+
+- XSS によるクッキー値の盗み出しを例にする
+- 以下は、検索画面の一部を抜き出したもの
+- このページはログイン後に使用できるもので、検索キーワードを表示している
+- 検索キーワードは、サイト URL のクエリパラメータに反映される
+- `$_GET['keyword']` は URL の `keyword` というクエリパラメータからデータを取得するコード
+
+```php: /43/43-001.php
+<?php
+  session_start();
+  // ログインチェック（略）
+?>
+<body>
+検索キーワード:<?php echo $_GET['keyword']; ?><br>
+以下略
+</body>
+```
+
+`http://example.jp/43/43001.php?keyword=Haskell` にアクセスした場合、画面は以下になる。
+
+![](https://storage.googleapis.com/zenn-user-upload/296094d870ff-20240101.png)
+
+次に、以下のようなキーワードを指定して攻撃を行う。
+
+```
+keyword=<script>alert(document.cookie)</script>
+```
+
+すると、画面は以下のようになる。
+
+![](https://storage.googleapis.com/zenn-user-upload/0f66028ba119-20240101.png)
+
+`<script>alert(document.cookie)</script>` の部分において、`<` や `>` のエスケープができていないため、XSS 攻撃が通用してしまう。
+
+### 引用符で囲まない属性値の XSS
+
+以下のように属性値が引用符で囲まれていないスクリプトは XSS 脆弱性が存在する。
+
+```php: /43/43-003.php
+<body>
+  <input type=text name=email value=<?php echo $_GET['p']; ?>>
+</body>
+```
+
+ここで、クエリパラメータの `p` に以下の値を与えた場合を考える。
+
+```
+p=1+onmouseover%3dalert(document.cookie)
+```
+
+URL 上の記号「`+`」はスペース、`%3d` は「`=`」を意味する。
+そのため、上記の `<input />` は以下のように展開される。
+
+```html
+<input type="text" name="mail" value="1" onmouseover="alert(document.cookie)" />
+```
+
+よって、`<input />` のテキストボックスにマウスカーソルを合わせると、JavaScript が実行される。
+
+![](https://storage.googleapis.com/zenn-user-upload/8a9ec3df55c9-20240101.png)
+
+### 引用符で囲った属性値の XSS
+
+以下のように属性値を引用符で囲っていても、「`"`」をエスケープしていないと XSS 攻撃が可能。
+
+```php: /43/43-004.php
+<body>
+  <input type="text" name="mail" value="<?php echo $_GET['p']; ?>">
+</body>
+```
+
+ここで、クエリパラメータ `p` に以下の値を与えた場合を考える。
+
+```
+p="+onmouseover%3d"alert(document.cookie)
+```
+
+`<input />` は以下のように展開される。
+
+```html
+<input type="text" name="mail" value="" onmouseover="alert(document.cookie)" />
+```
+
+## 対策
