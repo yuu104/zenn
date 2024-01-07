@@ -419,3 +419,320 @@ p="+onmouseover%3d"alert(document.cookie)
 - クッキーのセキュリティを強化するために使われる
 - この属性がクッキーに設定されていると、クッキーはクライアントサイドのスクリプト（例えば JavaScript）からアクセスできなくなる
 - サーバーサイドでクッキーを設定する際に、HttpOnly 属性を指定する
+
+## href 属性や src 属性が原因の XSS
+
+- `a` タグ の `href` 属性、`img` タグや `frame` タグ、`iframe` タグの `src` 属性などは、URL を属性値としている
+- URL を外部から変更できる場合、URL として **`javascript:JavaScript式`** という形式（javascript スキーム）で、JS を起動できる
+
+以下のスクリプトは、外部から受け取った URL を元にリンクを作成している。
+
+```php
+<body>
+   <a href="<?php　echo　htmlspecialchars($_GET['url']);?>">ブックマーク</a>
+</body>
+```
+
+攻撃例として、`url` パラメータに以下を指定する。
+
+```
+url=javascript:alert(document.cookie)
+```
+
+生成される HTML は以下のようになる。
+
+```html
+<body>
+  <a href="javascript:alert(document.cookie)">ブックマーク</a>
+</body>
+```
+
+`href` 属性には、javascript スキームによる JS 呼び出しが指定されている。
+`a` タグのリンクを踏むと、`alert(document.cookie)` が実行され、攻撃が成功する。
+
+![](https://storage.googleapis.com/zenn-user-upload/6a2c74dfa156-20240107.png)
+
+### 対策
+
+- URL として、以下のいずれかのみを許容するようにチェックする
+  - `http:` または `https:` で始まる絶対 URL
+  - 「`/`」で始まる相対 URL（絶対パス参照）
+- チェックが通った URL は、属性値として HTML エスケープする
+
+実装例は以下の通り。
+
+```typescript
+function isSafeUrl(url: string): boolean {
+  // URLがhttpまたはhttpsで始まるか、'/'で始まる相対URLの場合にtrueを返す
+  return /^(https?:\/\/|\/)/i.test(url);
+}
+
+// 外部からのURLを取得（実際のコードでは適切にURLを取得する）
+let externalUrl: string = "ここに外部からのURLを設定";
+
+// 安全なURLの場合のみエスケープして出力
+if (isSafeUrl(externalUrl)) {
+  document.body.innerHTML = `<a href="${encodeURI(
+    externalUrl
+  )}">ブックマーク</a>`;
+} else {
+  document.body.innerHTML = `<a href="#">無効なリンク</a>`;
+}
+```
+
+#### リンク先ドメイン名のチェック
+
+リンク先として任意のドメイン名の URL を指定できる場合、利用者が気づかないうちに罠サイトに誘導される可能性がある。
+外部ドメインに対するリンクが自明な場合以外は、以下のどちらかを実施すると良い。
+
+- リンク先 URL を検証して、URL が外部ドメインである場合はエラーにする
+- 外部ドメインへのリンクであることを利用者に注意喚起するためのクッションページを表示する
+
+## JavaScript の動的生成が原因の XSS 脆弱性
+
+### イベントハンドラの XSS
+
+```php
+<head>
+  <script>
+     function init(a) {} // ダミーの関数
+  </script>
+</head>
+<body onload="init(<?php echo htmlspecialchars($_GET['name'], ENT_QUOTES) ?>')">
+</body>
+```
+
+- `init(<?php echo htmlspecialchars($_GET['name'], ENT_QUOTES) ?>')` は JavaScript コンテキスト
+- `htmlspecialchars()` を使用してエスケープしているので一見良さそう
+- しかし、XSS 脆弱性がある
+
+`name` パラメータに以下を指定してみる。
+
+```
+name=');alert(document.cookie)//
+```
+
+この場合、以下の HTML が生成される。
+
+```html
+<body onload="init('&#039;);alert(document.cookie)//')"></body>
+```
+
+`onload` は、属性値として文字参照が解釈されるため、以下の JavaScript が実行される。
+
+```js
+init(’’);
+alert(document.cookie); //')
+```
+
+`')` の部分で `init` 関数が終了し、`alert(document.cookie)` が実行されてしまう。
+以降のコードは `//` によりコメントアウトされる。
+
+![](https://storage.googleapis.com/zenn-user-upload/fd774d0e692f-20240107.png)
+
+- 脆弱性が混入した原因は、**JavaScript の文字列リテラルのエスケープが抜けていたこと**
+- `name` パラメータ中の「`'`」が、データとしての文字「`'`」ではなく、JavaScript の文字列の終端に使用されてしまった
+
+#### 対策
+
+以下の手順を行う。
+
+1. データを JavaScript 文字列リテラルとしてエスケープする
+2. その結果を HTML エスケープする
+
+JavaScript の文字列リテラルのエスケープとして最低限必要な文字は以下の通り。
+
+| 文字 | エスケープ後 |
+| ---- | ------------ |
+| \    | \\\          |
+| '    | \'           |
+| ""   | \"           |
+| 改行 | \n           |
+
+よって、入力として「`<>'"\`」が与えられた場合、以下のエスケープが必要。
+
+| 文字   | エスケープ後 | HTML エスケープ後               |
+| ------ | ------------ | ------------------------------- |
+| <>'"\  | <>\\'\\"\\\  | \&lt;\&gt;\\&\#39;\\\&quot;\\\  |
+
+## <script> 要素が原因の XSS 脆弱性
+
+- `<script>` 要素内で JavaScript の一部を動的生成する場合の XSS 脆弱性
+- `<script>` 要素内はタグや文字参照を解釈しないので、HTML としてのエスケープは必要ない
+- よって、JavaScript の文字列リテラルとしてのエスケープを行う
+- しかし、それだけではダメ
+
+以下のスクリプトの場合を考える。
+
+```php
+<?php
+session_start();
+function escape_js($s) {
+   return mb_ereg_replace('([\\\\\'"])', '\\\1', $s);
+}
+?>
+<body>
+   <div id="name"></div>
+   <script>
+      var div = document.getElementById('name');
+      var txt = '<?php echo escape_js($_GET['name']); ?>';
+      div.textContent = txt + 'の文字数は' + txt.length + '文字です';
+   </script>
+</body>
+```
+
+`name` パラメータに `大谷san` を指定した場合は以下になる。
+
+![](https://storage.googleapis.com/zenn-user-upload/be30894d9dbb-20240107.png)
+
+- `escape_js()` は、「`\`」、「`'`」、「`"`」の前に、「`\`」を挿入することにより、入力データを JavaScript 文字列リテラルとしてエスケープしている
+- これで XSS 脆弱性を対策できたはず
+- しかし、入力値に「`</script>`」が含まれている場合、そこで JavaScript ソースの終端となる
+
+以下の場合を考える。
+
+```html
+<script>
+   foo('</script>');
+</script>
+```
+
+- 上記スクリプトには「`</script>`」が 2 箇所あるが、最初の `</script>` で `script` 要素は終わりになる
+- `script` 要素内の終端は、JavaScript としての文脈を一切考慮しない
+- よって、最初に「`</script>`」が出現した時点で `script` は終わる
+
+![](https://storage.googleapis.com/zenn-user-upload/bb5fa1c83ecb-20240107.png)
+
+これを悪用して、`name` パラメータに以下を指定することにより XSS 攻撃が可能になる。
+
+```
+name=</script><script>alert(document.cookie)//
+```
+
+上記パラメータの入力により、以下の HTML が生成される。
+
+```html
+<body>
+  <div id="name"></div>
+  <script>
+    var div = document.getElementById('name');
+    var txt = '
+  </script>
+  <script>
+    alert(document.cookie); //';div.textContent = txt + "の文字数は" + txt.length + "文字です";
+  </script>
+</body>
+```
+
+- HTML5 の規格では、`script` 要素内のデータには「`</script`」という文字の並びは出現できないことになっている
+- 文字参照も解釈されないので、文字参照を使って書くこともできない
+
+### 対策
+
+#### JSON エンコードの使用
+
+- **JSON エンコード**とは、データを JSON 形式の文字列に変換すつプロセス
+- JavaScript では、`JSON.stringify()` 関数を使用してオブジェクトを JSON 文字列に変換する
+- PHP では、`json_encode()` 関数を使用して値（配列やオブジェクトなど）を JSON 形式の文字列に変換する
+
+:::details PHP での例
+
+```php
+<?php
+session_start();
+?>
+<body>
+   <div id="name"></div>
+   <script>
+      var div = document.getElementById('name');
+      // JSONエンコードを用いてユーザー入力を安全に処理
+      var txt = <?php echo json_encode($_GET['name']); ?>;
+      div.textContent = txt + 'の文字数は' + txt.length + '文字です';
+   </script>
+</body>
+```
+
+`name` パラメータに以下を指定する
+
+```
+name=</script><script>alert(document.cookie)//
+```
+
+`json_encode` によりエンコードされた結果、`text` は以下のようになる。
+
+```js
+var txt = "\u003C/script\u003E\u003Cscript\u003Ealert(document.cookie)//";
+```
+
+これにより、XSS 攻撃を防げる。
+
+:::
+
+## JavaScript の文字列リテラルの動的生成の対策
+
+### 基本原理
+
+1. JavaScript の文法から、引用符（「`"`」または「`'`」）と「`\`」や改行をエスケープする
+2. イベントハンドラ中の場合は、(1)の結果を文字参照により HTML エスケープして、「`"`」で囲む
+3. `<script>` 要素の場合は、(1)の結果に「`</script`」という文字列が出現しないようにする
+
+- JavaScript のエスケープルールは複雑なため、対処漏れが生じやすく、脆弱性の温床になる
+- よって、JavaScript の動的生成は避けた方が良い
+- しかし、JavaScript に動的なパラメータを渡したいニーズは良くあるので、次の 2 種の対策方法がある
+
+### script 要素の外部でパラメータを定義して、JavaScript から参照する
+
+カスタムデータ属性を使用する。
+
+```html
+<div id="x1" data-foo="123">こんにちは</div>
+```
+
+`data-foo="123"` がカスタムデータ属性。
+これを取得するスクリプトは以下の通り。
+
+```js
+var div = document.getElementById("x1");
+var data = div.dataset.foo; // 123
+```
+
+先ほどの例で試してみる。
+
+```php
+<body>
+   <div id="name" data-name="<?php echo htmlspecialchars($_GET['name'], ENT_COMPAT, 'utf-8'); ?>"></div>
+   <script>
+      var div = document.getElementById('name');
+      var txt = div.dataset.name; // カスタムデータ属性の取得
+      div.textContent = txt + 'の文字数は' + txt.length + '文字です';
+   </script>
+</body>
+```
+
+上記スクリプトに対し、XSS 攻撃を行うと、`div` 要素の部分は以下となる。
+
+```html
+<div
+  id="name"
+  data-name="&lt;/script&gt;&lt;script&gt;alert(document.cookie)//"
+></div>
+```
+
+HTML エスケープ済みのものを JavaScript で使用するため、脆弱性がなくなる。
+
+## HTML タグや CSS の入力を許す場合の対策
+
+- ブログや SNS の開発には、利用者の入力に HTML タグや CSS の入力を許可したい場合がある
+- しかし、これらの入力を許可すると、XSS の危険性が高まる
+- HTML タグの入力を許す場合、`<script>` 要素やイベントハンドラによって開発者が意図しない JavaScript の実行が可能になる場合がある
+- CSS の「expressions」という機能により、JavaScript が起動できる
+
+### 対策方法
+
+- 入力された HTML を構文解析して、表示してよい要素のみを抽出する
+- しかし、HTML の構文は複雑であるため、この方式の実装は容易でない
+- よって、ライブラリを使用するのが望ましい
+
+## React で発生しうる XSS 脆弱性
+
+https://qiita.com/kazzzzzz/items/897f8ed89ca36a0734de
