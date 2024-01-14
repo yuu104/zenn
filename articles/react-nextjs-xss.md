@@ -31,7 +31,7 @@ export default function App() {
 ## `dangerouslySetInnerHTML` の使用による脆弱性の発生
 
 JSX では、`dangerouslySetInnerHTML` 属性を使用することで、エスケープを無効化し、HTML を直接挿入することが可能。
-よって、XSS を引き起こす可能性がある。
+よって、以下のような XSS を引き起こす可能性がある。
 
 #### `img` タグを使用して XSS 攻撃
 
@@ -105,7 +105,7 @@ export default function App() {
 ## javascript スキームによる脆弱性の発生
 
 - `a` タグ の `href` 属性、`img` タグや `frame` タグ、`iframe` タグの `src` 属性などは、URL を属性値としている
-- URL を外部から変更できる場合、URL として `javascript:JavaScript式` という形式（javascript スキーム）で、JS を起動できる
+- URL を外部から変更できる場合、URL として `javascript:JavaScript式` という形式（javascript スキーム）を指定することで、JS を起動できる
 
 ```tsx
 export default function App() {
