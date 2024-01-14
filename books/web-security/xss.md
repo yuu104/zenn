@@ -733,6 +733,6 @@ HTML エスケープ済みのものを JavaScript で使用するため、脆弱
 - しかし、HTML の構文は複雑であるため、この方式の実装は容易でない
 - よって、ライブラリを使用するのが望ましい
 
-## React で発生しうる XSS 脆弱性
+## React, Next.js で発生しうる XSS 脆弱性
 
-https://qiita.com/kazzzzzz/items/897f8ed89ca36a0734de
+https://zenn.dev/yuu104/articles/react-nextjs-xss
