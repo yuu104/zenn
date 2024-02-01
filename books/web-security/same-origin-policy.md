@@ -101,7 +101,7 @@ XSS 攻撃によるデータ漏洩を防ぐために重要。
 - XSS (Cross Site Scripting)
 - CSRF (Cross-Site Request Forgeries)
 
-## JavaScript 以外のクロスドメインアクセス
+## 同一オリジンポリシーに制限されないケース
 
 - JavaScript には同一オリジンポリシーによりクロスドメインアクセスが厳しく制限されている
 - JavaScript 以外のブラウザ機能で、以下のクロスドメインアクセスが許可されている
