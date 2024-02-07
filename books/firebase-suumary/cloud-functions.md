@@ -1,5 +1,5 @@
 ---
-title: "Cloud FUnctions"
+title: "Cloud Functions"
 ---
 
 ## 呼び出し可能関数（`functions.https.onCall`）
