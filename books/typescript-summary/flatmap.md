@@ -155,3 +155,29 @@ const array = nullableArray.flatMap((data) => {
 
 これだとそもそも array の型定義が `Array<string>` にはならないため、記述のミスに気づくことができる。
 また、加えて変数定義時に const `array: Array<string> = ...` と期待値を明記しておくとより記述ミスに気付きやすい。
+
+## `flatMap` 内で非同期処理を行う
+
+```ts
+type User = {
+  id: string;
+  name: string;
+};
+
+const getUserInfo = async (ownUserId: string): Promise<User[]> => {
+  const userInfo = await Promise.all(
+    userIds
+      .flatMap(async (userId) => {
+        if (userId === ownUserId) return [];
+        const userInfo = await fetchUserInfo(userId);
+        return userInfo;
+      })
+      .flat() // 最後に`flat()`する必要がある
+  );
+};
+
+const userInfo = await getUserInfo("id-1");
+
+// `flat()`しないと、`userInfo`の型は`{id: string; name: string:}[][]`
+// `flat()`すると、`userInfo`の型は`{id: string; name: string:}[]`
+```
