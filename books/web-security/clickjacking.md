@@ -115,6 +115,18 @@ CSP の `frame-ancestors` ディラクティブも `X-Frame-Options` と同じ�
 - `frameancestorshttps://*.site.example` のように `*` を使用して、文字列の部分一致を指定できる
 - `frameancestors 'self' https://*.site.exapmlehttps://example.com` のように複数のオリジンを指定できる
 
+## 脆弱性が生まれる原因
+
+- アプリケーションのバグが原因ではない
+- HTML の仕様を巧妙に悪用した攻撃
+
+## 保険的対策
+
+- **「重要な処理」の実行後に、登録済みメールアドレスに通知メールを送信する**
+- CSRF と同じ
+- これでクリックジャッキング攻撃を防ぐことはできない
+- しかし、万一クリックジャッキング攻撃を受けた際に利用者が早期に気づくことができ、被害を最小限にとどめることができる可能性がある
+
 ## まとめ
 
 ![](https://storage.googleapis.com/zenn-user-upload/d57e2460e551-20240210.png)
