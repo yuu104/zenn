@@ -366,7 +366,7 @@ props は以下の通り。
    - 並び替えるアイテムの ID 配列を与える
    - 型は `string[] | { id: string }[]`
    - `string[]` の場合は各要素が 識別子となり、`{ id: string }[]` の場合は各要素の `id` プロパティが識別子となる
-   - `items` に指定する識別子は後に使用する `useSortable` の引数に指定する `id` と一致させる必要がある
+   - **`items` に指定する識別子は後に使用する `useSortable` の引数に指定する `id` と一致させる必要がある**
 2. **`strategy`（Optional）**
    - アイテムを並び替える時のレイアウトと動作を定義する
    - D&D 操作におけるアイテムの移動方法を決定する
@@ -482,40 +482,42 @@ props は以下の通り。
 `handleDragEnd` は以下の通り。
 
 ```diff tsx
- const handleDragEnd = (e: DragEndEvent) => {
-   const { active, over } = e;
++  import { arrayMove } from "@dnd-kit/sortable";
 
-   if (!over) return;
+   const handleDragEnd = (e: DragEndEvent) => {
+     const { active, over } = e;
 
-   const draggedId = active.id as string;
-   const droppedId = over.id as string;
+     if (!over) return;
 
-+  if (draggedId.startsWith("member_") && droppedId.startsWith("member_")) {
-     setGroups((prev) => {
-       return prev.map((group) => {
-         const isDroppedSameGroup =
-           group.members.some((member) => member.name === draggedId) &&
-           droppedId === group.id;
-         if (isDroppedSameGroup) return group;
+     const draggedId = active.id as string;
+     const droppedId = over.id as string;
 
-         const newMembers = group.members.filter(
-           (member) => member.name !== draggedId
-         );
++    if (draggedId.startsWith("member_") && droppedId.startsWith("member_")) {
+       setGroups((prev) => {
+         return prev.map((group) => {
+           const isDroppedSameGroup =
+             group.members.some((member) => member.name === draggedId) &&
+             droppedId === group.id;
+           if (isDroppedSameGroup) return group;
 
-         if (droppedId === group.id) newMembers.push({ name: draggedId });
+           const newMembers = group.members.filter(
+             (member) => member.name !== draggedId
+           );
 
-         return { ...group, members: newMembers };
+           if (droppedId === group.id) newMembers.push({ name: draggedId });
+
+           return { ...group, members: newMembers };
+         });
        });
-     });
-+  } else if (draggedId.startsWith("group_") && droppedId.startsWith("group_")) {
-+    setGroups((prev) => {
-+      const prevIndex = prev.findIndex((group) => group.id === draggedId);
-+      const newIndex = prev.findIndex((group) => group.id === droppedId);
++    } else if (draggedId.startsWith("group_") && droppedId.startsWith("group_")) {
++      setGroups((prev) => {
++        const prevIndex = prev.findIndex((group) => group.id === draggedId);
++        const newIndex = prev.findIndex((group) => group.id === droppedId);
 +
-+      return arrayMove(prev, prevIndex, newIndex);
-+    });
-+  }
- };
++        return arrayMove(prev, prevIndex, newIndex);
++      });
++    }
+   };
 ```
 
 :::details arrayMove
@@ -670,6 +672,12 @@ const GroupItem = ({ group }: GroupItemProps) => {
 これでバグが消える。
 
 ![](https://storage.googleapis.com/zenn-user-upload/4669a01a7bab-20231214.gif)
+
+## グループ内のメンバーも並び替え可能にする
+
+以下のようにメンバー間の並び替えができるようにする。
+
+**gif 画像が入る**
 
 ## 参考リンク
 
