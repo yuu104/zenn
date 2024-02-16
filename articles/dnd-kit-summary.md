@@ -170,7 +170,7 @@ const GroupItem = ({ group }: GroupItemProps) => {
 
 `onDragEnd` はユーザがドラッグした要素を離したときに呼び出される。
 ドラッグ操作の最終的な結果を処理するために使用され、ドラッグされた要素の新しい位置や状態の更新などを行う。
-`onDragEnd` に渡されるイベントオブジェクトには、ドラッグ操作に関する以下の情報が含まれている。
+`onDragEnd` に渡されるイベントオブジェクト（`e: DragEndEvent`）には、ドラッグ操作に関する以下の情報が含まれている。
 
 1. **`active`**
    - ドラッグされていた要素に関する情報
@@ -211,9 +211,11 @@ const GroupItem = ({ group }: GroupItemProps) => {
 +      });
 +    };
 
-    return (
-      // 省略
-    );
+     return (
++      <DndContext onDragEnd={handleDragEnd}>
+         // 省略
+       </DndContext>
+     );
   };
 ```
 
@@ -365,18 +367,18 @@ props は以下の通り。
    - 型は `string[] | { id: string }[]`
    - `string[]` の場合は各要素が 識別子となり、`{ id: string }[]` の場合は各要素の `id` プロパティが識別子となる
    - `items` に指定する識別子は後に使用する `useSortable` の引数に指定する `id` と一致させる必要がある
-2. **`strategy`**（Optional）
+2. **`strategy`（Optional）**
    - アイテムを並び替える時のレイアウトと動作を定義する
    - D&D 操作におけるアイテムの移動方法を決定する
    - `rectSortingStrategy`: デフォルトの戦略。一般的なリストやグリッドに適している。仮想化リストには非対応。
    - `verticalListSortingStrategy`: 垂直リストに最適化。仮想化リストに対応。
    - `horizontalListSortingStrategy`: 水平リストに最適化。仮想化リストに対応。
    - `rectSwappingStrategy`: アイテムの位置を直接交換（スワップ）。特定のケースに適している。
-3. **`id`**（Optional）
+3. **`id`（Optional）**
    - `id` の指定がない場合は自動生成される
    - この prop は高度なユースケースのためのもの
 
-```tsx
+```diff tsx
 +  import {
 +    SortableContext,
 +    horizontalListSortingStrategy,
@@ -425,7 +427,10 @@ props は以下の通り。
 +     transition,
 +   };
 
-    // 省略
++   const { setNodeRef: setDroppableNodeRef } = useDroppable({
+      id: group.id,
+    });
+
 
     return (
 +     <div ref={setSortableNodeRef} style={style} className={styles.groupItem}>
@@ -547,7 +552,7 @@ _引用：https://docs.dndkit.com/presets/sortable_
 
 ### 原因
 
-原因は、`GroupItem` コンポーネントにおいて、 `useSortable` と `useDroppable` のドロップ領域が競合していることにある。
+`GroupItem` コンポーネントにおいて、 `useSortable` と `useDroppable` のドロップ領域が競合していることにある。
 
 ```tsx
 const GroupItem = ({ group }: GroupItemProps) => {
