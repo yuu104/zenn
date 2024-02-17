@@ -681,7 +681,7 @@ function Items() {
           <div key={field.id} className={styles.itemField}>
             <div>
               <label htmlFor={`items.${index}.name`}>商品名</label>
-              <input type="text" {...register(`items.${index}.name` as)} />
+              <input type="text" {...register(`items.${index}.name`)} />
             </div>
             <div>
               <label htmlFor={`items.${index}.price`}>単価</label>
@@ -848,7 +848,6 @@ function App() {
     // ここでデータをフェッチする
     const fetchData = { email: "sample@gmail.com", password: "password" }
 
-    // `formData`を更新して再レンダリングしても`defaultValues`の値は更新されず`undefiend`
     reset(fetchData);
   }, [reset]);
 
@@ -902,6 +901,10 @@ const emailField = watch("email");
 
 :::details Form
 :::
+
+## React Hook Form は非制御コンポーネントからどのように変更を検知しているのか？
+
+https://zenn.dev/counterworks/articles/react-hook-form-subscription
 
 ## 参考リンク
 
