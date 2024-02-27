@@ -906,6 +906,47 @@ const emailField = watch("email");
 
 https://zenn.dev/counterworks/articles/react-hook-form-subscription
 
+## `handleSubmit()` を直接呼び出したい時
+
+https://qiita.com/zksytmkn/items/ff3c454a905e81100ec6
+
+`handleSubmit` 関数の後に `()` を追加する必要がある。
+
+```tsx
+import React from "react";
+import { useForm } from "react-hook-form";
+
+function App() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+  const onSubmit = (data) => console.log(data);
+
+  // handleSubmitを直接onClickにバインドするための関数
+  const handleClick = () => {
+    handleSubmit(onSubmit)();
+  };
+
+  return (
+    <div>
+      <form>
+        {/* フォーム要素 */}
+        <input {...register("example", { required: true })} />
+        {errors.example && <span>This field is required</span>}
+      </form>
+      {/* フォーム外の送信ボタン */}
+      <button onClick={handleClick}>Submit</button>
+    </div>
+  );
+}
+```
+
+`handleSubmit` 関数は、内部でフォームのバリデーションやエラーハンドリングを行った後、指定されたコールバック関数を実行する関数を返す。
+よって、`handleSubmit` 関数を呼び出すと、新しい関数が返される。
+この返された関数を実行するためには、`()` を使用して呼び出す必要がある。
+
 ## 参考リンク
 
 https://reffect.co.jp/react/react-hook-form-ts/
