@@ -122,6 +122,11 @@ export default function App() {
 
 `<a href={link}>Reactの詳細ページ</a>` のリンクをクリックすると、`alert("XSS攻撃")` が実行されてしまう。
 
+:::message
+javascript スキームの問題は React 本体でも対策が進められている。
+React16.9 からはデベロッパーツールの Console パネルに警告文を表示するようになっている。（2022 年 12 月時点）
+:::
+
 ### 対策
 
 - http/https スキームの URL しか指定できないようにする
