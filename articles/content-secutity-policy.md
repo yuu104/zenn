@@ -1,5 +1,5 @@
 ---
-title: "CSP"
+title: "CSPのざっくり概要"
 emoji: "🦔"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [security, xss]
@@ -121,7 +121,16 @@ Content-Security-Policy: script-src 'self';
 Content-Security-Policy: defaultsrc 'self'; scriptsrc 'self' *.trusted.com
 ```
 
-### 代表的なディレクティブ
+## HTML の `<meta>` タグを使用して指定する
+
+- `<head>` セクションに `<meta>` タグを使用して、CSP を設定する
+- `<meta>` タグを使った方法は、サーバーの設定にアクセスできない場合や、特定のページにのみポリシーを適用したい場合に便利
+
+```html
+<meta http-equiv="Content-Security-Policy" content="script-src 'self'" />
+```
+
+## 代表的なディレクティブ
 
 CSP には以下のように様々なコンテンツを制御するためのディレクティブが用意されている。
 
@@ -149,7 +158,7 @@ Content-Security-Policy: default-src *.trusted.com
 https://qiita.com/yuria-n/items/c50a1bc0ba51f6e33215
 https://www.proactivedefense.jp/blog/blog-vulnerability-assessment/post-2179#index_id1
 
-### ソースのキーワード
+## ソースのキーワード
 
 `self` のように、ソースに指定できる特別な意味を持つキーワードは以下の通り。
 
@@ -184,7 +193,7 @@ Content-Security-Policy: script-src 'self' 'unsafe-inline' *.trusted.com
 - しかし、`unsafe-inline` は非推奨
 - 安全にインラインスクリプトやインラインスタイルを許可するためには、**nonce-source** や **hash-source** と呼ばれるソースを利用する
 
-#### none-source
+### none-source
 
 - none-source は、`<script>` 要素に指定したランダムなトークンが CSP ヘッダのソースに指定されているトークンと一致しなければエラーにする機能
 - 指定するトークンは固定値ではなく、リクエストごとにトークンを変更して、攻撃者が推測できないようにする必要がある
@@ -210,11 +219,11 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ=='
 - `nonce-source` を利用した場合は以下のように JavaScript ファイルの実行も制限することができる
 
 ```html
-<!nonceが付与されているため実行されるJavaScriptファイル>
+<!-- nonceが付与されているため実行されるJavaScriptファイル -->
 <script src=./allowed.jsnonce="tXCHNF14TxHbBvCj3G0WmQ=="></script>
 <script src=https://crossorigin.example/allowed.jsnonce="tXCHNF14TxHbBvCj3G0WmQ=="></script>
 
-<!nonceが付与されていないため実行されないJavaScriptファイル>
+<!-- nonceが付与されていないため実行されないJavaScriptファイル -->
 <script src=./notallowed.js></script>
 ```
 
@@ -227,16 +236,85 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ=='
 <button id="btn" onclick="alert('クリックされました')">ClickMe!</button>
 ```
 
-#### hash-source
+### hash-source
 
-## HTML の `<meta>` タグを使用して指定する
+- nonce-source と同じように、トークンを指定してインラインスクリプトの実行を許可する
+- **CSP ヘッダに JavaScript や CSS のコードのハッシュ値を指定する**
+- HTML、CSS、JavaScript のみで構成されるサーバを持たない静的サイトの場合、リクエストごとに nonce-source のトークン値を生成することはできないが、hash-source であれば可能
 
-- `<head>` セクションに `<meta>` タグを使用して、CSP を設定する
-- `<meta>` タグを使った方法は、サーバーの設定にアクセスできない場合や、特定のページにのみポリシーを適用したい場合に便利
+例えば、以下のようなインラインスクリプトがある。
 
 ```html
-<meta http-equiv="Content-Security-Policy" content="script-src 'self'" />
+<script>
+  alert(1);
+</script>
 ```
+
+この `alert(1)` を SHA256 で計算し、Base64 でエンコードすると以下の値になる。
+
+```
+5jFwrAK0UV47oFbVg/iCCBbxD8X1w+QvoOUepu4C2YA=
+```
+
+この値を CSP ヘッダに設定する。
+
+```http
+Content-Security-Policy: script-src 'sha256-5jFwrAK0UV47oFbVg/iCCBbxD8X1w+QvoOUepu4C2YA='
+```
+
+- `<ハッシュアルゴリズム>-<Base64のハッシュ値>` の形で指定する
+- SHA256 以外にも、SHA384 や SHA512 を指定できる
+- インラインスクリプトの内容が 1 文字でも異なれば、ハッシュ値は全く違う値になる
+- よって、仮にスクリプトが改ざんされた場合は、改ざんされたスクリプトのハッシュ値と CSP ヘッダに指定したハッシュ値は一致しない
+- ハッシュ値が一致しなければそのスクリプトは実行されないため、hash-source のトークンは常に同じ値でも問題ない
+- **HTML を動的に変更できない場合は、hash-source を利用する**
+
+### strict-dynamic
+
+nonce-source や hash-source により許可された JavaScript コード内でも、以下のような動的な `<script>` 要素の生成は禁止されている。
+
+```html
+<script nonce="tXCHNF14TxHbBvCj3G0WmQ==">
+  const s = document.createElement("script");
+  s.src = "https://cross-origin.example/main.js";
+  document.body.appendChild(s);
+</script>
+```
+
+`<script>` 要素を動的に生成したいときは、**`script-dynamic`** ソースを使用する。
+
+```http
+Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ==' 'strict-dynamic'
+```
+
+しかし、`strict-dynamic` を指定しても DOM-based XSS のシンクである `innerHTML` や `document.write` は機能しないように制限されている。
+
+```html
+<script nonce="tXCHNF14TxHbBvCj3G0WmQ==">
+  const s = `<script src="https://cross-origin.example/main.js"></script>`;
+  // `innerHTML` は禁止されているため、`script` 要素はHTMLへ挿入されない
+  document.querySelector("#inserted-script").innerHTML = s;
+</script>
+```
+
+### object-src/base-uri
+
+- `object-src` は Flash などのプラグインに対する制限をするディテクティブ
+- `object-src: none` とすることで、Flash などのプラグインんを悪用した攻撃を防ぐ
+
+- `base-uri` は `<base>` 要素に対する制限を行うディレクティブ
+- `<base>` 要素はリンクやリソースの URL の基準となる URL を設定する HTML 要素
+
+```html
+<!-- 基準となるURLをsite.exampleに設定 -->
+<base href="https://site.example/" />
+
+<!-- リンク先はhttps://site.example/home -->
+<a href="/home">Home</a>
+```
+
+- 攻撃者にって `<base>` を挿入されてしまった場合、相対パスで指定している URL を攻撃者が用意した罠サイトへの URL に変えられてしまう可能性がある
+- そのため、`base-uri 'none'` を指定して `<base>` の使用を防ぐ
 
 注意点として、**`<meta>` タグを使用して CSP を指定する場合、全てのディレクティブが使用できるわけではない**。
 `frame-ancestors` や `report-uri` ディレクティブは使用できない。
@@ -254,8 +332,11 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ=='
 - そのため、適用前に**ブロックしないテスト専用の CSP**がある
 - `Content-Security-Policy-Report-Only` ヘッダーは CSP の一種
 - ポリシー違反があった場合に、実際にブロックはせず、違反を報告してくれる
+- 報告レポートは JSON 形式で送信される
 - 既存サイトの CSP を設定・更新する際に、ポリシーの影響をモニタリングし、調整するために使える
 - **`Content-Security-Policy-Report-Only` ヘッダは `<meta>` タグによる設定ができない**
+
+![](https://storage.googleapis.com/zenn-user-upload/1d7428473706-20240317.png)
 
 ### 基本的な概念
 
@@ -277,18 +358,63 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ=='
   ```
 
 - 例えば、以下のように設定することができる：
+
   ```http
-  Content-Security-Policy-Report-Only: default-src 'self'; report-uri /csp-report-endpoint;
+  Content-Security-Policy-Report-Only: script-src 'nonce-1LLE/F9R1nlVvTsUBIpzkA==' 'strict-dynamic' report-uri /csp-report
   ```
-  この設定では、自ドメイン (`'self'`) からのリソースのみを許可し、ポリシー違反が発生した場合は `/csp-report-endpoint` にレポートを送信する
 
-### 注意点
+  - この設定では、自ドメイン (`'self'`) からのリソースのみを許可し、ポリシー違反が発生した場合は `/csp-report` にレポートを送信する
+  - `report-uri`はレポート送信先リクエストのエンドポイント
+  - 相対パス・絶対パスのどちらでも指定可能
+  - CSP 違反があった場合、指定したエンドポイントに対して POST リクエストする
+  - リクエストボディにはレポート内容を表す JSON データが付与される
+  - 開発者はレポートを受け取るための POST API を用意しておく必要がある
 
-- **レポートの収集**:
-  レポート URI は、CSP 違反レポートを受け取るエンドポイントを指定する必要がある。このエンドポイントは違反レポートの収集と分析を行うための仕組みを備えている必要がある。
+- CSP 違反となった場合、以下のような JSON 形式のレポートが POST メソッドで指定の URL へ送信される
 
-- **本番環境での使用**:
-  テストやデバッグフェーズ後、問題が解決されたと確信したら、`Content-Security-Policy` ヘッダーに切り替えて、ポリシーを強制することが推奨される。
+  ```json
+  {
+    "cspreport": {
+      "documenturi": "https://site.example/csp",
+      "referrer": "",
+      "violated-directive": "script-src-elem",
+      "effective-directive": "script-src-elem",
+      "original-policy": "script-src'nonce-random'report-uri/csp-report",
+      "disposition": "enforce",
+      "blockeduri": "inline",
+      "line-number": 12,
+      "source-file": "https://site.example/csp",
+      "status-code": 200,
+      "script-sample": ""
+    }
+  }
+  ```
+
+  - 上記は `nonce` を指定していない `<script>` 要素があった場合のレポート
+  - `violated-directive` は CSP 違反の原因となるディレクティブを指す
+
+- 実際に活用する際は、サーバへ送信された JSON データを DB などに保存しておき、Readash などを使用して開発者がレポート内容を検索しやすくしておく
+- その際、User-Agent などヘッダの情報も保存しておくと、ユーザが使用したブラウザの情報などを確認でき、エラーの調査に役立つ
+
+- また、`Content-Security-Policy` ヘッダで 実際の CSP を適用しながらレポートのを送信することもできる
+- レポートの送信には `report-uri` ディレクティブを使用する
+
+```http
+Content-Security: script-src 'nonce-1LLE/F9R1nlVvTsUBIpzkA==' 'strict-dynamic' report-uri /csp-report
+```
+
+### report-uri は現在非推奨
+
+- report-uri は現在非推奨となっている
+- 代替のディレクティブとして、`report-to` が存在する
+- しかし、`report-to` は非対応のブラウザも存在する
+- そのため、現在のブラウザとの互換性を保ちつつ、ブラウザが `report-to` に対応したときに前方互換性を持たせられるよう、`report-uri` と `report-to` の両方を指定できるようになっている
+
+  ```http
+  Content-Security-Policy: …; report-uri https://endpoint.com; report-to groupname
+  ```
+
+- `report-to` に対応しているブラウザでは、`report-uri` は無視される
 
 ## CSP のデメリット
 
@@ -296,3 +422,13 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ=='
 - それが故に、メンテナンスが大変
 - 読み込みを許可するリソースのリストアップが大変
 - 少し設定を間違えると、サイトが機能しなくなる恐れがある
+
+## まとめ
+
+- CSP は XSS 対策として強力
+- しかし、既存システムの本来の動作を意図せず破壊してしまう可能性がある
+- Report-Only モードで事前に監視し、CSP 導入後もレポートを送信して監視し続けることが大切
+
+## 参考文献
+
+https://www.shoeisha.co.jp/book/detail/9784798169477
