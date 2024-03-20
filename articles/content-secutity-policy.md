@@ -483,6 +483,18 @@ Content-Security-Policy: require-trusted-types-for 'script'; trusted-types defau
 
 :::
 
+### 全てのポリシーを許可する
+
+- 通常、`trusted-types` ディレクティブに指定していないポリシーが存在する場合はエラーになる
+- しかし、CSP ヘッダに `trusted-types` を指定しなければ、全てのポリシーを許可できる
+
+```http
+Content-Security-Policy: require-trusted-types-for 'script'
+```
+
+- ただし、XSS により`<meta>` 要素で勝手にポリシーを作成される危険性がある
+- よって、できるだけ `trusted-types` を指定した方が良い
+
 ## `<meta>` タグとレスポンスヘッダーのどちらで CSP 設定すべきか？
 
 - 基本的には Web サーバのレスポンスヘッダーで設定すれば良いと思う
