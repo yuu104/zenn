@@ -120,3 +120,110 @@ docRef.set(
 - データの読み書き操作（`set()`, `get()`, `update()`, `delete()`）が非同期処理として実行され、Firestore へのリクエストを発生させる
 - `doc()` の段階でドキュメント ID が自動生成され、クライアント側で保持される
 - データベースに実際のドキュメントが作成されるのは、その後の `set()` や `add()` などの操作を通じてのみ
+
+## `onSnapshot` メソッドを使用してデータ更新を監視する
+
+- `onSnapshot` は Firestore のドキュメントやコレクションの変更をリアルタイムで監視
+- 変更があるたびに指定したコールバック関数が自動的に実行される
+
+### 主な使用ケース
+
+- ユーザーインターフェースのリアルタイム更新
+- データベースの変更を即時反映させるアプリケーション機能
+
+### ドキュメント監視
+
+- 特定のドキュメントの変更を監視
+- ドキュメントが更新されると、登録されたリスナー関数が呼び出される
+
+```javascript
+const docRef = db.collection("collectionName").doc("docId");
+const unsubscribe = docRef.onSnapshot((docSnapshot) => {
+  if (docSnapshot.exists) {
+    console.log("Current data:", docSnapshot.data());
+  } else {
+    console.log("Document does not exist");
+  }
+});
+```
+
+### コレクション監視
+
+- コレクション内のドキュメントの追加、更新、削除を監視
+- 各変更タイプ（`added`, `modified`, `removed`）に対する処理を実装可能
+
+```javascript
+const collectionRef = db.collection("collectionName");
+const unsubscribe = collectionRef.onSnapshot((snapshot) => {
+  snapshot.docChanges().forEach((change) => {
+    if (change.type === "added") {
+      console.log("New doc:", change.doc.data());
+    } else if (change.type === "modified") {
+      console.log("Modified doc:", change.doc.data());
+    } else if (change.type === "removed") {
+      console.log("Removed doc:", change.doc.data());
+    }
+  });
+});
+```
+
+### リスナーの解除
+
+- 監視が不要になった場合、`onSnapshot` によって返される関数を呼び出してリスナーを解除
+- メモリリーク防止とコスト管理のため、不要になったリスナーは適切に解除することが重要
+
+```javascript
+// リスナー解除
+unsubscribe();
+```
+
+### 監視の停止タイミング
+
+- コンポーネントのアンマウント時（React など）
+- ページ遷移やアプリの状態変更時
+- 監視対象のデータが不要になった時
+
+### 実装のベストプラクティス
+
+- React での使用例
+- `useEffect` フック内でリスナーを登録し、クリーンアップ関数で解除
+
+```javascript
+useEffect(() => {
+  const unsubscribe = db.collection("myCollection").onSnapshot((snapshot) => {
+    // 変更に対する処理
+  });
+
+  // コンポーネントのクリーンアップ時にリスナー解除
+  return () => unsubscribe();
+}, []);
+```
+
+リスナーがアクティブな状態が続くと予期せぬ読み取り回数の増加やコスト増加のリスクがあるため、リスナーのライフサイクル管理に注意を払う。
+
+### エラーハンドリング
+
+- `onSnapshot` の第二引数にエラーハンドリング関数を指定可能
+- 監視中にエラーが発生した場合、指定したエラーハンドリング関数が呼び出される
+- リスナーはエラー発生後もアクティブな状態が続くため、不要になったリスナーは明示的に解除する必要がある
+
+#### 使用例
+
+```js
+const docRef = db.collection("collectionName").doc("docId");
+const unsubscribe = docRef.onSnapshot(
+  (docSnapshot) => {
+    // データ更新時の処理
+  },
+  (error) => {
+    console.error("Error listening to document:", error);
+    unsubscribe(); // エラー時にリスナーを解除
+  }
+);
+```
+
+#### 注意点
+
+- エラーが発生してもリスナーは自動的には停止しないため、不要になったリスナーは適切に解除することが重要
+- エラーハンドリングは、ユーザーに適切なフィードバックを提供し、アプリケーションの挙動をコントロールするために使用される
+- エラーの種類に応じて、リスナーの解除、再試行の提案、または適切なエラーメッセージの表示など、異なる対応を検討する
