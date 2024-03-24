@@ -19,14 +19,14 @@ FROM table_name;
 
 具体的な`Customers`テーブルを用意し、`DISTINCT`相当の操作を実行した結果を以下に示す。
 
-| CustomerID | Name    | Country | City          |
-| ---------- | ------- | ------- | ------------- |
-| 1          | Alice   | USA     | New York      |
-| 2          | Bob     | Canada  | Toronto       |
-| 3          | Charlie | USA     | San Francisco |
-| 4          | David   | USA     | New York      |
-| 5          | Eve     | Canada  | Vancouver     |
-| 6          | Frank   | Canada  | Toronto       |
+| CustomerID | Name    | Country | City          | Age |
+| ---------- | ------- | ------- | ------------- | --- |
+| 1          | Alice   | USA     | New York      | 12  |
+| 2          | Bob     | Canada  | Toronto       | 23  |
+| 3          | Charlie | USA     | San Francisco | 50  |
+| 4          | David   | USA     | New York      | 32  |
+| 5          | Eve     | Canada  | Vancouver     | 8   |
+| 6          | Frank   | Canada  | Toronto       | 63  |
 
 ### `Country`カラムの一意な値を出力
 
@@ -81,4 +81,18 @@ SELECT count(DISTINCT Country) FROM Customers;
 
 ```sql
 SELECT DISTINCT Country FROM Customers;
+```
+
+`GROUP BY` で以下のように置き換え可能
+
+```sql
+SELECT  Country FROM Customers GROUP BY Country;
+```
+
+しかし、`GROUP BY` を使用した集計を、`DISTINCT` で置き換えることはできない。
+
+```sql
+SELECT Country, sum(Age)
+FROM Customers
+GROUP BY Country;
 ```
