@@ -1,0 +1,18 @@
+title: "SQL"
+summary: ""
+topics: [sql]
+published: false
+price: 0 # 有料の場合200〜5000
+# 本に含めるチャプターを順番に並べましょう
+chapters:
+  - select
+  - where
+  - logical-operator
+  - between
+  - like
+  - length
+  - order-by
+  - group-by
+  - having
+  - join
+  - distinct
