@@ -1,5 +1,5 @@
 ---
-title: "SUBSTRING"
+title: "SUBSTRING（SUBSTR）"
 ---
 
 対象の文字列から「開始位置」と「文字数」を指定して一部を切り出すことができる関数。
@@ -9,6 +9,14 @@ title: "SUBSTRING"
 ```sql
 SELECT SUBSTRING(column_name, 開始位置, 文字数) FROM table_name;
 ```
+
+または、
+
+```sql
+SELECT SUBSTR(column_name, 開始位置, 文字数) FROM table_name;
+```
+
+DBMS によっては、`SUBSTR` と記述する場合がある。
 
 - `開始位置` は整数を指定する
 - 負の値でも良いが、DBMS によっては非対応の場合もある
