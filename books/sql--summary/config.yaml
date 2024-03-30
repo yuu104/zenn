@@ -18,3 +18,7 @@ chapters:
   - distinct
   - substring
   - raund
+  - regular-expression
+  - case
+  - in
+  - limit
