@@ -551,7 +551,7 @@ Content-Security-Policy: require-trusted-types-for 'script'
 - 例えば、以下のように設定することができる：
 
   ```http
-  Content-Security-Policy-Report-Only: script-src 'nonce-1LLE/F9R1nlVvTsUBIpzkA==' 'strict-dynamic' report-uri /csp-report
+  Content-Security-Policy-Report-Only: script-src 'self' report-uri /csp-report
   ```
 
   - この設定では、自ドメイン (`'self'`) からのリソースのみを許可し、ポリシー違反が発生した場合は `/csp-report` にレポートを送信する
@@ -588,11 +588,6 @@ Content-Security-Policy: require-trusted-types-for 'script'
 - その際、User-Agent などヘッダの情報も保存しておくと、ユーザが使用したブラウザの情報などを確認でき、エラーの調査に役立つ
 
 - また、`Content-Security-Policy` ヘッダで 実際の CSP を適用しながらレポートのを送信することもできる
-- レポートの送信には `report-uri` ディレクティブを使用する
-
-```http
-Content-Security: script-src 'nonce-1LLE/F9R1nlVvTsUBIpzkA==' 'strict-dynamic' report-uri /csp-report
-```
 
 ### report-uri は現在非推奨
 
