@@ -8,7 +8,8 @@ published: false
 
 ## CSP とは
 
-- ブラウザに対して、どのような外部リソースがウェブページで許可されるかを指示するための仕組みで、**ブラウザ標準の機能**
+- ブラウザに対して、どのような外部リソースがウェブページで許可されるかを指示するための仕組み
+- **ブラウザ標準の機能**
 - CSP を用いることで、ブラウザが読み込み可能なリソース（JavaScript, CSS, Img など）をホワイトリストで制限することができる
 - これにより、悪意あるリソースの読み込みを防ぐことができる
 
@@ -17,7 +18,7 @@ CSP を設定するためには以下の 2 通りがある。
 - Web サーバのレスポンスヘッダーに `Content-Security-Policy` を含ませる
 - HTML の `<meta>` タグを使用して指定する
 
-Web サーバのレスポンスヘッダーに含めてポリシーを定義するのがメジャー？
+恐らく Web サーバのレスポンスヘッダーに含めてポリシーを定義するのがメジャー？
 
 ## Web サーバのレスポンスヘッダーに `Content-Security-Policy` を設定
 
@@ -154,10 +155,6 @@ CSP には以下のように様々なコンテンツを制御するためのデ�
 Content-Security-Policy: default-src *.trusted.com
 ```
 
-他のディレクティブに関しては、下記参照。
-https://qiita.com/yuria-n/items/c50a1bc0ba51f6e33215
-https://www.proactivedefense.jp/blog/blog-vulnerability-assessment/post-2179#index_id1
-
 ## ソースのキーワード
 
 `self` のように、ソースに指定できる特別な意味を持つキーワードは以下の通り。
@@ -172,7 +169,25 @@ https://www.proactivedefense.jp/blog/blog-vulnerability-assessment/post-2179#ind
 
 - 明示的に `unsafe-inline` が指定されていないページでは、HTML の `<script>` 要素内のインラインスクリプトやインラインのイベントハンドラ、`<style>` 要素や `style` 属性を使用したスタイルは実行されない
 
-![](https://storage.googleapis.com/zenn-user-upload/0146a70584dd-20240314.png)
+```html
+<head>
+  <style>
+    /* このスタイルは適用されない */
+    body {
+      background-color: gray;
+    }
+  </style>
+  <body>
+    <input id="num" type="number" value="0" />
+    <div id="result"></div>
+  </body>
+
+  <script>
+    // このインラインスクリプトは実行されない
+    console.log("inline script");
+  </script>
+</head>
+```
 
 - `unsafe-inline` や `unsafe-hashes` のキーワードを使用すれば、それらのインラインスクリプトやインラインスタイルの実行を許可できる
 - しかし、`unsafe-xxx` のソースは安全ではないため、XSS を発生させる恐れがある
@@ -185,7 +200,7 @@ https://www.proactivedefense.jp/blog/blog-vulnerability-assessment/post-2179#ind
 Content-Security-Policy: script-src 'self' 'unsafe-inline' *.trusted.com
 ```
 
-上記のようなソースを組み合わせながら、最初は `unsafe-inline` などを使用して緩いポリシーから運用をはじめ、徐々に厳しいポリシーへ移行していくこともできる。
+上記のようなソースを組み合わせながら、最初は `unsafe-inline` などを使用して緩いポリシーから運用をはじめ、徐々に厳しいポリシーへ移行していくことも可能。
 
 ## Strict CSP
 
@@ -239,7 +254,7 @@ Content-Security-Policy: script-src 'nonce-tXCHNF14TxHbBvCj3G0WmQ=='
 ### hash-source
 
 - nonce-source と同じように、トークンを指定してインラインスクリプトの実行を許可する
-- **CSP ヘッダに JavaScript や CSS のコードのハッシュ値を指定する**
+- トークンには、**JavaScript や CSS のコードのハッシュ値**を利用する
 - HTML、CSS、JavaScript のみで構成されるサーバを持たない静的サイトの場合、リクエストごとに nonce-source のトークン値を生成することはできないが、hash-source であれば可能
 
 例えば、以下のようなインラインスクリプトがある。
@@ -340,7 +355,7 @@ Strict CSP は強力な XSS 対策であるが、開発者の実装次第で DOM
 - DOM-based XSS は文字列をそのまま HTML へ反映してしまうことが原因で発生する
 - 今回だと、`location.hash.slice(1)` で取得した文字列をそのまま使用していることが原因
 
-**Trusted Types** という機能を使用することで、 DOM のプロパティなどが**任意の文字列を受け取ることを禁止**し、特定の関数を通過した**検証済みの文字列のみを許容**させることができる。
+Trusted Types という機能を使用することで、 DOM のプロパティなどが**任意の文字列を受け取ることを禁止**し、特定の関数を通過した**検証済みの文字列のみを許容**させることができる。
 
 ### Trusted Types の有効化
 
@@ -465,7 +480,7 @@ trustedTypes.createPolicy("default", {
   createHTML: (unsafeHTML) => DOMPufify.sanitize(unsafeHTML),
 });
 
-// デフォルトポリsーによって自動的に`TrustedHTML`へ変換されて代入される
+// デフォルトポリシーによって自動的に`TrustedHTML`へ変換されて代入される
 el.innerHTML = decodeURIComponent(location.hash.slice(1));
 ```
 
