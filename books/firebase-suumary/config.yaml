@@ -11,3 +11,4 @@ chapters:
   - firestore-security-rule
   - cloud-functions
   - cloud-storage-for-firebase
+  - firebase-admin
