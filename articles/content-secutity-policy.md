@@ -3,7 +3,7 @@ title: "CSPのざっくり概要"
 emoji: "🦔"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [security, xss]
-published: false
+published: true
 ---
 
 ## CSP とは
@@ -527,8 +527,6 @@ Content-Security-Policy: require-trusted-types-for 'script'
 - 既存サイトの CSP を設定・更新する際に、ポリシーの影響をモニタリングし、調整するために使える
 - **`Content-Security-Policy-Report-Only` ヘッダは `<meta>` タグによる設定ができない**
 
-![](https://storage.googleapis.com/zenn-user-upload/1d7428473706-20240317.png)
-
 ### 基本的な概念
 
 - **レポートモード**:
@@ -618,3 +616,5 @@ Content-Security-Policy: require-trusted-types-for 'script'
 ## 参考文献
 
 https://www.shoeisha.co.jp/book/detail/9784798169477
+
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy-Report-Only
