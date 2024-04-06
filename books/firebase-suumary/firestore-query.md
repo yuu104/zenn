@@ -1,6 +1,8 @@
 ---
-title: "Firestoreにおけるクエリ操作ガイド"
+title: "Firestoreにおけるクエリ操作"
 ---
+
+https://zenn.dev/tentel/articles/ea7d5c03e68e6d142d98
 
 ## Firestore SDK の初期化
 
@@ -227,6 +229,59 @@ const unsubscribe = docRef.onSnapshot(
 - エラーが発生してもリスナーは自動的には停止しないため、不要になったリスナーは適切に解除することが重要
 - エラーハンドリングは、ユーザーに適切なフィードバックを提供し、アプリケーションの挙動をコントロールするために使用される
 - エラーの種類に応じて、リスナーの解除、再試行の提案、または適切なエラーメッセージの表示など、異なる対応を検討する
+
+## Timestamp 型の扱い方
+
+### タイムスタンプの作成
+
+- Firestore の`Timestamp`クラスを使用し、現在の日時または特定の日時のタイムスタンプを作成できる
+  - 現在の日時でタイムスタンプを作成する場合
+    ```javascript
+    const { Timestamp } = require("firebase/firestore");
+    const now = Timestamp.now();
+    ```
+  - 特定の日時でタイムスタンプを作成する場合（例：2020 年 1 月 1 日）
+    ```javascript
+    const specificDate = new Timestamp.fromDate(new Date("2020-01-01"));
+    ```
+
+### ドキュメントにタイムスタンプを保存
+
+- Firestore のドキュメントにタイムスタンプを保存する際は、`set`や`update`メソッドを利用
+  ```javascript
+  const { doc, setDoc } = require("firebase/firestore");
+  const docRef = doc(db, "collectionName", "documentId");
+  await setDoc(docRef, { createdAt: Timestamp.now() });
+  ```
+
+### タイムスタンプの読み込み
+
+- Firestore からドキュメントを読み込み、タイムスタンプ型のデータを取得することが可能
+
+  ```javascript
+  const { doc, getDoc } = require("firebase/firestore");
+  const docRef = doc(db, "collectionName", "documentId");
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    console.log("Document data:", docSnap.data());
+    const timestamp = docSnap.data().createdAt;
+    console.log("Timestamp:", timestamp.toDate());
+  } else {
+    console.log("No such document!");
+  }
+  ```
+
+### タイムスタンプの操作
+
+- Firestore のタイムスタンプには、`toDate()`メソッドを利用し JavaScript の`Date`オブジェクトに変換する機能がある
+- これを通じて日時の操作が容易になる
+
+```javascript
+const timestamp = Timestamp.now();
+const date = timestamp.toDate();
+console.log(date.toString());
+```
 
 ## Typescript による型安全
 
