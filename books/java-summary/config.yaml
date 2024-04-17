@@ -10,3 +10,5 @@ chapters:
   - entry-point
   - comments
   - variable-and-constant-definitions-and-types
+  - operator
+  - type-conversion
