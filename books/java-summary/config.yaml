@@ -12,3 +12,6 @@ chapters:
   - variable-and-constant-definitions-and-types
   - operator
   - type-conversion
+  - arrays-and-reference-types
+  - command-line-argument
+  - string-type
