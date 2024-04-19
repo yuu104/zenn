@@ -88,5 +88,47 @@ System.out.println(isSameName); // false
 
 ### 文字列比較のベストプラクティス
 
-宣言方法の違いにより、文字列が同じでも `==` では同じと判断される時と異なると判断される時がある。
-よって、Java で文字列の比較を行うときは **`equals()` メソッドを使う**。
+Java で文字列の比較を行うときは **`equals()` メソッドを使う**。
+なぜ `==` ではダメなのか？
+
+```java: == が true になるケース
+String str = "hoge";
+String str_2 = "hoge";
+//このif文の条件は`true`だが、それは値が同じだからではなく参照先(アドレス値)が同じだから。
+if (str == str_2){
+    System.out.println("値は同じです");
+} else {
+    System.out.println("値は違います");
+}
+
+```
+
+- 上記コードの `str` と `str_2` は値が同じである
+- しかし、値の一致と `==` の結果は関係ない
+- `==` は参照先アドレスを比較している
+- 今回、文字リテラルによる宣言を行なっているため、`str` と `str_2` の参照先アドレスは同じ
+- よって、比較結果が `true` になる
+
+```java: == が false になるケース
+String str = "hoge";
+String str_2 = new String("hoge");
+//この場合は参照の再利用はされず、strとstr_2の参照先(アドレス値)は異なるため条件はfalseになります。
+if (str == str_2){
+    System.out.println("値は同じです");
+} else {
+    System.out.println("値は違います");
+}
+```
+
+`String` 型の値自体を比較するためには、冒頭で書いた通り `equals` メソッドを使用するようにする。
+
+```java
+String str = "hoge";
+String str_2 = new String("hoge");
+//equalsメソッドを使うことで、値自体の比較ができます。
+if (str.equals(str_2)){
+  System.out.println("値は同じです");
+} else {
+  System.out.println("値は違います");
+}
+```

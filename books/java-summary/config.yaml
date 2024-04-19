@@ -15,3 +15,7 @@ chapters:
   - arrays-and-reference-types
   - command-line-argument
   - string-type
+  - for
+  - while
+  - if
+  - switch
