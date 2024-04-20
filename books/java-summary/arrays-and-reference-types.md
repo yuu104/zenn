@@ -108,3 +108,16 @@ for (int i = 0; i < matrix.length; i++) {
     System.out.println(); // 新しい行で改行
 }
 ```
+
+## 要素の存在チェック
+
+Java 8 以降では、ストリーム API の `anyMatch` メソッド使ってチェックできる。
+
+```java
+import java.util.Arrays;
+
+int[] numbers = {1, 2, 3, 4, 5}; // 例として整数配列を用意
+int valueToFind = 3; // 探したい値
+
+boolean found = Arrays.stream(numbers).anyMatch(n -> n == valueToFind);
+```
