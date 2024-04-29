@@ -63,6 +63,7 @@ title: "開発環境構築"
 
 ## JRE
 
+- Java Runtime Enviroment の略
 - Java アプリケーションを実行するために必要なソフトウェアのパッケージ
 - Java のランタイム環境のこと
 - 以下 3 つを含む
