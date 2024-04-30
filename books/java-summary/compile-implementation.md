@@ -39,3 +39,9 @@ java Sample
 ```shell
 Hello, World!
 ```
+
+## コンパイルと実行を一括で行う(Java11 以降)
+
+```shell
+java Sample.java
+```
