@@ -22,3 +22,5 @@ chapters:
   - class
   - package
   - class-path
+  - big-decimal
+  - array-list
