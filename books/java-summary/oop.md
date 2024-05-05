@@ -18,10 +18,10 @@ title: "オブジェクト指向"
 
 1. **属性**
    - クラス内で定義された**変数**
-   - **「フィールド」**とも呼ぶ
+   - **「フィールド」** とも呼ぶ
 2. **機能**
    - クラス内で定義された**関数**
-   - **「メソッド」**とも呼ぶ
+   - **「メソッド」** とも呼ぶ
 
 フィールドとメソッドを合わせて**メンバ**と言う。
 
@@ -135,7 +135,7 @@ Java でインスタンス化するというプロセスは、実際にはクラ
    - コンストラクタの実行が完了すると、オブジェクトは使用のために準備が整う
    - アプリケーション内の他の部分から、このオブジェクトにアクセスしてメソッドを呼び出したり、フィールドを操作したりすることができる
 
-## デフォルトコンストラクタ
+### デフォルトコンストラクタ
 
 - クラス内にコンストラクタが明示的に定義されていない場合、内部で実装されるコンストラクタ
 - 一つでもコンストラクタが明示的に定義されている場合、デフォルトコンストラクタは定義されない
@@ -462,7 +462,7 @@ public class ShoppingSystem {
 - `private` なフィールドには外部から参照・変更できるような専用メソッドを必要に応じて提供する必要がある
 - このメソッドを **「アクセス用メソッド」** と呼び、参照用メソッドを **「getter」**、代入用メソッドを **「setter」** と呼ぶ
 
-#### getter
+:::details getter
 
 - クラスのプライベートフィールドの値を取得するために使用する
 - 通常、メソッドは引数を取らず、フィールド値を返す
@@ -479,7 +479,9 @@ public class Person {
 }
 ```
 
-#### setter
+:::
+
+:::details setter
 
 - クラスのプライベートフィールドに値を設定するために使用する
 - 通常、設定したい値を引数として受け取り、フィールドの値を更新する
@@ -496,7 +498,9 @@ public class Person {
 }
 ```
 
-#### getter と setter は「インターフェース的な役割」を果たす
+:::
+
+:::details getter と setter は「インターフェース的な役割」を果たす
 
 - getter と setter はクラスのフィールドへのアクセスを提供する「インターフェース的な役割」を果たす
 - これにより、クラスの内部実装とクラスを使用するコードとの間に抽象的な境界が作られ、クラスのフィールドがどのように使用されるかを厳密にコントロールできるようになる
@@ -546,6 +550,8 @@ public class Employee {
 }
 ```
 
+:::
+
 ### アクセス修飾子を付与する対象
 
 アクセス修飾子によるアクセス制限が可能なものは以下の 3 つ
@@ -588,3 +594,605 @@ public class Employee {
    - カプセル化されたコードは他のプロジェクトで再利用しやすい
    - 内部実装を変更しても公開インターフェースが保持される限り、既存のコードに影響を与えない
    - ソフトウェアのメンテナンスが容易になる
+
+## 継承
+
+### 概要
+
+- 既存クラスのメンバを受け継いで別のクラスを作成すること
+- 継承により、**コードの再利用** が促進され、プログラムの構造がより自然で理解しやすくなる
+- 継承元となるクラスを **「スーパークラス」** という
+- 継承先となるクラスを **「サブクラス」** という
+- サブクラスはスーパークラスのメソッドをオーバーライド（再定義）したり、新規メソッドやプロパティを追加できる
+
+### 構文
+
+```java
+class サブクラス名 extends スーパークラス名 {}
+```
+
+以下の例は、基本的なフィールドとメソッドを持つ `Vehicle` クラスから、`Car` と `Bike` クラスを派生させる。
+
+```java
+class Vehicle {
+  protected int speed; // 速度を表すフィールド
+
+  public Vehicle() {
+    this.speed = 0;  // 初期速度は0
+  }
+
+  public void move() {
+    this.speed = 10; // 移動すると速度は10になる
+    System.out.println("This vehicle is moving at speed: " + speed + " km/h.");
+  }
+}
+
+class Car extends Vehicle {
+  private int fuelLevel; // 燃料レベルを表すフィールド
+
+  public Car() {
+    this.fuelLevel = 100; // 初期燃料レベルは100
+  }
+
+  public void honk() {
+    System.out.println("The car is honking: Beep beep!");
+  }
+
+  public void refuel(int amount) {
+    this.fuelLevel += amount; // 燃料を追加する
+    System.out.println("Fuel level after refuel: " + fuelLevel);
+  }
+}
+
+class Bike extends Vehicle {
+  private boolean isElectric; // 電動バイクかどうかを表すフィールド
+
+  public Bike() {
+    this.isElectric = false; // 初期設定では非電動
+  }
+
+  public void pedal() {
+    this.speed += 5; // ペダルをこぐと速度が5 km/h増加する
+    System.out.println("The bike is pedaling at speed: " + speed + " km/h.");
+  }
+
+  public void switchToElectricMode() {
+    this.isElectric = true; // 電動モードに切り替える
+    System.out.println("Electric mode activated.");
+  }
+}
+```
+
+### 継承の利点
+
+- ソースコードの重複を防ぐ
+- 機能拡張が容易になる
+- プログラム構造の理解が容易になる
+- 仕様変更への対応が容易になる
+
+### Java では単一継承のみ
+
+- Java では単一継承のみ認められている
+- 1 つのクラスが複数のスーパークラスを持つことはできない
+- **階層的な継承**は可能
+
+### スーパークラスのメンバへアクセスする
+
+サブクラスからスーパークラスのメンバへアクセスする手法は様々ある。
+
+:::details 変数名を指定して直接アクセスする
+
+スーパークラスが `public` や `protected` で定義したメンバは、サブクラスから直接アクセス可能。
+
+```java
+class Parent {
+  protected int value = 100;
+
+  public void hello() {
+    System.out.println("Hello");
+  }
+}
+
+class Child extends Parent {
+  void display() {
+    System.out.println(value);  // 直接アクセス
+    hello(); // 直接アクセス
+  }
+}
+```
+
+ただ、この方法は**ローカル変数との名前衝突のリスクがあるため、非推奨**。
+
+:::
+
+:::details this キーワードを使用して直接参照する
+
+自クラスのメンバへアクセスするときと同様に、`this` を使用してスーパークラスのメンバへアクセスする。
+
+```java
+
+class Parent {
+  protected int value = 100;
+
+  public void hello() {
+    System.out.println("Hello");
+  }
+}
+
+class Child extends Parent {
+  void display() {
+    System.out.println(this.value);
+    this.hello();
+  }
+}
+
+```
+
+ただし、サブクラスに同じ名前のメンバが存在した場合、サブクラスが優先されてしまう。
+
+```java
+class Parent {
+  protected int value = 100;
+
+  public void hello() {
+    System.out.println("Hello");
+  }
+}
+
+class Child extends Parent {
+  protected int value = 200;
+
+  void display() {
+    System.out.println(this.value);  // 200
+    this.hello();
+  }
+}
+```
+
+:::
+
+:::details super キーワードを使用して直接参照する
+
+`super` キーワードを使用することで、サブクラスの `value` ではなく、隠蔽されたスーパークラスの `value` へアクセス可能。
+
+```java
+class Parent {
+  protected int value = 100;
+
+  public void hello() {
+    System.out.println("Hello");
+  }
+}
+
+class Child extends Parent {
+  protected int value = 200;
+
+  void display() {
+    System.out.println(super.value);  // 100
+    super.hello();
+  }
+}
+```
+
+**スーパークラスのメンバへアクセスする際は、`super` キーワードを使用が推奨。**
+
+:::
+
+:::details getter、setter を介したアクセス
+
+- スーパークラスのメンバが `private` な場合、`super` などによる直接のアクセスが不可能
+- よって、getter や setter を通じて間接的にアクセスする
+- これにより、スーパークラスのカプセル化を維持しつつ、サブクラスからの安全なアクセスが可能となる
+
+```java
+class Parent {
+  protected int value = 100;
+
+  protected int getValue() { // getter
+    return this.value;
+  }
+
+  public void hello() {
+    System.out.println("Hello");
+  }
+}
+
+class Child extends Parent {
+  protected int value = 200;
+
+  void display() {
+    System.out.println(super.getValue());  // 100
+    super.hello();
+  }
+}
+```
+
+:::
+
+:::details ベストプラクティス
+
+1. **フィールドは `private` にしておく**
+
+   - クラスのデータをカプセル化し、クラス外部から直接アクセスされるのを防ぐ
+   - これにより、フィールドの値が予期しない方法で変更されることを防ぐ
+   - 将来的にクラス内部の実装を変更しても、公開インターフェースに影響を与えることが少なくなる
+
+2. **フィールドへの直接的なアクセスはせず、getter や setter を使用する**
+   - フィールドへのアクセスを抽象化する
+   - これにより、フィールドの値を取得・設定する際の追加のロジックを容易に実装できる
+   - 例: バリデーションチェック、イベントのトリガー
+3. **スーパークラスのメンバへ直接アクセスする際は、`super` を使用する**
+   - サブクラスで定義したフィールドとの名前衝突を避けるため
+
+:::
+
+### `final` キーワードで継承を禁止する
+
+クラスを `final` で宣言すると、そのクラスは継承できなくなる。
+
+```java
+public final class Calculator {
+  public int add(int a, int b) {
+    return a + b;
+  }
+}
+
+// このクラスはコンパイルエラーになる
+class AdvancedCalculator extends Calculator {
+  // エラー: Cannot inherit from final 'Calculator'
+}
+```
+
+### 継承とコンストラクタ、`super()`
+
+:::details スーパークラスのコンストラクタはサブクラスには継承されない
+
+- コンストラクタはそのクラス固有の特殊なメソッド
+- インスタンス化の際にフィールドに対して初期値を設定するのは該当クラスのコンストラクタ
+  :::
+
+:::details サブクラスでスーパークラスのコンストラクタを呼び出す
+
+- サブクラスのコンストラクタで `super()` を使用し、スーパークラスのコンストラクタを呼び出す必要がある
+- `this()` を使用して自クラスのコンストラクタを呼び出すイメージ
+
+```java
+class Parent {
+  int x;
+
+  Parent(int x) {
+    this.x = x;
+    System.out.println("Parent constructor called.");
+  }
+}
+
+class Child extends Parent {
+  int y;
+
+  Child(int x, int y) {
+    super(x);  // Parentのコンストラクタを呼び出す
+    this.y = y;
+    System.out.println("Child constructor called.");
+  }
+}
+```
+
+上記は、`Child` クラスのコンストラクタが `super(x)` により `Parent` クラスのコンストラクタを呼び出している。
+これにより、`Parent` クラスの `x` が適切に初期化され、その後 `y` が設定される。
+
+:::
+
+:::details コンストラクタは上位クラスから順に呼び出す必要がある
+継承関係を持つクラスをインスタンス化する際、コンストラクタの呼び出し順序は、スパークラス → 　サブクラスへと階層的に行われる必要がある。
+インスタンスを作成する際、以下のステップに従ってコンストラクタが呼び出される。
+
+1. **スーパークラスのコンストラクタの呼び出し**
+   - 最も上位のスーパークラス（Object クラスを除く）のコンストラクタが最初に呼び出される
+   - これにより、クラス階層の基礎となる部分が最初に初期化される
+2. **サブクラスのコンストラクタの実行**
+   - スーパークラスのコンストラクタの実行が完了すると、次に下位のクラスのコンストラクタが順に実行さる
+
+### なぜこの順序が必要か？
+
+- サブクラスのコンストラクタでスーパークラスのフィールドを使用する場合、そのフィールドが正しく設定されている必要がある
+- クラス間の継承は、サブクラスがスーパークラスの機能を「拡張」するという契約に基づいており、そのためにも、スーパークラスの状態がサブクラスの機能によって予期せず変更される前に、完全に初期化されている必要がある
+
+:::
+
+:::details super() はコンストラクタ内の先頭で呼び出す
+
+- `super()` の呼び出しはコンストラクタの**最初のステートメント**である必要がある
+- この規則は言語仕様によって強制されている
+
+**正しい記述**
+
+```java
+public ChildClass(int value) {
+  super(value);  // スーパークラスのコンストラクタを最初に呼び出す
+  // その他の初期化コード
+}
+```
+
+**誤った記述**
+
+```java
+public ChildClass(int value) {
+  someInitialization();  // スーパークラスのコンストラクタ呼び出し前に他の初期化を行う（エラー）
+  super(value);  // コンパイルエラーが発生する
+}
+```
+
+:::
+
+:::details 1 つのコンストラクタ内で super() や this() を 2 つ以上使用できない
+
+- `super()` はコンストラクタ内の最初のステートメントで呼び出す必要がある
+- `this()` はコンストラクタ内の最初のステートメントで呼び出す必要がある
+
+上記 2 点の制約から、同一コンストラクタ内では `super()`、`this()` のうち 1 つのみしか呼び出せない。
+
+```java
+class Parent {
+  Parent() {
+    System.out.println("Parent Constructor");
+  }
+}
+
+class Child extends Parent {
+  Child() {
+    super();  // スーパークラスのコンストラクタを呼び出す
+    System.out.println("Child Constructor");
+  }
+
+  Child(String msg) {
+    this();  // 同じクラスの別のコンストラクタを呼び出す
+    System.out.println("Child Constructor with message: " + msg);
+  }
+}
+
+public class Main {
+  public static void main(String[] args) {
+    Child child = new Child("Hello");
+  }
+}
+```
+
+上記の場合、以下の手順でコードが実行される。
+
+1. `Child` クラスのインスタンス化の際に `Child(String msg)` が呼び出される
+2. このコンストラクタでは、最初のステトメントに `this()` の記述があるため、`Child()` が呼び出される
+3. `Child()` では `super()` の記述があるため、`Parent()` が呼び出される
+
+:::
+
+:::details super() を明示的に呼び出さない場合
+サブクラスのコンストラクタで `super()` を明示的に呼び出さなかった場合、処理の先頭で**暗黙的に** `super()` （引数なし）が実行される。
+
+```java
+class Parent {
+ int x;
+
+ Parent() {
+  this.x = 10;
+  System.out.println("Parent Constructor: x = " + x);
+ }
+}
+
+class Child extends Parent {
+ int y;
+
+ Child() {
+  // super(); がここに暗黙的に挿入される
+  this.y = 20;
+  System.out.println("Child Constructor: y = " + y);
+ }
+}
+```
+
+:::
+
+### オーバーライド
+
+- スーパークラスのメソッドを、サブクラス側で同じ名前で再定義すること
+- オーバーライドされたメソッドは、スーパークラスのメソッドを隠蔽する
+- サブクラスのインスタンスでそのメソッドがよびだされると、オーバーライドした内容で処理される
+
+:::details オーバーライドのルール
+
+1. **メソッドシグネチャの一致**
+   - メソッド名と引数がスーパークラス側のメソッドと一致している必要がある
+2. **アクセス修飾子**
+   - スーパークラスのメソッドと同じ or より公開度が高い
+   - 例：`protected` → 　`public` は可能、`public` → 　`protected` は不可
+3. **戻り値の型**
+   - スーパークラスのメソッドと同じ or そのサブタイプ
+
+:::
+
+:::details 使用例
+
+```java
+class Animal {
+  public void eat() {
+    System.out.println("This animal eats food.");
+  }
+}
+
+class Dog extends Animal {
+    public void eat() {
+      System.out.println("Dog eats bones.");
+    }
+}
+
+public class Main {
+  public static void main(String[] args) {
+    Animal myAnimal = new Animal();
+    myAnimal.eat();  // Outputs: This animal eats food.
+
+    Dog myDog = new Dog();
+    myDog.eat();  // Outputs: Dog eats bones.
+
+    Animal myAnimalDog = new Dog();
+    myAnimalDog.eat();  // Outputs: Dog eats bones.
+  }
+}
+
+```
+
+- `Dog` クラスが `Animal` クラスの `eat()` メソッドをオーバーライドしている
+- `Dog` のインスタンスでは、`eat()` が呼ばれると、オーバーライドした `Dog` の `eat()` が実行される
+
+:::
+
+:::details @Override アノテーション
+
+- `@Override` アノテーションは、特定のメソッドがスーパークラスのメソッドをオーバーライドする意図であることを明示的に示すために使用する
+- コンパイラに対してそのオーバーライドであることを確認するよう指示するもの
+- **もしスーパークラスに同じシグネチャを持つメソッドが存在しない場合、コンパイラはエラーを生成する**
+
+### 利点
+
+1. **コンパイル時の安全性の確保**
+   - `@Override` アノテーションを使用することで、メソッドが正しくオーバーライドされているかをコンパイルが検証する
+   - これにより、プログラマのミスやリファクタリングによる問題を事前に検出できる
+2. **コードの可読性向上**
+   - アノテーションをメソッドに付けることで、他のプログラマがコードを読む際にそのメソッドがオーバーライドされたものであることをすぐに理解できる
+   - 特に大きなプロジェクトや多数のクラスが関与する場合に有効
+3. **意図的なエラーの発見**
+   - スーパークラスのメソッドが削除されたり、シグネチャが変更されたりした場合に、`@Override` アノテーションがついたメソッドはコンパイルエラーを引き起こす
+
+### 使用例
+
+```java
+class Animal {
+  public void eat() {
+    System.out.println("This animal eats food.");
+  }
+}
+
+class Dog extends Animal {
+  @Override
+  public void eat() {
+    System.out.println("Dog eats bones.");
+  }
+}
+```
+
+- `Doc` クラスの `eat()` メソッドに `@Override` アノテーションを使用している
+- もし、`Animal` クラスに `eat()` が存在しなかったり、シグネチャが異なってればコンパイルエラーとなる
+
+:::
+
+:::details final キーワードでオーバーライドを禁止する
+
+スーパークラスのメソッドに `final` キーワードを付けると、そのメソッドはオーバーライドできなくなる。
+
+```java
+class Parent {
+  public final void show() {
+    System.out.println("This method cannot be overridden.");
+  }
+}
+
+class Child extends Parent {
+  // この試みはエラーを引き起こします。
+  @Override
+  public void show() {
+    System.out.println("Trying to override.");
+  }
+}
+```
+
+上記では、`Parent` クラスの `show()` が `final` として宣言されているため、`Child` クラスでオーバーライドしようとするとコンパイルエラーが発生する。
+
+:::
+
+### アクセス修飾子 `protected`
+
+以下のいずれかに該当するクラスはアクセス可能。
+
+- 同一パッケージ
+- サブクラス
+
+`public` よりも制限的で、`private` よりも広範。
+
+```java
+package com.example.animals;
+
+public class Animal {
+  protected int age;
+
+  protected void eat() {
+    System.out.println("This animal eats food.");
+  }
+}
+
+package com.example.animals;
+
+public class Dog extends Animal {
+  public void displayAge() {
+    System.out.println("The dog's age is " + age);  // 直接アクセス可能
+  }
+
+  @Override
+  protected void eat() {
+    super.eat();  // スーパークラスの protected メソッドにアクセス
+    System.out.println("Dog eats bones.");
+  }
+}
+```
+
+`Doc` クラスは `Animal` クラスと同一パッケージだが、異なるパッケージでも継承関係にあるため、`eat()` メソッドへアクセス可能。
+
+## クラスオブジェクト・インスタンスオブジェクト・静的メンバ（`static`）
+
+### クラスオブジェクト
+
+- クラスそのものを表すオブジェクト
+- インスタンスの元となるファイル情報を格納しているメモリ領域
+- Java の実行において、ファイルの読み込みの際に JVM によってメモリ上に自動生成される
+
+### インスタンスオブジェクト
+
+- インスタンスのこと
+- `new` キーワードを使用してクラスから生成される具体的なオブジェクト
+- これは実際のデータ（フィールド）を持ち、メソッドを具体的に実行できる
+
+### 静的メンバ（`static`）
+
+- クラスオブジェクトに属するメンバ
+- 任意のインスタンスには属さない
+- **静的メンバは全てのインスタンス間で共有され、インスタンスを生成しなくてもアクセスできる**
+
+静的メンバは `static` キーワードを使用して定義する。
+
+```java
+public class Counter {
+  private static int count = 0; // 静的フィールド
+
+  public Counter() {
+    count++; // インスタンスごとにカウントアップ
+  }
+
+  public static int getCount() { // 静的メソッド
+    return count;
+  }
+}
+
+public class Main {
+  public static void main(String[] args) {
+    Counter counter1 =　new Counter();
+    Counter counter2 = new Counter();
+
+    System.out.println(Counter.getCount()); // 2
+    System.out.println(counter1.getCount()); // 2
+    System.out.println(counter2.getCount()); // 2
+  }
+}
+```
+
+- `Counter` クラスが持つ静的フィールド `count` が、クラスの全てのインスタンスによって共有される
+- `Conter` クラスがインスタンス化され、コンストラクタが実行される度、静的フィールド `count` が +1 される
+- `count` はクラスオブジェクトで管理されているため、`counter1` と `counter2` で共有される
+
+上記から分かるように、静的メンバは**クラスオブジェクトで管理される**。
