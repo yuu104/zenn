@@ -12,6 +12,128 @@ published: false
 - Next.js13 では、SC を標準サポートしている
 - RSC の登場により、これまでのコンポーネント（js ファイルによりクライアント側で生成するコンポーネント）を Client Components（CC）と呼ぶようになった
 
+## CSR の復習
+
+React では CSR 戦略が用いられてきた。
+CSR では、ユーザーが受け取るのは以下のような中身のない空の HTML ファイルだった。
+
+```html
+<!DOCTYPE html>
+<html>
+  <body>
+    <div id="root"></div>
+    <script src="/static/js/bundle.js"></script>
+  </body>
+</html>
+```
+
+`bundle.js` には、React アプリケーションを構築するために必要なものが全て含まれている。
+
+JS がダウンロードされて解析されると、React が動作し始め、アプリケーション全体のすべての DOM ノードを呼び出し、それを空の `<div id="root">` に格納する。
+
+![](https://storage.googleapis.com/zenn-user-upload/546bc9f4a9a1-20240506.png)
+_引用：https://nextjs.org/learn-pages-router/basics/data-fetching/pre-rendering_
+
+### 処理の流れ
+
+1. クライアントからリクエストが送られる
+2. サーバから空の HTML と共に、CSS、JS が送信される
+3. JS で UI を構築し、必要なデータは API を叩いてフェッチする
+
+![](https://storage.googleapis.com/zenn-user-upload/d2dc28e22865-20240506.png)
+
+### 問題点
+
+とてもシンプルではあるが、CSR の問題点は、
+
+- JS のバンドルサイズが大きい
+- 膨大な JS を実行し、UI を表示するのに時間がかかる
+
+UI が表示されるまでの間、ユーザーは白い画面を見続けることになる。
+そして、この問題は開発が進み、JS のコード量が大きくなるにつれて悪化する傾向にある。
+
+## SSR の復習
+
+CSR の問題を解決するために設計されたアプローチ。
+空の HTML ファイルを送信する代わりに、サーバー側で初期の HTML を生成し、ハイドレーション用のミニマルな JS と共にクライアントへ送信する。
+HTML には CSR と同様に `<script>` タグが含まれており、ハイドレーションが行われ、インタラクティブな状態になる。
+
+![](https://storage.googleapis.com/zenn-user-upload/3f2814cdba3f-20240506.png)
+_引用：https://nextjs.org/learn-pages-router/basics/data-fetching/pre-rendering_
+
+初期ロードの時点である程度のコンテンツが表示されるため、バンドルされた JS がダウンロードされ解析されている間、ユーザーは真っ白なページを見続ける必要がなくなる。
+
+### 処理の流れ
+
+1. クライアントからリクエストが送られる
+2. 初期表示に必要なデータをサーバ側で API コール
+3. API からのレスポンスによりデータを取得
+4. サーバ側でレンダリングを行い、HTML を生成
+5. HTML、CSS、JS をクライアントに送信
+6. クライアントは HTML を表示し、ロードした JS を実行してハイドレードする
+
+![](https://storage.googleapis.com/zenn-user-upload/71fd32295596-20240506.png)
+
+### SSR の魅力
+
+SSR の大きな利点は、**サーバで直接データを取得し、そのデータを基に UI 構築・HTML 生成ができる**こと。
+Web ページのパフォーマンス指標として、以下がある。
+
+1. **FCP（First Contentful Paint）**
+   - ブラウザが最初のテキストや画像などのコンテンツを描画するまでの時間
+   - 真っ白な画面かではなく、何かしらの表示（レイアウトなど）がある状態
+2. **TTI（Time To Interactive）**
+   - ページが完全にインタラクティブになるまでの時間
+   - React がダウンロードされ、アプリケーションがレンダリングされ、ハイドレーションが行われる
+   - ページ上の UI コンポーネントが反応し始め、ユーザーが入力できる状態
+3. **LCP（Largest Contentful Paint）**
+   - ページの主要なコンテンツが表示されるまでの時間
+   - ユーザが関心のあるコンテンツが含まれている
+   - DB からデータを取得し、UI にレンダリングされた状態
+
+SSR では CSR と比べ、FCP が改善されている。
+しかし、必要なデータをクライアント側でフェッチしている状態だと、LCP が改善されない。
+ユーザはローディング画面を見るためにサイトにアクセスしているのではない。
+
+![](https://storage.googleapis.com/zenn-user-upload/c381cf09e7be-20240506.png)
+
+ユーザが望むのは、DB から取得した情報が表示されている UI である。
+
+![](https://storage.googleapis.com/zenn-user-upload/dd3076fa8d05-20240506.png)
+
+Next.js をはじめとするフレームワークでは、LCP 問題を解決するために**サーバ側でデータ取得を行えるようにしている**。
+
+```tsx
+// pages/products.js
+import axios from "axios";
+
+function Products({ products }) {
+  return (
+    <div>
+      <h1>Available Products</h1>
+      <ul>
+        {products.map((product) => (
+          <li key={product.id}>{product.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export async function getServerSideProps() {
+  const res = await axios.get("https://api.example.com/products");
+  const products = res.data;
+  return {
+    props: { products }, // will be passed to the page component as props
+  };
+}
+
+export default Products;
+```
+
+`getServerSideProps` はサーバ上で実行される関数であり、JS バンドルには含まれず、クライアントで再実行されることもない。
+これにより、FCP の問題が改善された。
+
 ## まずは Suspense を知る
 
 - Suspense は機能の名前であると同時に、React から提供されているコンポーネントの名前
@@ -386,6 +508,8 @@ SC と CC の使い分けの判断基準は、
 - CC はインタラクティブな UI の実現
 
 ## 参考リンク
+
+https://postd.cc/server-components/
 
 https://qiita.com/naruto/items/c17c79ec5c2a0c7c4686
 
