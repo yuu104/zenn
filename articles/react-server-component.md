@@ -215,10 +215,34 @@ SSR により、CSR が抱える問題を改善できたが、まだ問題が残
 
 ## React Server Components とは？
 
-- サーバ側でレンダリングされたコンポーネント
-- SC の登場により、コンポーネント毎に「クライアントでレンダリングされるコンポーネント」と「サーバでレンダリングされるコンポーネント」を区別が付けられるようになった
-- 以下のように、1 つのページに SC と CC が混在するようになる
-  ![](https://storage.googleapis.com/zenn-user-upload/e93e24d24658-20230924.png)
+**サーバー側でのみ実行される**コンポーネント。
+SC では、以下のように非同期関数で書くことが可能。
+
+```tsx
+export default async function ServerComponent() {
+  const res = await fetch("https://example.com/posts");
+  const posts = await res.json();
+
+  return (
+    <div>
+      <h1>投稿一覧</h1>
+      <ul>
+        {posts.map(() => (
+          <li>
+            <a href={post.url}>{post.title}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+これにより、「**コンポーネント上から直接**外部 API のデータを取得してレンダリングする」ということが可能になる。
+
+SC の登場により、コンポーネント毎に「クライアントでレンダリングされるコンポーネント」と「サーバでレンダリングされるコンポーネント」を区別が付けられるようになった。
+以下のように、1 つのページに SC と CC が混在するようになる。
+![](https://storage.googleapis.com/zenn-user-upload/e93e24d24658-20230924.png)
 
 ## サーバ側でレンダリング？？
 
