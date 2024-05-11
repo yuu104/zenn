@@ -17,8 +17,8 @@ published: false
 
 ## HTML の解析
 
-読み込んだ HTML に対し、上の行から順に解析する。
-具体的な解析手順は省略しますが、最終的には DOM ツリーを構築する。
+読み込んだ HTML から DOM ツリーを構築する。
+HTML ファイルに対し、上の行から順に解析する。
 ![](https://storage.googleapis.com/zenn-user-upload/5605775489f7-20230715.png)
 
 ## 外部リソースのダウンロード
