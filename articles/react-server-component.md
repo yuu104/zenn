@@ -247,7 +247,70 @@ RSC のレンダリングは、2 つの段階（stage0 と stage1）に分けて
 - stage0 : SC のレンダリング
 - stage1 : CC のレンダリング
 
-RSC では、最初に stage0 である SC がサーバー側で実行され、その後 stage1 である CC がレンダリングされます。必ず stage0 → 　 stage1 の順で実行されます。
+RSC では、最初に stage0 である SC がサーバー側で実行され、その後 stage1 である CC がレンダリングされます。stage0 → 　 stage1 の順で段階的に実行されます。この「段階的に実行される」ということを具体例を通して見てみましょう。
+
+```tsx
+// Server Component
+async function Notes() {
+  const notes = await db.notes.getAll();
+  return (
+    <div>
+      {notes.map((note) => (
+        <Expandable key={note.id}>
+          <p note={note} />
+        </Expandable>
+      ))}
+    </div>
+  );
+}
+
+// Client Component
+export default function Expandable({ children }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div>
+      <button onClick={() => setExpanded(!expanded)}>Toggle</button>
+      {expanded && children}
+    </div>
+  );
+}
+```
+
+`Notes` は SC、`Expandable` は CC です。2 つのコンポーネントは親子関係にあります。
+まず初めに、stage0 を実行して、SC をレンダリングします。すると、以下のような結果となります。
+
+```tsx
+<div>
+  <Expandable key={1}>
+    <p>this is the first note</p>
+  </Expandable>
+  <Expandable key={2}>
+    <p>this is the second note</p>
+  </Expandable>
+  <!--...-->
+</div>
+```
+
+SC である `Notes` コンポーネントが stage0 として実行され、ただの HTML になりました。一方、`Expandable` は依然コンポーネントのままです。`Expandable` は CC であり、stage1 で実行されるからです。
+それでは次に、stage1 を実行して CC をレンダリングします。すると、以下のような結果となります。
+
+```tsx
+<div>
+  <div>
+    <button onClick={イベントハンドラ}>Toggle</button>
+    <p>this is the first note</p>
+  </div>
+  <div>
+    <button onClick={イベントハンドラ}>Toggle</button>
+    <p>this is the second note</p>
+  </div>
+  <!--...-->
+</div>
+```
+
+これで、すべてのコンポーネントのレンダリングが完了し、HTMl タグに変換されました。
+このように、RSC におけるレンダリングは「**多段階計算**」と捉えることができます。（この考え方は[こちらの記事](https://zenn.dev/uhyo/articles/react-server-components-multi-stage)が非常に参考になります。）
+
 stage0 は SC のレンダリングなので、**サーバー側でしか実行されません**。
 stage1 は CC のレンダリングなので、クライアント側では必ず実行されますが、**場合によってはサーバー側でも実行されます**。
 どこで何のコンポーネントが実行されるのかは以下のように整理できます。
@@ -329,7 +392,6 @@ RSC をレンダリングする時には、以下のような流れになりま�
 1. サーバがレンダリングリクエストを受け取る
 2. サーバが React 要素を生成し、React ツリーを構築する
 3. 構築した React ツリーをシリアライズする
-<!-- 4. クライアントが React ツリーを再構築する -->
 
 SC をレンダリングした（stage0 を実行した）ことによる最終成果物は「**React ツリーをシリアライズしたもの**」です。[Next.js](https://nextjs.org/docs/app/building-your-application/rendering/server-components#how-are-server-components-rendered)では、これを「**RSC ペイロード**と呼称しています」
 
@@ -411,8 +473,8 @@ SC が CC をインポートする際、実際のインポート対象を取得�
 
 これにより、シリアライズ可能な React ツリーがサーバ側で構築される。
 このツリーは、**HTML タグとクライアントコンポーネントへの参照**で構成されている。
-![](https://storage.googleapis.com/zenn-user-upload/9213030c02b4-20231015.png)
-引用：https://postd.cc/how-react-server-components-work/
+![](https://storage.googleapis.com/zenn-user-upload/9213030c02b4-20231015.png =500x)
+_引用：https://postd.cc/how-react-server-components-work/_
 
 ### 3. 構築した React ツリーをシリアライズする
 
@@ -443,30 +505,124 @@ J0:["$","@1",null,{"children":["$","span",null,{"children":"Hello from server la
    バンドラーを用いてサーバ上でクライアントコンポーネントをモジュール参照に置き換えたように、逆の変換もバンドラーが行います。
    :::
    React ツリーが再構築されると、SC により事前計算された HTML タグと CC が混合した状態になります。
-   ![](https://storage.googleapis.com/zenn-user-upload/1382ecbd6311-20231015.png)
+   ![](https://storage.googleapis.com/zenn-user-upload/1382ecbd6311-20231015.png =500x)
+   _引用 : https://postd.cc/how-react-server-components-work/_
 4. **DOM を構築し、描画する**
    あとはこれまで通り、仮想 DOM 構築 → 実 DOM 構築 → 　描画を行います。
+
+![](https://storage.googleapis.com/zenn-user-upload/5a214ff7cd8f-20240512.png)
 
 ## RSC（SSR あり）のレンダリングプロセス
 
 ここでは Next.js を使用した際にレンダリングプロセスを説明します。
 https://nextjs.org/docs/app/building-your-application/rendering/server-components#how-are-server-components-rendered
 
+1. **サーバー側で SC をレンダリング**
+   stage0 を実行して SC をレンダリングし、RSC ペイロードを生成します。
+2. **RSC ペイロードと CC の JS を使用して、HTML を生成する**
+   SSR の場合、サーバー側でも stage1 を実行します。
+   ここでは、RSC ペイロードを参照しつつ React ツリーを再構築します。
+   その結果を HTML として生成します。
+3. **生成した HTML と CC の JS バンドルをクライアントに送信する**
+   SSR では、サーバー側で React ツリーの再構築を行なっているため、RSC ペイロードをクライアントに送信する必要はありません。JS バンドルの中身は、CC のハイドレーション用です。
+4. **バンドル JS を基に CC をハイドレーションする**
+   CC をハイドレートし、アプリケーションをインタラクティブにします。
+   従来の SSR と異なる点として、**インタラクション性が必要な CC だけがバンドルに含まれています**。
+
+![](https://storage.googleapis.com/zenn-user-upload/aed22be4e5ee-20240512.png)
+
+## SC と CC の境界
+
+RSC では、**すべてのコンポーネントが、デフォルトで SC とみなされます**。CC を使用したい場合、`"use client"` ディレクティブを宣言する必要があります。
+
+```tsx
+"use client";
+
+export const Button = () => {
+  return <button onClick={() => console.log("clicked")}>click me!!</button>;
+};
+```
+
+`"use client"` は、宣言したファイル内のコンポーネントが CC であり、JS バンドルに含める必要があることを React に知らせます。
+SC を使用する際は、 `"use server"` のようなディレクティブを指定する必要はありません。
+
+`"use client"` を宣言するうえで重要なのは、**SC と CC の境界となるコンポーネントファイルで使用する**ことです。すべてのコンポーネントファイルに対し、ディレクティブを宣言する必要はありません。
+実は、**CC から import されたコンポーネントは、自動的に CC になります**。
+![](https://storage.googleapis.com/zenn-user-upload/e1fcecba7241-20240512.png =500x)
+そのため、上記の `IconButton` コンポーネントのような汎用性の高いコンポーネントは SC/CC どちらにもなり得ます。
+
+以上をまとめると、以下になります。
+
+- 何も宣言しなければ SC になる
+- `"use client"` を宣言すれば CC になる
+- CC に import されると、そのコンポーネントは CC になる
+
+CC 上で SC を import できず、import されたコンポーネントは CC になると説明しました。では、どのようにして 以下のように SC と CC が混在したツリーを実現するのでしょうか？どうすれば、CC の子に SC を配置することができるのでしょうか？
+![](https://storage.googleapis.com/zenn-user-upload/34ff396577c8-20240512.png =500x)
+_引用 : https://postd.cc/how-react-server-components-work/_
+**CC（親）→ 　 SC（子）の関係を実現するには、SC を CC の props として渡します**。
+
+具体的には、React の `children` prop を使用します。
+
+```tsx
+"use client";
+
+import { useState } from "react";
+
+export default function ClientComponent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [count, setCount] = useState(0);
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+      {children}
+    </>
+  );
+}
+```
+
+`children` には、SC のレンダリング結果が入ります。上記コンポーネントが実行されるときにはすでに stage0 が完了しており、SC は存在しません。
+
+```tsx
+// このパターンは動作する：
+// Client ComponentのchildまたはpropとしてServer Componentを渡す
+import ClientComponent from "./client-component";
+import ServerComponent from "./server-component";
+
+export default function Page() {
+  return (
+    <ClientComponent>
+      <ServerComponent />
+    </ClientComponent>
+  );
+}
+```
+
+よって、上記のように SC → CC → SC となる場合、クライアント側で `ClientComponent` を実行するときには以下のような状態になっています。
+
+```tsx
+<ClientComponent>
+  <div>
+    <p>SCのレンダリング結果</p>
+  </div>
+</ClientComponent>
+```
+
+図で表すと以下のイメージです。
+![](https://storage.googleapis.com/zenn-user-upload/cfbabcffc83e-20240512.png =500x)
+_引用 : https://demystifying-rsc.vercel.app/client-components/server-children/_
+
 ## RSC の制約
-
-<!-- ### ルートコンポーネントは必ず RSC -->
-
-<!-- - RSC を使用する場合、レンダリングの一部はサーバが行う必要がある -->
-
-<!-- - そのため、ページのレンダリングは必ずサーバで始まる -->
-
-<!-- - したがって、「ルート」コンポーネントは必ず SC である必要がある -->
 
 ### CC は SC をインポートできない
 
-SC はブラウザ上で実行できず、ブラウザ上では機能しないコードが含まれる可能性がある。
-したがって、以下のように CC 上で SC をインポートしてレンダリングすることはできない。
-以下は Next.js における例。
+これまでの内容を理解していれば、当然ですよね。
+CC のレンダリングは SC のレンダリング後に行われます。そのため、CC をレンダリングする段階では既に SC は存在せず、ただの HTML 要素に変換されています。
+そのため、以下のような使用はできません。
 
 ```tsx
 "use client";
@@ -548,22 +704,6 @@ function SomeServerComponent() {
 - インタラクティブ機能とイベントリスナーを使用できない
 - 状態管理（`useState`）や副作用（`useEffect`）は使用できない
 - ブラウザ専用の API を使用できない
-
-## Next.js における RSC のレンダリングプロセス
-
-公式ドキュメントによると、Next.js における SC のレンダリング手法は以下の通り。
-Next.js には pre-rendering 機能があるため、React とは少し異なる。
-
-**サーバ側**
-
-1. React がサーバ側で SC をレンダリングしてシリアライズ
-2. Next.js が シリアライズ結果と CC の js 命令を使用し、サーバ上で HTML を生成する
-
-**クライアント側**
-
-1. サーバで生成した HTML を高速で表示する（非インタラクティブなプレビュー）
-2. コンポーネントツリーを調整し、DOM を更新
-3. js ファイルを実行し、CC をハイドレートし、アプリケーションをインタラクティブにする
 
 ## RSC のメリット
 
@@ -653,6 +793,10 @@ const ServerComponents = ({ data }) => {
 **UX を実現するための JS が必要な場合**のみ、CC にする。
 UX に関係ないコンポーネントは基本サーバ側の処理だけで完結するので、JS バンドル削減のためにも SC にする。
 
+## Streaming HTML と RSC
+
+SSR の問題点として、「**サーバ側でのデータ取得とレンダリングがページ単位でしか機能しない**」がありました。
+
 ## 参考リンク
 
 https://postd.cc/server-components/
@@ -675,6 +819,8 @@ https://zenn.dev/msy/articles/a042024e12fca1
 
 https://ja.react.dev/reference/rsc/server-components#noun-labs-1201738-(2)
 
+https://demystifying-rsc.vercel.app/
+
 ## まずは Suspense を知る
 
 - Suspense は機能の名前であると同時に、React から提供されているコンポーネントの名前
@@ -695,13 +841,3 @@ https://ja.react.dev/reference/rsc/server-components#noun-labs-1201738-(2)
 - コンポーネントが「ローディング中」である場合にサスペンドする
 - `<Suspense />` 内部のコンポーネントが 1 つでもサスペンドすれば、`fallback` がレンダリングされる
 - 従って、`<SomeComonent />` の子コンポーネントがサスペンドした場合も `fallback` がレンダリングされる
-
-<!-- ## サーバ側でレンダリング？？ -->
-
-<!-- サーバ側でレンダリングするとはどういうことなのか？ -->
-<!-- それは、サーバ側で React 要素を生成することである。 -->
-<!-- サーバはクライアントからの HTTP リクエストをもとに、サーバコンポーネント関数を呼び出し、`React.createElement()` で React 要素を生成する。 -->
-<!-- そして、生成した React 要素から React ツリーを構築し、クライアントに送信する。 -->
-<!-- クライアントは受け取った React 要素とクライアントコンポーネントで React ツリーを再構築し、DOM へ反映させる。 -->
-
-<!-- ![](https://storage.googleapis.com/zenn-user-upload/c65e803902b8-20231015.png) -->
