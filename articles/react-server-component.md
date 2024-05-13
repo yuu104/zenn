@@ -786,32 +786,69 @@ const ServerComponents = ({ data }) => {
 };
 ```
 
-## SC と CC の使い分け
-
-![](https://storage.googleapis.com/zenn-user-upload/6451055ce774-20230924.png)
-
-**UX を実現するための JS が必要な場合**のみ、CC にする。
-UX に関係ないコンポーネントは基本サーバ側の処理だけで完結するので、JS バンドル削減のためにも SC にする。
-
 ## Streaming HTML と RSC
 
-SSR の問題点として、「**サーバ側でのデータ取得とレンダリングがページ単位でしか機能しない**」がありました。
+### SSR の問題点
+
+SSR の問題点として、「**サーバー側でのデータ取得とレンダリングがページ単位でしか機能しない**」がありました。そのため、以下 2 点の問題を抱えています。
+
+1. **サーバー側での処理が遅れた場合、FCP が遅延する**
+   サーバー側で行うデータ取得処理が遅れた場合、HTML の生成・クライアントへの送信も当然遅れます。遅れている間はブラウザには何も映らないため、CSR と同様、真っ白の画面が表示され続けます。
+   ![](https://storage.googleapis.com/zenn-user-upload/2db55b228262-20240513.png =600x)
+   _引用 : https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming_
+
+2. **クライアント側で一部のハイドレーションが遅れた場合、TTI が遅延する**
+   SSR では、JS がすべてロードされてからハイドレートされます。そのため、ロードする JS のサイズが大きい場合、ハイドレートまでの時間がかかります。
+   また、JS ロード後、ハイドレートを開始するとツリー全体に対して処理されるまで終了することができません。既にハイドレードが完了しているヘッダーやナビゲーションがあっても、他のコンポーネントが完了していなければアプリケーションはインタラクティブな状態になりません。
+
+### Streaming HTML の登場
+
+Streaming HTML は、サーバーが HTML を小さな部分（チャンク）に分割して順番にブラウザに送信する技術です。の方法により、ブラウザはページ全体がサーバーから送信されるのを待たずに、受信したチャンクを順に処理し、ユーザーに表示することができます。これにより、FCP がさらに向上し、ユーザー体験が改善されます。
+![](https://storage.googleapis.com/zenn-user-upload/dcc8a2f88e2e-20240513.png)
+_引用 : https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming_
+
+Streaming HTML では、優先度の高いコンポーネントやデータに依存しないコンポーネントは最初に送信でき、早期にハイドレーションが開始されます。これにより、TTI も改善されます。
+
+### SC との組み合わせ
+
+SC は従来の SSR では出来なかったコンポーネント単位のデータ取得が可能なため、Streaming HTML との相性が非常に良いです。
+
+```tsx
+import { Suspense } from "react";
+
+export default function Home() {
+  return (
+    <Container>
+      <NavBar />
+      <SideBar />
+      <Suspense fallback={<Spinner />}>
+        <ServerComponent />
+      </Suspense>
+    </Container>
+  );
+}
+```
+
+上記のように `<Suspence />` で SC をラップすることで、`<ServerComponent />` 以外の部分が先に送信され、描画を行います。
+`<ServerComponent />` の非同期処理が完了するまでは、`fallback` にしている `<Spinner />` がレンダリングされローディング UI を表示できます。
+![](https://storage.googleapis.com/zenn-user-upload/d60f5c4be335-20240513.png)
+そして、`<ServerComponent />` の非同期処理・レンダリングが完了すると、追加の HTML を送信します。
+![](https://storage.googleapis.com/zenn-user-upload/be423a51ebac-20240513.png)
+
+## SC と CC の使い分け
+
+ポイントとして、**UX を実現するための JS が必要な場合**のみ CC にすると考えれば良いでしょう。UX に関係ないコンポーネントは基本サーバ側の処理だけで完結するので、JS バンドル削減のためにも SC にするのが適切です。
+
+![](https://storage.googleapis.com/zenn-user-upload/eda329f0cc58-20240513.png)
+_引用 : https://ja.next-community-docs.dev/docs/app-router/building-your-application/rendering/composition-patterns_
 
 ## 参考リンク
 
 https://postd.cc/server-components/
 
-https://qiita.com/naruto/items/c17c79ec5c2a0c7c4686
-
-https://zenn.dev/sumiren/articles/f39a151e7320d5
-
 https://postd.cc/how-react-server-components-work/
 
 https://zenn.dev/uhyo/articles/react-server-components-multi-stage
-
-https://qiita.com/getty104/items/74d975ff02bdf4fa9b2b
-
-https://zenn.dev/izumin/articles/bc47e189e25874
 
 https://nextjs.org/docs/app/building-your-application/rendering/server-components
 
@@ -821,23 +858,4 @@ https://ja.react.dev/reference/rsc/server-components#noun-labs-1201738-(2)
 
 https://demystifying-rsc.vercel.app/
 
-## まずは Suspense を知る
-
-- Suspense は機能の名前であると同時に、React から提供されているコンポーネントの名前
-- 以下のように使用できる
-  ```tsx
-  import { Suspense } from "react";
-  // ...
-  <Suspense fallback={<div>Loading...</div>}>
-    <SomeComponent />
-  </Suspense>;
-  ```
-- `<Suspense />` は通常の状態では何もせず、子として渡されたコンテンツ（`<SomeComponent />`）がレンダリングされる
-- しかし、中身のコンポーネントがサスペンドした場合、代わりに `fallback` として渡されたコンテンツがレンダリングする
-
-### サスペンドとは？
-
-- コンポーネントが「まだレンダリングできない」状態
-- コンポーネントが「ローディング中」である場合にサスペンドする
-- `<Suspense />` 内部のコンポーネントが 1 つでもサスペンドすれば、`fallback` がレンダリングされる
-- 従って、`<SomeComonent />` の子コンポーネントがサスペンドした場合も `fallback` がレンダリングされる
+https://ja.react.dev/blog/2021/12/17/react-conf-2021-recap#streaming-server-rendering-with-suspense
