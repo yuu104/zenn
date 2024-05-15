@@ -9,3 +9,6 @@ chapters:
   - flatmap
   - array
   - string-obj
+  - oop
+  - try-catch
+  - fetch-api
