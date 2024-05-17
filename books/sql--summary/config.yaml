@@ -18,8 +18,11 @@ chapters:
   - join
   - distinct
   - substring
-  - raund
+  - round
   - regular-expression
   - case
   - in
   - limit
+  - sub-query
+  - lock
+  - query-order

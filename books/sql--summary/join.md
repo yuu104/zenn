@@ -53,6 +53,12 @@ title: "JOIN"
 - `INNER JOIN` は両テーブルに共通するレコードのみを返す
 - この場合、`CustomerID` が両テーブルに存在する `Alice` と `Bob` の情報のみが結果として返される
 
+`INNER JOIN` は `JOIN` と省略して記述することも可能。
+主要な DBMS ではどちらの記法にも対応している。
+
+- どちらを使用するかは現場によって様々
+- 海外では他の JOIN との混合を避けるため、`INNER JOIN` と詳しく記述することが多い？
+
 **SQL クエリ**:
 
 ```sql
@@ -117,7 +123,7 @@ RIGHT JOIN Orders ON Customers.CustomerID = Orders.CustomerID;
 
 ![](https://storage.googleapis.com/zenn-user-upload/8fa1c3a5cf3c-20240324.png)
 
-###　`FULL OUTER JOIN`（`FULL JOIN`）
+### `FULL OUTER JOIN`（`FULL JOIN`）
 
 - 両テーブルの全レコードを返す
 - 一方のテーブルにしか存在しないレコードも結果に含まれる
@@ -145,7 +151,7 @@ FULL JOIN Orders ON Customers.CustomerID = Orders.CustomerID;
 
 - SQL 文における`ON`キーワードは、主に `JOIN` 句内で使用され、二つのテーブルを結合する際の条件を指定するために使われる
 - `ON`句は、どのカラムの値を基にしてテーブル間で結合を行うかを明確にする役割を持っている
-- これにより、関連するデータを正確にマッチングさせて結合することができます
+- これにより、関連するデータを正確にマッチングさせて結合することがでる
 
 ### `ON`句の基本構文
 
@@ -171,3 +177,7 @@ ON Customers.CustomerID = Orders.CustomerID;
 ```
 
 このクエリでは、`Customers`テーブルの`CustomerID`と`Orders`テーブルの`CustomerID`が一致するレコード同士を結合し、顧客名とその顧客の注文 ID を取得する。
+
+## どっちが REFT？RIGHT?
+
+`ON` の前が LEFT、後が RIGHT
