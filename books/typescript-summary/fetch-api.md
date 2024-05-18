@@ -1,5 +1,5 @@
 ---
-"Fetch API"
+title: "Fetch API"
 ---
 
 https://developer.mozilla.org/ja/docs/Web/API/Fetch_API/Using_Fetch#%E3%83%95%E3%82%A7%E3%83%83%E3%83%81%E3%81%8C%E6%88%90%E5%8A%9F%E3%81%97%E3%81%9F%E3%81%8B%E3%81%AE%E7%A2%BA%E8%AA%8D
@@ -17,7 +17,7 @@ const fetchSample = async () => {
     const response = await fetch("https://httpbin.org/status/404");
   } catch (err) {
     // 404ではエラーはスローされない
-    console.log(err, "error");
+    console.error(err);
   }
 };
 ```
@@ -25,3 +25,17 @@ const fetchSample = async () => {
 **ネットワークエラーや CORS エラーの場合のみ `TypeError` でスローされる。**
 
 よって、`response.ok` でステータスコードが `2XX` かどうかを確認する必要がある。
+
+```ts
+const fetchSample = async () => {
+  try {
+    // ステータスコード404を返すリクエスト
+    const response = await fetch("https://httpbin.org/status/404");
+
+    // 4XX、5XX系エラーがあればthrowする
+    if (!response) throw new Error("Server Error");
+  } catch (err) {
+    console.error(err);
+  }
+};
+```
