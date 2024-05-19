@@ -508,8 +508,9 @@ J0:["$","@1",null,{"children":["$","span",null,{"children":"Hello from server la
    ![](https://storage.googleapis.com/zenn-user-upload/1382ecbd6311-20231015.png =500x)
    _引用 : https://postd.cc/how-react-server-components-work/_
 4. **DOM を構築し、描画する**
-   あとはこれまで通り、仮想 DOM 構築 → 実 DOM 構築 → 　描画を行います。
+   あとはこれまで通り、仮想 DOM 構築 → 実 DOM 構築 → 描画を行います。
 
+ここまでの流れを図示すると、以下のようになります。
 ![](https://storage.googleapis.com/zenn-user-upload/5a214ff7cd8f-20240512.png)
 
 ## RSC（SSR あり）のレンダリングプロセス
@@ -523,13 +524,18 @@ https://nextjs.org/docs/app/building-your-application/rendering/server-component
    SSR の場合、サーバー側でも stage1 を実行します。
    ここでは、RSC ペイロードを参照しつつ React ツリーを再構築します。
    その結果を HTML として生成します。
-3. **生成した HTML と CC の JS バンドルをクライアントに送信する**
-   SSR では、サーバー側で React ツリーの再構築を行なっているため、RSC ペイロードをクライアントに送信する必要はありません。JS バンドルの中身は、CC のハイドレーション用です。
-4. **バンドル JS を基に CC をハイドレーションする**
-   CC をハイドレートし、アプリケーションをインタラクティブにします。
-   従来の SSR と異なる点として、**インタラクション性が必要な CC だけがバンドルに含まれています**。
+3. **生成した HTML と RSC ペイロード、 CC の JS バンドルをクライアントに送信する**
+   SSR では、サーバー側で stage1 を実行した結果である HTML も返却します。 JS バンドルの中身は、SSR なしのときと同様、CC のハイドレーション用です。
+4. **クライアントは受け取った HTML をブラウザレンダリングする**
+   この HTML は、高速に非インタラクティブなプレビューを表示するために使用されます。
+5. **React ツリーを再構築する**
+   SSR なしのときと同様、RSC ペイロードと JS バンドルを基に React ツリーを再構築します。
+6. **バンドル JS を基に CC をインタラクティブにする**
+7. **DOM を構築し、描画する**
+   仮想 DOM 構築 → 実 DOM の更新 → 描画を行います。
 
-![](https://storage.googleapis.com/zenn-user-upload/aed22be4e5ee-20240512.png)
+ここまでの流れを図示すると、以下のようになります。
+![](https://storage.googleapis.com/zenn-user-upload/ebf15cd55ea4-20240519.png)
 
 ## SC と CC の境界
 
