@@ -175,3 +175,177 @@ export const getItem = cache(async (id: string) => {
   return item;
 });
 ```
+
+## Data Cache
+
+- Request Memoization と同様、サーバー上におけるデータフェッチの結果をキャッシュする
+- `fetch` 関数を使用した場合、デフォルトでキャッシュされる
+- ビルド時にキャッシュされる
+- キャッシュされたデータはどのユーザーでもパブリックに使用される
+- よって、キャッシュ可能なのは「静的データ」に限定される
+
+![](https://storage.googleapis.com/zenn-user-upload/ce2601b69141-20240519.png)
+
+### 特徴
+
+- 異なるブラウザリクエストをまたいで共有される
+- 異なるユーザーをまたいで共有される
+- **再ビルドしても破棄されない**
+- キャッシュ更新には再検証が必要
+
+### キャッシュの保存期間
+
+- 再検証が発生するまで、永続的に再利用される
+- ローカル開発環境における build & start でも同様
+
+### 再検証
+
+再検証には 2 通りある。
+
+- Time-based Revalidation
+- On-demand Revalidation
+
+### オプトアウト（キャッシュ機能の無効化）
+
+`fetch` 関数に以下のどちらかを指定する。
+
+```ts
+// 個々の `fetch` リクエストに対するキャッシュをオプトアウトする。
+fetch(`https://...`, { cache: "no-store" });
+fetch(`https://...`, { next: { revalidate: 0 } });
+```
+
+また、以下を Root Layout から `export` することで、特定の Root Segment のキャッシュを一括でオプトアウトできる。
+
+```ts
+// ルートセグメント内のすべてのデータリクエストのキャッシュをオプトアウトする
+export const dynamic = "force-dynamic";
+```
+
+### 対応するリクエストメソッド
+
+GET だけでなく、POST メソッドによるデータ取得もキャッシュされる。
+例えば、以下のように GraphQL サーバーから静的データを取得する際などに活用できる。
+
+```ts
+fetch("/path/to/graphql", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ query }),
+  next: { revalidate: 60 * 60 * 24 },
+});
+```
+
+### `fetch` 関数以外でキャッシュする方法
+
+Next.js が提供する `unstable_cache` 関数を使用する。
+第一引数に渡す「非同期関数」の戻り値がキャッシュされる。
+
+```ts
+import { getUser } from "./data";
+import { unstable_cache } from "next/cache";
+
+const getCahrdUser = unstable_cache(async (id) => getUser(id), ["my-app-user"]);
+
+export default async function Component({ userID }) {
+  const user = await getCachedUser(userID);
+  // ...省略
+}
+```
+
+## Full Route Cache
+
+- 各 Route のレスポンスを永続的にキャッシュする
+- 具体的には、「RSC ペイロード」と「HTML」をキャッシュする
+
+![](https://storage.googleapis.com/zenn-user-upload/5f69662e55a7-20240519.png)
+SSG と同じイメージ。
+
+### 特徴
+
+- ビルド時 or 再検証のタイミングでデータフェッチ&レンダリングする
+- RSC ペイロードと HTML をキャッシュする
+- 再ビルドすると破棄される
+- キャッシュされるのは「静的レンダリング」のみ
+- 異なるユーザー間で共有される
+
+### キャッシュの保存期間
+
+- デフォルトでは永続的に保存される
+- 再ビルドすると破棄される
+- 再検証によるキャッシュ更新が可能
+
+### 再検証
+
+再検証のタイミングは 2 つ。
+
+- Data Cache の再検証時
+- 再ビルド時
+
+### オプトアウト（キャッシュ機能の無効化）
+
+オプトアウトする方法は 2 つ。
+
+1. **動的レンダリングにする**
+   静的レンダリングの場合、自動でキャッシュされてしまうので、[動的関数](https://ja.next-community-docs.dev/docs/app-router/building-your-application/caching/#%E5%8B%95%E7%9A%84%E9%96%A2%E6%95%B0)を使うなどしてブラウザリクエストの度にレンダリングが必要な状態にする。
+2. **Data Cache をオプトアウトする**
+   レンダリング時にデータ取得が必要な場合、Data Cache をオプトアウトすることで Full Route Cache もオプトアウトされる。ルートにキャッシュされない `fetch` リクエストがある場合、Full Route Cache から除外される。
+
+## Router Cahce
+
+- クライアント側で RSC ペイロードをキャッシュする
+- ブラウザのメモリ上にキャッシュされる
+- HTML はキャッシュしない
+
+![](https://storage.googleapis.com/zenn-user-upload/55813d509fb3-20240519.png)
+
+### キャッシュの保存期間
+
+一定期間が経過すると、自動で破棄される。所用時間は、レンダリングが静的か動的かによって異なる。
+
+- 動的レンダリング：30 秒
+- 静的レンダリング：5 分
+
+### 再検証
+
+3 つの手法がある。
+
+1. **`router.refresh` で新規にリクエストを送信する**
+   - `useRouter` の `refresh` 関数を使用することで、ルートを手動で更新できる
+   - これは Router Cache を完全にクリアし、現在のルートに対して新たなリクエストを送信する
+2. **Server Action 内で `cookies.set` または `cookies.delete` を使用する**
+3. **Server Action 内で On-demand Revalidation を実施する**
+
+- 手法 2 は、古い Full Route Cache や Data Cache に HIT する場合があるため、最新の結果がレンダリングされるとは限らない
+
+### オプトアウト（キャッシュ機能の無効化）
+
+- **オプトアウトできない**
+- 必ずキャッシュされる
+
+### Link prefetch
+
+`<Link>` コンポーネントは、遷移先のページをプリフェッチする。
+これにより、ナビゲーションが高速になり、より良い UX を提供できる。
+
+プリフェッチの流れは以下の図の通り。
+![](https://storage.googleapis.com/zenn-user-upload/e21c6e911019-20240519.png)
+`<Link>` コンポーネントがユーザーのビューポートに表示されると、自動的にプリフェッチされる。
+プリフェッチの動作は、静的ルートと動的ルートで異なる。
+
+- **静的ルート** :
+  - デフォルトでルート全体がプリフェッチされ、キャッシュされる
+- **動的ルート** :
+  - 直近の loading.js ファイルまでの共有レイアウトのみをプリフェッチし 30 秒間キャッシュする
+  - つまり、ルートレイアウトやネストされた `layout.ts` のみがプリフェッチの対象となる
+
+`<Link>` には `preferch` prop を指定できる
+
+- デフォルトでは `true`
+- `true` を（明示的に？）指定すると、動的ルートであってもキャッシュ保存期間が 5 分になる。
+- `false` に指定すると、プリフェッチはオプトアウトされ、静的ルートであってもキャッシュ保存期間が 30 秒となる。
+
+### 注意点
+
+Route Cache はオプトアウトする手段がないため、動的ルートであっても最低 30 秒はキャッシュされる。
+そのため、表示するデータの更新を即座に反映できない可能性がある。
