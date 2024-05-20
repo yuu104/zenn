@@ -74,7 +74,7 @@ myDog.bark(); // Woof!
 - **呼び出し:** インスタンス生成時、必ず最初に自動で呼び出される
 - **アクセス修飾子:** `public`、`private`、`protected`、修飾子なしのどれか
 
-### コンストラクタは複数指定可能（バーバーロード）
+### コンストラクタは複数指定可能（オーバーロード）
 
 - コンストラクタはメソッド
 - よって、オーバーロード可能
@@ -565,7 +565,7 @@ public class Employee {
 | アクセス修飾子 | 説明                                   |
 | -------------- | -------------------------------------- |
 | `public`       | どこからでもアクセス可能               |
-| 無指定         | どうパッケージ内からのアクセスのみ可能 |
+| 無指定         | 同一パッケージ内からのアクセスのみ可能 |
 
 #### メンバに使用可能なアクセス修飾子
 
@@ -1257,3 +1257,59 @@ public class Main {
 `Doc` クラスはこの抽象クラスを継承し、具体的な `move()` メソッドを実装している。
 
 :::
+
+## 可変長引数
+
+- メソッドが不特定多数の引数を受け取れるようにするための機能
+- 可変長引数を使用すると、配列を渡すのと同じように、0 個以上の引数を渡すことができる
+
+### 可変長引数の定義
+
+可変長引数は、メソッドのパラメータリストの最後に `...` を使用して定義する。
+
+```java
+public class VarargsExample {
+    public static void printNumbers(int... numbers) {
+        for (int number : numbers) {
+            System.out.println(number);
+        }
+    }
+
+    public static void main(String[] args) {
+        // 可変長引数メソッドの呼び出し
+        printNumbers(1, 2, 3); // 出力: 1 2 3
+        printNumbers(10, 20);  // 出力: 10 20
+        printNumbers();        // 出力なし
+    }
+}
+```
+
+### 注意点
+
+- 可変長引数は、メソッドの最後のパラメータでなければならない
+  ```java
+  public void exampleMethod(String fixedParam, int... varargs) {
+      // 実装
+  }
+  ```
+- 可変長引数を使うメソッドをオーバーロードする場合は、注意が必要
+- 曖昧さを避けるために、特定の引数リストのメソッドを先に定義するのが一般的
+
+```java
+public class VarargsExample {
+    public static void printNumbers(int number) {
+        System.out.println("Single number: " + number);
+    }
+
+    public static void printNumbers(int... numbers) {
+        for (int number : numbers) {
+            System.out.println("Number: " + number);
+        }
+    }
+
+    public static void main(String[] args) {
+        printNumbers(1);       // Single number: 1
+        printNumbers(1, 2, 3); // Number: 1 Number: 2 Number: 3
+    }
+}
+```

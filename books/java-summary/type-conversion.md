@@ -90,12 +90,6 @@ double d = 0.5;
 double result = c + d; // 65.5
 ```
 
-```java
-char a = 'A'; // Unicode for 'A' is 65
-char b = 'B';
-double result = c + d; // 65.5
-```
-
 ## 明示的な型変換
 
 ### 数値型同士の型変換
@@ -126,6 +120,17 @@ byte b = (byte) s;    // shortからbyteへ明示的にキャスト
   - 動小数点数から整数へのキャストでは、小数点以下が切り捨てられる
   - 大きな数値を小さな型にキャストする際には、正確な値が失われる可能性がある
 
+### 浮動小数点数 → 　整数の型変換
+
+小数点以下は切り捨てられる。
+
+```java
+double a = 123.456;
+
+int b = (int)a;
+System.out.println(b); // 123
+```
+
 ### 文字 ⇄ 整数の型変換
 
 **文字列 → 　整数:**
@@ -140,4 +145,9 @@ int y = Integer.parseInt(x);
 ```java
 int x = 10;
 String y = String.valueOf(x);
+```
+
+```java
+int number = 123;
+String str = Integer.toString(number);
 ```
