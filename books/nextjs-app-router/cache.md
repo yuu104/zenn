@@ -2,7 +2,7 @@
 title: "キャッシュ"
 ---
 
-App Router では、「レンダリング結果」と「データフェッチ結果」をデフォルトでキャッシュする機能が備わっている。
+App Router では、「レンダリング結果」と「データフェッチ結果」を**デフォルトで**キャッシュする機能が備わっている。
 キャッシュの種類は以下 4 つ。
 
 - Request Memoization
@@ -10,12 +10,12 @@ App Router では、「レンダリング結果」と「データフェッチ結
 - Full Route Cache
 - Router Cache
 
-| 種類                | キャッシュ対象                             | 保管場所                                         | 目的                                                      | キャッシュ期間                   |
-| ------------------- | ------------------------------------------ | ------------------------------------------------ | --------------------------------------------------------- | -------------------------------- |
-| Request Memoization | `fetch` 関数の戻り値（データフェッチ結果） | Server                                           | Route Segment（コンポーネントツリー）でデータを再利用する | ブラウザリクエストごと           |
-| Data Cache          | データフェッチ結果                         | ブラウザリクエスト・デプロイをまたぐデータの保存 | 永久的（再検証可能）                                      |
-| Full Route Cache    | HTML, RSC Payload                          | Server                                           | レンダリングコストの削減                                  | 永久的（再検証可能）             |
-| Router Cache        | RSC Payload                                | Client                                           | ナビゲーション時のブラウザリクエスト削減                  | ユーザーセッション or 時間ベース |
+| 種類                | キャッシュ対象                             | 保管場所  | 目的                                                      | キャッシュ期間                   |
+| ------------------- | ------------------------------------------ | --------- | --------------------------------------------------------- | -------------------------------- |
+| Request Memoization | `fetch` 関数の戻り値（データフェッチ結果） | Server    | Route Segment（コンポーネントツリー）でデータを再利用する | ブラウザリクエストごと           |
+| Data Cache          | データフェッチ結果                         | Server 　 | ブラウザリクエスト・デプロイをまたぐデータの保存          | 永久的（再検証可能）             |
+| Full Route Cache    | HTML, RSC Payload                          | Server    | レンダリングコストの削減                                  | 永久的（再検証可能）             |
+| Router Cache        | RSC Payload                                | Client    | ナビゲーション時のブラウザリクエスト削減                  | ユーザーセッション or 時間ベース |
 
 キャッシュされる順番は
 
@@ -176,12 +176,19 @@ export const getItem = cache(async (id: string) => {
 });
 ```
 
+### キャッシュされる条件
+
+以下 2 つのどちらかを満たせばキャッシュされる。
+
+- サーバー上で `fetch` 関数を使用する
+- サーバー上で `cache` 関数を使用する
+
 ## Data Cache
 
 - Request Memoization と同様、サーバー上におけるデータフェッチの結果をキャッシュする
 - `fetch` 関数を使用した場合、デフォルトでキャッシュされる
-- ビルド時にキャッシュされる
-- キャッシュされたデータはどのユーザーでもパブリックに使用される
+- ビルド時やサーバーリクエスト時にキャッシュされる
+- **キャッシュされた場合、誰もが共有できるデータとなる**
 - よって、キャッシュ可能なのは「静的データ」に限定される
 
 ![](https://storage.googleapis.com/zenn-user-upload/ce2601b69141-20240519.png)
@@ -207,20 +214,41 @@ export const getItem = cache(async (id: string) => {
 
 ### オプトアウト（キャッシュ機能の無効化）
 
-`fetch` 関数に以下のどちらかを指定する。
+1. **`fetch` 関数に以下のどちらかを指定する。**
 
-```ts
-// 個々の `fetch` リクエストに対するキャッシュをオプトアウトする。
-fetch(`https://...`, { cache: "no-store" });
-fetch(`https://...`, { next: { revalidate: 0 } });
-```
+   ```ts
+   // 個々の `fetch` リクエストに対するキャッシュをオプトアウトする。
+   fetch(`https://...`, { cache: "no-store" });
+   fetch(`https://...`, { next: { revalidate: 0 } });
+   ```
 
-また、以下を Root Layout から `export` することで、特定の Root Segment のキャッシュを一括でオプトアウトできる。
+2. **以下を Root Layout から `export` することで、特定の Root Segment のキャッシュを一括でオプトアウトできる**
 
-```ts
-// ルートセグメント内のすべてのデータリクエストのキャッシュをオプトアウトする
-export const dynamic = "force-dynamic";
-```
+   ```ts
+   // ルートセグメント内のすべてのデータリクエストのキャッシュをオプトアウトする
+   export const dynamic = "force-dynamic";
+   ```
+
+3. **レンダリングプロセスの中で「動的関数」を使用する**
+   「動的関数」を使用すると、そのコンポーネント内で使用した `fetch` はキャッシュされない。
+   以下の実装では、動的関数である `cookies` を使用しているため、`fetch` 関数は明示的なオプトアウトをしていないにも関わらず、「動的データ取得」として扱われる。
+
+   ```ts
+   import { cookies } from "next/headers";
+
+   export function Page() {
+     const cookieStore = cookies();
+
+     const res = await fetch(`https://...`);  // 動的データ取得
+     const data = await res.json();
+
+     return (
+      // 省略
+     )
+   }
+   ```
+
+   しかし、`fetch` 関数で `{ cache: "force-cache" }` の指定や [`export const fetchCache = "force-cache"` の利用](https://ja.next-community-docs.dev/docs/app-router/api-reference/file-conventions/route-segment-config?_highlight=dynamic#fetchcache)があると、動的関数が存在しても「静的データ取得」として扱われ、キャッシュが有効になる。
 
 ### 対応するリクエストメソッド
 
@@ -287,7 +315,8 @@ SSG と同じイメージ。
 オプトアウトする方法は 2 つ。
 
 1. **動的レンダリングにする**
-   静的レンダリングの場合、自動でキャッシュされてしまうので、[動的関数](https://ja.next-community-docs.dev/docs/app-router/building-your-application/caching/#%E5%8B%95%E7%9A%84%E9%96%A2%E6%95%B0)を使うなどしてブラウザリクエストの度にレンダリングが必要な状態にする。
+   - [動的関数](https://ja.next-community-docs.dev/docs/app-router/building-your-application/caching/#%E5%8B%95%E7%9A%84%E9%96%A2%E6%95%B0)を使うなどしてブラウザリクエストの度にレンダリングが必要な状態にする
+   - [`dynamic = "force-dyamic"`](https://ja.next-community-docs.dev/docs/app-router/api-reference/file-conventions/route-segment-config?_highlight=dynamic#dynamic) または [`revalidate = 0`](https://ja.next-community-docs.dev/docs/app-router/api-reference/file-conventions/route-segment-config?_highlight=dynamic#revalidate) を使用して、強制的に動的レンダリングさせる
 2. **Data Cache をオプトアウトする**
    レンダリング時にデータ取得が必要な場合、Data Cache をオプトアウトすることで Full Route Cache もオプトアウトされる。ルートにキャッシュされない `fetch` リクエストがある場合、Full Route Cache から除外される。
 
@@ -349,3 +378,8 @@ SSG と同じイメージ。
 
 Route Cache はオプトアウトする手段がないため、動的ルートであっても最低 30 秒はキャッシュされる。
 そのため、表示するデータの更新を即座に反映できない可能性がある。
+
+## Data Cache と Full Route Cache
+
+- Data Cache をオプトアウトすると、Full Route Cache が無効になる
+- Full Route Cache のオプトアウトは Data Cache に影響しない
