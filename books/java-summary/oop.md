@@ -1258,6 +1258,215 @@ public class Main {
 
 :::
 
+## インターフェース
+
+クラスが実装すべきメソッドのセットを定義するための抽象型。
+
+### インターフェースの特性
+
+1. **メソッドの宣言のみ**
+   - インターフェース内ではメソッドのシグネチャ（名前、引数、戻り値の型）だけを定義し、実装（メソッドボディ）は含めない
+   - 実装はインターフェースを実装するクラスで提供される
+2. **多重継承**
+   - クラスは複数のインターフェースを実装できる
+   - これは、Java のクラス継承が単一継承しかサポートしていないことに対して、インターフェースによる多重継承を可能にする
+3. **デフォルトメソッドと静的メソッド**
+   - Java 8 から、インターフェースにデフォルトメソッド（`default` キーワードを使用）と静的メソッド（`static` キーワードを使用）を定義できるようになった
+4. **定数**
+   - インターフェースはフィールドも持つことができるが、それらは暗黙的に `public static final` であり、定数として扱われる
+
+### インターフェースの定義と実装
+
+定義
+
+```java
+public interface Animal {
+    // メソッドの宣言
+    void eat();
+    void sleep();
+}
+```
+
+実装
+
+```java
+public class Dog implements Animal {
+    // インターフェースのメソッドを実装
+    @Override
+    public void eat() {
+        System.out.println("Dog is eating");
+    }
+
+    @Override
+    public void sleep() {
+        System.out.println("Dog is sleeping");
+    }
+}
+```
+
+使用
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        Animal myDog = new Dog();
+        myDog.eat();
+        myDog.sleep();
+    }
+}
+```
+
+### デフォルトメソッドと静的メソッド
+
+Java 8 から、インターフェースにデフォルトメソッドと静的メソッドを追加できるようになった。
+
+:::details デフォルトメソッド（Default Method）
+
+- デフォルトメソッドは、インターフェース内で実装を持つメソッド
+- インターフェースを実装するクラスが、これらのデフォルトメソッドをオーバーライドせずにそのまま使用することができる
+- デフォルトメソッドは `default` キーワードを使って定義される
+
+#### デフォルトメソッドの定義
+
+```java
+public interface Animal {
+    void eat();
+    void sleep();
+
+    // デフォルトメソッドの定義
+    default void breathe() {
+        System.out.println("Animal is breathing");
+    }
+}
+```
+
+#### デフォルトメソッドの利用
+
+```java
+public class Dog implements Animal {
+    @Override
+    public void eat() {
+        System.out.println("Dog is eating");
+    }
+
+    @Override
+    public void sleep() {
+        System.out.println("Dog is sleeping");
+    }
+
+    // breatheメソッドはデフォルト実装がそのまま使用される
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Dog dog = new Dog();
+        dog.eat(); // 出力: Dog is eating
+        dog.sleep(); // 出力: Dog is sleeping
+        dog.breathe(); // 出力: Animal is breathing
+    }
+}
+```
+
+#### デフォルトメソッドの利点
+
+1. **後方互換性の確保**
+   - 既存のインターフェースに新しいメソッドを追加する際に、既存の実装クラスに影響を与えずに変更を行うことができる
+   - これにより、後方互換性を維持できる
+2. **共通の実装の提供**
+   - 複数のクラスで共通の実装を提供でき、コードの重複を避けることができる
+
+:::
+
+:::details 静的メソッド（Static Method）
+
+- 静的メソッドは、インターフェース自体に関連するメソッドであり、インターフェースを実装するクラスからではなく、インターフェースそのものから呼び出される
+- 静的メソッドは `static` キーワードを使って定義される
+
+#### 静的メソッドの定義
+
+```java
+public interface Animal {
+    void eat();
+    void sleep();
+
+    // 静的メソッドの定義
+    static void info() {
+        System.out.println("This is an Animal interface");
+    }
+}
+```
+
+#### 静的メソッドの利用
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        // 静的メソッドはインターフェース名を使って呼び出す
+        Animal.info(); // 出力: This is an Animal interface
+    }
+}
+```
+
+#### 静的メソッドの利点
+
+1. **ユーティリティメソッドの提供**
+   - インターフェースに関連するユーティリティメソッドを提供できる
+   - これにより、ユーティリティクラスを別途作成する必要がなくなる
+2. **インスタンス不要**
+   - 静的メソッドはインスタンス化なしで呼び出せるため、インターフェースのメソッドを簡単に利用できる
+
+:::
+
+:::details デフォルトメソッドと静的メソッドの違い
+
+| 特性           | デフォルトメソッド                                 | 静的メソッド                                           |
+| -------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| 定義キーワード | `default`                                          | `static`                                               |
+| 実装の有無     | あり                                               | あり                                                   |
+| 呼び出し方     | インターフェースを実装するクラスのインスタンスから | インターフェース名を使用して直接呼び出し               |
+| 用途           | インターフェースに共通の実装を提供する             | インターフェースに関連するユーティリティメソッドを提供 |
+
+:::
+
+### 多重継承
+
+クラスは複数のインターフェースを実装できる。これにより、多重継承のような機能を実現できる。
+
+```java
+public interface Walkable {
+    void walk();
+}
+
+public interface Swimmable {
+    void swim();
+}
+
+public class Duck implements Walkable, Swimmable {
+    @Override
+    public void walk() {
+        System.out.println("Duck is walking");
+    }
+
+    @Override
+    public void swim() {
+        System.out.println("Duck is swimming");
+    }
+}
+```
+
+### インターフェースの利点
+
+1. **抽象化の提供**
+   - インターフェースは、実装の詳細を隠し、メソッドの契約（シグネチャ）を提供する
+   - これにより、異なる実装を同じインターフェースとして扱うことがでる
+2. **多重継承のサポート**
+   - Java ではクラスの多重継承が禁止されているが、インターフェースを使用することで多重継承のような機能を実現できる
+3. **コーディングの柔軟性**
+   - インターフェースを使用することで、異なるクラスが共通のインターフェースを実装し、コードの再利用性と柔軟性が向上する
+4. **モジュール性とテスト容易性**
+   - インターフェースを使用すると、依存関係の低減とモジュール化が進み、テストが容易になる
+   - モックオブジェクトを使用してインターフェースを実装することで、テストを効率的に行うことができる
+
 ## 可変長引数
 
 - メソッドが不特定多数の引数を受け取れるようにするための機能
