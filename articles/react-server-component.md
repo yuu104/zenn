@@ -128,8 +128,6 @@ https://qiita.com/Yametaro/items/22cde58cd6abf577f1a4
 
 ### SSR の魅力
 
-<!-- SSR の大きな利点は、**サーバで直接データを取得し、そのデータを基に UI 構築・HTML 生成ができる**ことです。 -->
-
 SSR の大きな利点は、**FCP だけでなく LCP の改善も可能である**ことです。
 
 SSR ではプリレンダリングにより FCP が改善されています。真っ白な画面ではなく、何かしらの表示（レイアウトなど）がある状態を素早く提供できるようになりました。
@@ -170,8 +168,8 @@ export async function getServerSideProps() {
 export default Products;
 ```
 
-`getServerSideProps` はサーバ上で実行される関数であり、JS バンドルには含まれず、クライアントで再実行されることはありません。
-これにより、LCP の問題が改善されました。
+`getServerSideProps` はサーバ上で実行されます。この関数が実行された結果が props としてコンポーネントに渡り、プリレンダリングが開始します。
+これにより、でユーザーが関心のあるコンテンツが初期表示時に含まれているため、LCP の問題が改善されます。
 
 ### SSR の問題点
 
@@ -333,64 +331,63 @@ stage0 の実行内容である、SC のレンダリングプロセスについ�
 
 1. **React 要素の生成**:
 
-   - `React.createElement` 関数は React 要素を生成
-   - React 要素は、オブジェクトの形式で、`type`（コンポーネントの種類や HTML タグなど）、`props`（プロパティや子要素を含む）、および`key`や`ref`などの特別なプロパティを含んでいる
+`React.createElement` 関数により React 要素を生成します。React 要素はオブジェクトの形式のデータであり、`type`（コンポーネントの種類や HTML タグなど）、`props`（プロパティや子要素を含む）、および`key`や`ref`などの特別なプロパティを含んでいます。
 
-   例として、以下のような計 2 つのコンポーネントの場合、
+例として、以下のような計 2 つのコンポーネントの場合、
 
-   ```tsx
-   function Greeting({ name }) {
-     return <h1 className="greeting">Hello!</h1>;
-   }
+```tsx
+function Greeting({ name }) {
+  return <h1 className="greeting">Hello!</h1>;
+}
 
-   export default function App() {
-     return <Greeting name="Taylor" />;
-   }
-   ```
+export default function App() {
+  return <Greeting name="Taylor" />;
+}
+```
 
-   `createElement` により以下のようなオブジェクトが生成される。
+`createElement` により以下のようなオブジェクトが生成されます。
 
-   ```json
-   // App
-   {
-     type: Greeting,
-     props: {
-      name: 'Taylor'
-     },
-     key: null,
-     ref: null,
-   }
+```json
+// App
+{
+  type: Greeting,
+  props: {
+   name: 'Taylor'
+  },
+  key: null,
+  ref: null,
+}
 
-   // Greeting
-   {
-     type: "div",
-     {className: "greeting!"},
-     "Hello!",
-   }
-   ```
+// Greeting
+{
+  type: "div",
+  {className: "greeting!"},
+  "Hello!",
+}
+```
 
-2. **React ツリーの構築**:
-   `React.createElement` によって生成された React 要素は、親子関係を持つツリー構造（React ツリー）を形成します。
-   このツリーは、アプリケーション内すべてのコンポーネントの階層関係を表しています。
+1. **React ツリーの構築**:
+   React 要素は、親子関係を持つツリー構造（React ツリー）を形成します。
+   このツリーはアプリケーション内すべてのコンポーネントの階層関係を表しています。
 
-3. **仮想 DOM の構築**:
-   React ツリーは仮想 DOM の基盤となります。仮想 DOM は React ツリーから生成され、それは React が UI の状態を効率的に管理し、変更を追跡するための内部的な表現です。仮想 DOM は、実際の DOM とは独立して操作が行われるため、パフォーマンスが向上します。
+2. **仮想 DOM の構築**:
+   React ツリーは仮想 DOM の基盤となります。仮想 DOM は React ツリーから生成され、それは React が UI の状態を効率的に管理し、変更を追跡するための内部的な表現です。仮想 DOM は実際の DOM とは独立して操作が行われるため、パフォーマンスが向上します。
 
-4. **Diffing アルゴリズムによる変更点の検出**:
+3. **Diffing アルゴリズムによる変更点の検出**:
    コンポーネントの状態やプロパティが更新されると、新しい React ツリーが生成され、新旧の仮想 DOM が比較されます。この比較プロセスは、変更が必要な DOM ノードだけを特定するために行われます。
 
-5. **実 DOM への更新**:
+4. **実 DOM への更新**:
    変更が必要な部分が特定された後、React はそれらの変更を実 DOM に反映します。このステップは効率的に行われるため、パフォーマンスの低下を最小限に抑えつつ、ユーザーインターフェースが更新されます。
 
 :::
 
-RSC をレンダリングする時には、以下のような流れになります。
+RSC は以下のような流れでレンダリングされます。
 
-1. サーバがレンダリングリクエストを受け取る
-2. サーバが React 要素を生成し、React ツリーを構築する
+1. サーバーがレンダリングリクエストを受け取る
+2. サーバーが React 要素を生成し、React ツリーを構築する
 3. 構築した React ツリーをシリアライズする
 
-SC をレンダリングした（stage0 を実行した）ことによる最終成果物は「**React ツリーをシリアライズしたもの**」です。[Next.js](https://nextjs.org/docs/app/building-your-application/rendering/server-components#how-are-server-components-rendered)では、これを「**RSC ペイロード**と呼称しています」
+SC をレンダリングした（stage0 を実行した）ことによる最終成果物は**React ツリーをシリアライズしたもの**です。[Next.js](https://nextjs.org/docs/app/building-your-application/rendering/server-components#how-are-server-components-rendered)では、これを「**RSC ペイロード**」と呼称しています。
 
 ### 1. サーバがレンダリングリクエストを受け取る
 
