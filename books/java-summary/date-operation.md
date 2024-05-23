@@ -49,7 +49,7 @@ System.out.println("One month ago: " + lastMonth); // One month ago: 2024-04-22
 
 時間（時分秒）を表すクラス。
 
-#### 現在の時刻を取得
+### 現在の時刻を取得
 
 ```java
 import java.time.LocalTime;
@@ -58,14 +58,14 @@ LocalTime now = LocalTime.now();
 System.out.println("Current time: " + now); // Current time: 10:31:30.753651
 ```
 
-#### 特定の時刻を作成
+### 特定の時刻を作成
 
 ```java
 LocalTime specificTime = LocalTime.of(14, 30);
 System.out.println("Specific time: " + specificTime); // Specific time: 14:30
 ```
 
-#### 時間の加算と減算
+### 時間の加算と減算
 
 ```java
 LocalTime now = LocalTime.now();
@@ -618,7 +618,7 @@ System.out.println("Current date and time: " + now);
 System.out.println("New date and time (PM): " + newDateTime);
 ```
 
-## `java.time.temporal.ChronoUnit`
+## `ChronoUnit` クラス
 
 日付や時刻の特定の単位（年、月、日、時間、分、秒など）を表す列挙型。これを使用することで、期間の計算や日付・時刻の加算・減算を簡単に行うことができる。
 
@@ -822,3 +822,53 @@ System.out.println("Truncated to seconds: " + truncatedToSeconds);
 ```
 
 この例では、14 時 35 分 50 秒 123456789 ナノ秒が 14 時 35 分 50 秒に切り捨てられる。
+
+## 日付同士の差分を取得したい場合
+
+https://qiita.com/tora_kouno/items/d230f904a2b768ccb319
+
+## `TemporalAdjusters` クラス
+
+「次の月曜日」や「今月の最終日」などの日時操作を簡単に行うことができる。
+
+:::details 使い方
+
+```java
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.time.DayOfWeek;
+
+public class Main {
+    public static void main(String[] args) {
+        // 現在の日付を取得
+        LocalDate today = LocalDate.now();
+
+        // 次の月曜日に調整
+        LocalDate nextMonday = today.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+        System.out.println("Next Monday: " + nextMonday);
+
+        // 今月の最終日に調整
+        LocalDate lastDayOfMonth = today.with(TemporalAdjusters.lastDayOfMonth());
+        System.out.println("Last day of this month: " + lastDayOfMonth);
+
+        // 次の特定の日（例えば次の金曜日）
+        LocalDate nextFriday = today.with(TemporalAdjusters.next(DayOfWeek.FRIDAY));
+        System.out.println("Next Friday: " + nextFriday);
+    }
+}
+```
+
+:::
+
+:::details よく使われる `TemporalAdjusters` のメソッド
+
+- `firstDayOfMonth()`: 月の最初の日
+- `lastDayOfMonth()`: 月の最後の日
+- `firstDayOfNextMonth()`: 次の月の最初の日
+- `firstDayOfYear()`: 年の最初の日
+- `lastDayOfYear()`: 年の最後の日
+- `firstInMonth(DayOfWeek dayOfWeek)`: 月の最初の特定の曜日
+- `next(DayOfWeek dayOfWeek)`: 次の特定の曜日
+- `previous(DayOfWeek dayOfWeek)`: 前の特定の曜日
+
+:::
