@@ -27,3 +27,5 @@ chapters:
   - oop
   - java-lang-object
   - try-catch
+  - enum
+  - date-operation
