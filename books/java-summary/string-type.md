@@ -427,9 +427,7 @@ if (str.equals(str_2)){
 
 :::
 
-`StringBuilder`クラスについて網羅的かつ簡潔に解説します。
-
-### `StringBuilder` クラス
+## `StringBuilder` クラス
 
 - Java で可変長の文字列を扱うためのクラス
 - 通常、文字列の操作（連結、挿入、置換など）は不変の`String`クラスを使用すると非効率になる場合がある

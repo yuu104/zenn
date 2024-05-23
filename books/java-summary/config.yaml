@@ -23,6 +23,7 @@ chapters:
   - package
   - class-path
   - big-decimal
+  - collection
   - array-list
   - oop
   - java-lang-object

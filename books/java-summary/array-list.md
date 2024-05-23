@@ -15,17 +15,146 @@ ArrayList<型> 変数名 = new ArrayList<型>();
 
 ## 主要なメソッド
 
-1. **`get(index)`**
-   - 引数に指定したインデックスに該当するデータを参照
-2. **`add(data)`**
-   - `ArrayList` にデータを追加する
-   - 追加された順に 0 からインデックスが振られる
-3. **`size()`**
-   - `ArrayList` の要素数を出力する
-4. **`isEmpty()`**
-   - リストに要素がない場合、`true` を返す
-5. **`remove(index)`**
-   - 引数に指定したインデックスに該当するデータを削除
+:::details add()
+
+- **説明**: 指定された要素をリストの末尾に追加する。
+- **シグネチャ**: `public boolean add(E e)`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  list.add("banana");
+  // リストは ["apple", "banana"]
+  ```
+
+:::
+
+:::details add(int index, E element)
+
+- **説明**: 指定された位置に要素を挿入する。既存の要素は右にシフトされる。
+- **シグネチャ**: `public void add(int index, E element)`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  list.add(1, "banana");
+  // リストは ["apple", "banana"]
+  ```
+
+:::
+
+:::details get()
+
+- **説明**: 指定された位置にある要素を返す。
+- **シグネチャ**: `public E get(int index)`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  String element = list.get(0);
+  // elementは "apple"
+  ```
+
+:::
+
+:::details set()
+
+- **説明**: 指定された位置の要素を指定された要素に置き換える。
+- **シグネチャ**: `public E set(int index, E element)`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  list.set(0, "banana");
+  // リストは ["banana"]
+  ```
+
+:::
+
+:::details remove(int index)
+
+- **説明**: 指定された位置にある要素を削除し、その要素を返す。
+- **シグネチャ**: `public E remove(int index)`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  String removed = list.remove(0);
+  // removedは "apple"
+  // リストは []
+  ```
+
+:::
+
+:::details size()
+
+- **説明**: リストの要素数を返す。
+- **シグネチャ**: `public int size()`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  int size = list.size();
+  // sizeは 1
+  ```
+
+:::
+
+:::details clear()
+
+- **説明**: リストからすべての要素を削除する。
+- **シグネチャ**: `public void clear()`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  list.clear();
+  // リストは []
+  ```
+
+:::
+
+:::details isEmpty()
+
+- **説明**: リストが空であるかどうかを判定する。
+- **シグネチャ**: `public boolean isEmpty()`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  boolean empty = list.isEmpty();
+  // emptyは true
+  ```
+
+:::
+
+:::details contains()
+
+- **説明**: リストが指定された要素を含んでいるかどうかを判定する。
+- **シグネチャ**: `public boolean contains(Object o)`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  boolean contains = list.contains("apple");
+  // containsは true
+  ```
+
+:::
+
+:::details toArray()
+
+- **説明**: リスト内のすべての要素を含む配列を返す。
+- **シグネチャ**: `public Object[] toArray()`
+- **使用例**:
+  ```java
+  ArrayList<String> list = new ArrayList<>();
+  list.add("apple");
+  list.add("banana");
+  Object[] array = list.toArray();
+  // arrayは ["apple", "banana"]
+  ```
+
+:::
 
 ## `ArrayList` は参照型しか扱えない
 
