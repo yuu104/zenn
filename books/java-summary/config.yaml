@@ -23,10 +23,18 @@ chapters:
   - package
   - class-path
   - big-decimal
-  - collection
-  - array-list
   - oop
   - java-lang-object
   - try-catch
   - enum
   - date-operation
+  - collection
+  - list
+  - array-list
+  - linked-list
+  - iterator
+  - stream
+  - map
+  - hash-map
+  - linked-hash-map
+  - optional

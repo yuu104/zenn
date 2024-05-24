@@ -1467,6 +1467,194 @@ public class Duck implements Walkable, Swimmable {
    - インターフェースを使用すると、依存関係の低減とモジュール化が進み、テストが容易になる
    - モックオブジェクトを使用してインターフェースを実装することで、テストを効率的に行うことができる
 
+## ポリモーフィズム
+
+### 概要
+
+- OOP の重要な**概念**の一つ
+- 異なるクラスのオブジェクトが同じインターフェースを実装し、同じメソッド呼び出しに対して異なる振る舞いをすることを可能にする
+- これにより、コードの再利用性や拡張性が向上し、柔軟なプログラム設計が可能になる
+
+### 目的
+
+ポリモーフィズムの主な目的は、プログラムの柔軟性と拡張性を高めること。これにより、異なるクラスのオブジェクトを同じインターフェースや親クラスを通じて扱うことができ、コードの変更や追加を最小限に抑えながら機能を拡張できる。
+
+### 主な特徴
+
+1. **動的バインディング（遅延バインディング）**: 実行時にメソッドが決定される。
+2. **インターフェースの使用**: 異なるクラスが同じインターフェースを実装することで、一貫したメソッド呼び出しが可能。
+3. **オーバーライド**: サブクラスで親クラスのメソッドを再定義し、特定の振る舞いを実装。
+
+### ポリモーフィズムの種類
+
+1. **コンパイル時ポリモーフィズム（静的ポリモーフィズム）**:
+
+   - メソッドオーバーローディング
+   - 同じクラス内で、異なる引数リストを持つ同名のメソッドを複数定義すること
+
+   ```java
+   class Printer {
+       void print(String s) {
+           System.out.println(s);
+       }
+
+       void print(int i) {
+           System.out.println(i);
+       }
+   }
+   ```
+
+   - コンパイル時にメソッドが決定される
+
+2. **実行時ポリモーフィズム（動的ポリモーフィズム）**:
+
+   - メソッドオーバーライド
+
+   ```java
+   class Animal {
+       void makeSound() {
+           System.out.println("Some sound");
+       }
+   }
+
+   class Dog extends Animal {
+       @Override
+       void makeSound() {
+           System.out.println("Bark");
+       }
+   }
+
+   class Cat extends Animal {
+       @Override
+       void makeSound() {
+           System.out.println("Meow");
+       }
+   }
+   ```
+
+   - 実行時にメソッドが決定される
+
+### 解決したい技術的課題
+
+:::details コードの再利用性の向上
+
+- **問題点**
+  同じ動作を異なるクラスで実装する場合、コードが重複し、保守性が低下する。
+
+- **解決策**
+  ポリモーフィズムを使用して共通のインターフェースや親クラスを定義し、異なるクラスでそのインターフェースや親クラスを実装または継承することで、コードの重複を減らし、再利用性を向上させる。
+
+  ```java
+  interface Drawable {
+      void draw();
+  }
+
+  class Circle implements Drawable {
+      public void draw() {
+          System.out.println("Drawing Circle");
+      }
+  }
+
+  class Square implements Drawable {
+      public void draw() {
+          System.out.println("Drawing Square");
+      }
+  }
+
+  class DrawingApp {
+      public static void main(String[] args) {
+          Drawable shape1 = new Circle();
+          Drawable shape2 = new Square();
+          shape1.draw(); // Drawing Circle
+          shape2.draw(); // Drawing Square
+      }
+  }
+  ```
+
+:::
+
+:::details 拡張性の向上
+
+- **問題点**
+  新しい機能やクラスを追加するたびに、既存のコードを大幅に変更する必要がある。
+
+- **解決策**
+  ポリモーフィズムを活用し、共通のインターフェースや親クラスを使用することで、新しいクラスを追加する際に既存のコードに影響を与えずに拡張できる。
+
+  ```java
+  abstract class Employee {
+      abstract void work();
+  }
+
+  class Developer extends Employee {
+      void work() {
+          System.out.println("Writing code");
+      }
+  }
+
+  class Designer extends Employee {
+      void work() {
+          System.out.println("Designing UI");
+      }
+  }
+
+  class Company {
+      public static void main(String[] args) {
+          Employee dev = new Developer();
+          Employee des = new Designer();
+          dev.work(); // Writing code
+          des.work(); // Designing UI
+      }
+  }
+  ```
+
+:::
+
+:::details 柔軟性の向上
+
+- **問題点**
+  異なる動作を持つクラスを扱う場合、それぞれに対して特別な処理が必要になる。
+
+- **解決策**
+  ポリモーフィズムを使用して、共通のインターフェースや親クラスを通じて操作することで、異なるクラスのオブジェクトを一貫した方法で扱うことができる。
+
+  ```java
+  class Animal {
+      void makeSound() {
+          System.out.println("Some sound");
+      }
+  }
+
+  class Dog extends Animal {
+      @Override
+      void makeSound() {
+          System.out.println("Bark");
+      }
+  }
+
+  class Cat extends Animal {
+      @Override
+      void makeSound() {
+          System.out.println("Meow");
+      }
+  }
+
+  class AnimalSound {
+      public static void main(String[] args) {
+          Animal myDog = new Dog();
+          Animal myCat = new Cat();
+          myDog.makeSound(); // Bark
+          myCat.makeSound(); // Meow
+      }
+  }
+  ```
+
+:::
+
+### 結論
+
+ポリモーフィズムは、コードの再利用性、拡張性、柔軟性を向上させるための強力な概念。共通のインターフェースや親クラスを定義し、異なるクラスでこれを実装または継承することで、共通のメソッド呼び出しに対して異なる動作を実現できる。これにより、プログラムの保守性が向上し、新しい機能の追加が容易になる。
+
 ## 可変長引数
 
 - メソッドが不特定多数の引数を受け取れるようにするための機能
