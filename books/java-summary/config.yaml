@@ -37,4 +37,8 @@ chapters:
   - map
   - hash-map
   - linked-hash-map
+  - tree-map
+  - difference-of-linked-hash-map-and-tree-map
+  - set
+  - thread
   - optional

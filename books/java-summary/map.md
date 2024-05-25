@@ -1,5 +1,5 @@
 ---
-title: "Map"
+title: "Mapインターフェース"
 ---
 
 ## Map まとめ
@@ -37,7 +37,7 @@ title: "Map"
 
 ### 主要メソッド
 
-以下に`Map`インターフェースの主要メソッドとその使用例を示す。
+### Map の主要メソッド
 
 :::details put() - キーと値のペアを追加
 
@@ -54,70 +54,205 @@ title: "Map"
 
 :::details get() - 値の取得
 
-- **説明**: 指定されたキーに関連付けられた値を返す。
+- **説明**: 指定されたキーに対応する値を返す。
 - **シグネチャ**: `V get(Object key)`
 - **使用例**:
   ```java
-  int value = map.get("apple");
+  Integer value = map.get("apple");
   System.out.println(value); // 1
   ```
   :::
 
 :::details remove() - キーと値のペアを削除
 
-- **説明**: 指定されたキーに関連付けられたペアを削除する。
+- **説明**: 指定されたキーに対応するエントリをマップから削除する。
 - **シグネチャ**: `V remove(Object key)`
 - **使用例**:
   ```java
-  map.remove("banana");
-  System.out.println(map); // {apple=1}
+  map.remove("apple");
+  System.out.println(map); // {banana=2}
   ```
   :::
 
 :::details containsKey() - キーの存在確認
 
-- **説明**: 指定されたキーがマップに存在するかどうかを確認する。
+- **説明**: 指定されたキーがマップに存在するかを確認する。
 - **シグネチャ**: `boolean containsKey(Object key)`
 - **使用例**:
   ```java
-  boolean exists = map.containsKey("apple");
+  boolean exists = map.containsKey("banana");
   System.out.println(exists); // true
+  ```
+  :::
+
+:::details containsValue() - 値の存在確認
+
+- **説明**: 指定された値がマップに存在するかを確認する。
+- **シグネチャ**: `boolean containsValue(Object value)`
+- **使用例**:
+  ```java
+  boolean exists = map.containsValue(2);
+  System.out.println(exists); // true
+  ```
+  :::
+
+:::details size() - 要素数の取得
+
+- **説明**: マップに含まれるキーと値のペアの数を返す。
+- **シグネチャ**: `int size()`
+- **使用例**:
+  ```java
+  int size = map.size();
+  System.out.println(size); // 1
+  ```
+  :::
+
+:::details isEmpty() - 空の確認
+
+- **説明**: マップが空かどうかを確認する。
+- **シグネチャ**: `boolean isEmpty()`
+- **使用例**:
+  ```java
+  boolean isEmpty = map.isEmpty();
+  System.out.println(isEmpty); // false
+  ```
+  :::
+
+:::details clear() - 全てのエントリを削除
+
+- **説明**: マップの全てのエントリを削除する。
+- **シグネチャ**: `void clear()`
+- **使用例**:
+  ```java
+  map.clear();
+  System.out.println(map); // {}
   ```
   :::
 
 :::details keySet() - キーのセットを取得
 
-- **説明**: マップに含まれるすべてのキーのセットを返す。
+- **説明**: マップに含まれる全てのキーのセットを返す。
 - **シグネチャ**: `Set<K> keySet()`
 - **使用例**:
   ```java
   Set<String> keys = map.keySet();
-  System.out.println(keys); // [apple]
+  System.out.println(keys); // [apple, banana]
   ```
   :::
 
 :::details values() - 値のコレクションを取得
 
-- **説明**: マップに含まれるすべての値のコレクションを返す。
+- **説明**: マップに含まれる全ての値のコレクションを返す。
 - **シグネチャ**: `Collection<V> values()`
 - **使用例**:
   ```java
   Collection<Integer> values = map.values();
-  System.out.println(values); // [1]
+  System.out.println(values); // [1, 2]
   ```
   :::
 
-:::details entrySet() - エントリーのセットを取得
+:::details entrySet() - エントリのセットを取得
 
-- **説明**: マップに含まれるすべてのキーと値のペア（エントリー）のセットを返す。
+- **説明**: マップに含まれる全てのエントリのセットを返す。
 - **シグネチャ**: `Set<Map.Entry<K, V>> entrySet()`
 - **使用例**:
   ```java
   Set<Map.Entry<String, Integer>> entries = map.entrySet();
   for (Map.Entry<String, Integer> entry : entries) {
-      System.out.println(entry.getKey() + "=" + entry.getValue());
+      System.out.println(entry.getKey() + ": " + entry.getValue());
   }
-  // 出力: apple=1
+  // apple: 1
+  // banana: 2
+  ```
+  :::
+
+:::details putAll() - 全てのエントリをコピー
+
+- **説明**: 指定されたマップの全てのエントリをこのマップにコピーする。
+- **シグネチャ**: `void putAll(Map<? extends K, ? extends V> m)`
+- **使用例**:
+  ```java
+  Map<String, Integer> anotherMap = new HashMap<>();
+  anotherMap.put("cherry", 3);
+  map.putAll(anotherMap);
+  System.out.println(map); // {apple=1, banana=2, cherry=3}
+  ```
+  :::
+
+:::details getOrDefault() - デフォルト値を返す
+
+- **説明**: 指定されたキーに対応する値を返す。キーが存在しない場合はデフォルト値を返す。
+- **シグネチャ**: `V getOrDefault(Object key, V defaultValue)`
+- **使用例**:
+  ```java
+  Integer value = map.getOrDefault("orange", 0);
+  System.out.println(value); // 0
+  ```
+  :::
+
+:::details replace() - 値の置き換え
+
+- **説明**: 指定されたキーに対応する値を、新しい値で置き換える。
+- **シグネチャ**: `V replace(K key, V value)`
+- **使用例**:
+  ```java
+  map.replace("banana", 5);
+  System.out.println(map); // {apple=1, banana=5}
+  ```
+  :::
+
+:::details replace() - 条件付きで値の置き換え
+
+- **説明**: 指定されたキーと古い値が一致する場合に限り、新しい値で置き換える。
+- **シグネチャ**: `boolean replace(K key, V oldValue, V newValue)`
+- **使用例**:
+  ```java
+  boolean replaced = map.replace("banana", 2, 5);
+  System.out.println(replaced); // false
+  ```
+  :::
+
+:::details compute() - 値の再計算
+
+- **説明**: 指定されたキーに対する値を再計算し、置き換える。
+- **シグネチャ**: `V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction)`
+- **使用例**:
+  ```java
+  map.compute("banana", (k, v) -> v == null ? 1 : v + 1);
+  System.out.println(map); // {apple=1, banana=3}
+  ```
+  :::
+
+:::details computeIfAbsent() - 値が存在しない場合に計算
+
+- **説明**: 指定されたキーに対応する値が存在しない場合、新しい値を計算して格納する。
+- **シグネチャ**: `V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction)`
+- **使用例**:
+  ```java
+  map.computeIfAbsent("cherry", k -> 3);
+  System.out.println(map); // {apple=1, banana=2, cherry=3}
+  ```
+  :::
+
+:::details computeIfPresent() - 値が存在する場合に計算
+
+- **説明**: 指定されたキーに対応する値が存在する場合、新しい値を計算して置き換える。
+- **シグネチャ**: `V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction)`
+- **使用例**:
+  ```java
+  map.computeIfPresent("banana", (k, v) -> v + 1);
+  System.out.println(map); // {apple=1, banana=3}
+  ```
+  :::
+
+:::details merge() - 値をマージ
+
+- **説明**: 指定されたキーに対応する値を、指定された方法でマージする。
+- **シグネチャ**: `V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction)`
+- **使用例**:
+  ```java
+  map.merge("banana", 2, (oldValue, newValue) -> oldValue + newValue);
+  System.out.println(map); // {apple=1, banana=5}
   ```
   :::
 

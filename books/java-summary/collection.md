@@ -14,7 +14,7 @@ title: "コレクション"
 - さまざまなデータ構造を効率的に管理すること
 - これにより、データの保存、取得、操作が容易になる
 - 例えば、`ArrayList`は動的配列として使用でき、データのランダムアクセスが高速
-- `HashSet`は一意の要素を保持し、重複を排除するのに便利です。
+- `HashSet`は一意の要素を保持し、重複を排除するのに便利
 
 ### 再利用可能なアルゴリズムの提供
 
@@ -157,6 +157,375 @@ public class Main {
     }
 }
 ```
+
+## `Collections` クラス
+
+### 概要
+
+- コレクションフレームワークで提供されるユーティリティクラス
+- コレクションの操作を補助するための静的メソッドが多数含まれている
+- インスタンス化できず、全てのメソッドは静的
+
+### 目的
+
+- コレクションの操作（ソート、検索、変換、同期化など）を簡潔に行うこと
+- これにより、コードの可読性とメンテナンス性が向上する
+
+### 主な特徴
+
+- **ソート**: リストのソートを行うメソッドを提供。
+- **検索**: コレクション内で特定の要素を検索するメソッドを提供。
+- **変換**: コレクションの要素を変換するメソッドを提供。
+- **同期化**: コレクションを同期化するメソッドを提供。
+- **ユーティリティ**: コレクションの操作に便利なメソッドを多数提供。
+
+### 主なメソッド
+
+#### ソート関連
+
+:::details sort() - リストのソート
+
+- **説明**: リストを自然順序でソートする。
+- **シグネチャ**: `void sort(List<T> list)`
+- **使用例**:
+  ```java
+  List<String> list = new ArrayList<>(Arrays.asList("banana", "apple", "cherry"));
+  Collections.sort(list);
+  System.out.println(list); // [apple, banana, cherry]
+  ```
+  :::
+
+:::details sort() - リストを指定のコンパレータでソート
+
+- **説明**: 指定されたコンパレータでリストをソートする。
+- **シグネチャ**: `void sort(List<T> list, Comparator<? super T> c)`
+- **使用例**:
+  ```java
+  Collections.sort(list, Collections.reverseOrder());
+  System.out.println(list); // [cherry, banana, apple]
+  ```
+  :::
+
+#### 検索関連
+
+:::details binarySearch() - リスト内のバイナリ検索
+
+- **説明**: ソートされたリスト内で指定されたキーのバイナリ検索を行う。
+- **シグネチャ**: `int binarySearch(List<? extends Comparable<? super T>> list, T key)`
+- **使用例**:
+  ```java
+  List<String> list = new ArrayList<>(Arrays.asList("apple", "banana", "cherry"));
+  Collections.sort(list);
+  int index = Collections.binarySearch(list, "banana");
+  System.out.println(index); // 1
+  ```
+  :::
+
+:::details binarySearch() - 指定のコンパレータでバイナリ検索
+
+- **説明**: コンパレータを使用して、ソートされたリスト内で指定されたキーのバイナリ検索を行う。
+- **シグネチャ**: `int binarySearch(List<? extends T> list, T key, Comparator<? super T> c)`
+- **使用例**:
+  ```java
+  int index = Collections.binarySearch(list, "banana", Collections.reverseOrder());
+  System.out.println(index); // 1
+  ```
+  :::
+
+#### 最小値・最大値関連
+
+:::details max() - コレクション内の最大要素を取得
+
+- **説明**: コレクション内の最大要素を返す。
+- **シグネチャ**: `T max(Collection<? extends T> coll)`
+- **使用例**:
+  ```java
+  int max = Collections.max(Arrays.asList(1, 2, 3));
+  System.out.println(max); // 3
+  ```
+  :::
+
+:::details max() - 指定のコンパレータで最大要素を取得
+
+- **説明**: 指定されたコンパレータで比較してコレクション内の最大要素を返す。
+- **シグネチャ**: `T max(Collection<? extends T> coll, Comparator<? super T> comp)`
+- **使用例**:
+  ```java
+  String max = Collections.max(Arrays.asList("apple", "banana", "cherry"), Collections.reverseOrder());
+  System.out.println(max); // cherry
+  ```
+  :::
+
+:::details min() - コレクション内の最小要素を取得
+
+- **説明**: コレクション内の最小要素を返す。
+- **シグネチャ**: `T min(Collection<? extends T> coll)`
+- **使用例**:
+  ```java
+  int min = Collections.min(Arrays.asList(1, 2, 3));
+  System.out.println(min); // 1
+  ```
+  :::
+
+:::details min() - 指定のコンパレータで最小要素を取得
+
+- **説明**: 指定されたコンパレータで比較してコレクション内の最小要素を返す。
+- **シグネチャ**: `T min(Collection<? extends T> coll, Comparator<? super T> comp)`
+- **使用例**:
+  ```java
+  String min = Collections.min(Arrays.asList("apple", "banana", "cherry"), Collections.reverseOrder());
+  System.out.println(min); // apple
+  ```
+  :::
+
+#### 同期化関連
+
+:::details synchronizedCollection() - コレクションの同期化
+
+- **説明**: コレクションを同期化する。
+- **シグネチャ**: `Collection<T> synchronizedCollection(Collection<T> c)`
+- **使用例**:
+  ```java
+  Collection<String> syncCollection = Collections.synchronizedCollection(new ArrayList<>());
+  ```
+  :::
+
+:::details synchronizedList() - リストの同期化
+
+- **説明**: リストを同期化する。
+- **シグネチャ**: `List<T> synchronizedList(List<T> list)`
+- **使用例**:
+  ```java
+  List<String> syncList = Collections.synchronizedList(new ArrayList<>());
+  ```
+  :::
+
+:::details synchronizedSet() - セットの同期化
+
+- **説明**: セットを同期化する。
+- **シグネチャ**: `Set<T> synchronizedSet(Set<T> s)`
+- **使用例**:
+  ```java
+  Set<String> syncSet = Collections.synchronizedSet(new HashSet<>());
+  ```
+  :::
+
+:::details synchronizedMap() - マップの同期化
+
+- **説明**: マップを同期化する。
+- **シグネチャ**: `Map<K, V> synchronizedMap(Map<K, V> m)`
+- **使用例**:
+  ```java
+  Map<String, String> syncMap = Collections.synchronizedMap(new HashMap<>());
+  ```
+  :::
+
+#### 不変コレクション関連
+
+:::details unmodifiableCollection() - 不変コレクションの作成
+
+- **説明**: 不変コレクションを返す。
+- **シグネチャ**: `Collection<T> unmodifiableCollection(Collection<? extends T> c)`
+- **使用例**:
+  ```java
+  Collection<String> unmodifiableCollection = Collections.unmodifiableCollection(new ArrayList<>(Arrays.asList("apple", "banana")));
+  ```
+  :::
+
+:::details unmodifiableList() - 不変リストの作成
+
+- **説明**: 不変リストを返す。
+- **シグネチャ**: `List<T> unmodifiableList(List<? extends T> list)`
+- **使用例**:
+  ```java
+  List<String> unmodifiableList = Collections.unmodifiableList(new ArrayList<>(Arrays.asList("apple", "banana")));
+  ```
+  :::
+
+:::details unmodifiableSet() - 不変セットの作成
+
+- **説明**: 不変セットを返す。
+- **シグネチャ**: `Set<T> unmodifiableSet(Set<? extends T> s)`
+- **使用例**:
+  ```java
+  Set<String> unmodifiableSet = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("apple", "banana")));
+  ```
+  :::
+
+:::details unmodifiableMap() - 不変マップの作成
+
+- **説明**: 不変マップを返す。
+- **シグネチャ**: `Map<K, V> unmodifiableMap(Map<? extends K, ? extends V> m)`
+- **使用例**:
+  ```java
+  Map<String, String> unmodifiableMap = Collections.unmodifiableMap(new HashMap<>(Map.of("apple", "fruit", "carrot", "vegetable")));
+  ```
+  :::
+
+#### その他のユーティリティメソッド
+
+:::details addAll() - コレクションに要素を追加
+
+- **説明**: 指定された要素をコレクションに追加する。
+- **シグネチャ**: `boolean addAll(Collection<? super T> c, T... elements)`
+- **使用例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  Collections.addAll(list, "apple", "banana", "cherry");
+  System.out.println(list); // [apple, banana, cherry]
+  ```
+  :::
+
+:::details reverse() - リストの要素を逆順に並べ替え
+
+- **説明**: リストの要素を逆順に並べ替える。
+- **シグネチャ**: `void reverse(List<?> list)`
+- **使用例**:
+  ```java
+  Collections.reverse(list);
+  System.out.println(list); // [cherry, banana, apple]
+  ```
+  :::
+
+:::details shuffle() - リストの要素をランダムに並べ替え
+
+- **説明**: リストの要素をランダムに並べ替える。
+- **シグネチャ**: `void shuffle(List<?> list)`
+- **使用例**:
+  ```java
+  Collections.shuffle(list);
+  System.out.println(list); // [banana, apple, cherry] など
+  ```
+  :::
+
+:::details fill() - リストの全要素を置き換える
+
+- **説明**: 指定されたリストの全ての要素を指定されたオブジェクトで置き換える。
+- **シグネチャ**: `void fill(List<? super T> list, T obj)`
+- **使用例**:
+  ```java
+  Collections.fill(list, "orange");
+  System.out.println(list); // [orange, orange, orange]
+  ```
+  :::
+
+:::details copy() - リストの内容をコピー
+
+- **説明**: 元のリストの内容を新しいリストにコピーする。
+
+- **シグネチャ**: `void copy(List<? super T> dest, List<? extends T> src)`
+- **使用例**:
+  ```java
+  List<String> dest = new ArrayList<>(Arrays.asList("x", "x", "x"));
+  Collections.copy(dest, list);
+  System.out.println(dest); // [apple, banana, cherry]
+  ```
+  :::
+
+:::details nCopies() - オブジェクトの複数個のリストを返す
+
+- **説明**: 指定されたオブジェクトの n 個のイミュータブルなリストを返す。
+- **シグネチャ**: `List<T> nCopies(int n, T o)`
+- **使用例**:
+  ```java
+  List<String> nCopiesList = Collections.nCopies(3, "apple");
+  System.out.println(nCopiesList); // [apple, apple, apple]
+  ```
+  :::
+
+:::details replaceAll() - 全出現要素を置き換える
+
+- **説明**: 指定されたリスト内の全ての出現する要素を新しい要素で置き換える。
+- **シグネチャ**: `boolean replaceAll(List<T> list, T oldVal, T newVal)`
+- **使用例**:
+  ```java
+  Collections.replaceAll(list, "apple", "orange");
+  System.out.println(list); // [orange, banana, cherry]
+  ```
+  :::
+
+:::details rotate() - リストの要素を循環移動
+
+- **説明**: 指定された距離だけリストの要素を循環移動する。
+- **シグネチャ**: `void rotate(List<?> list, int distance)`
+- **使用例**:
+  ```java
+  Collections.rotate(list, 1);
+  System.out.println(list); // [cherry, orange, banana]
+  ```
+  :::
+
+:::details swap() - リスト内の二つの要素を入れ替え
+
+- **説明**: リスト内の二つの要素を入れ替える。
+- **シグネチャ**: `void swap(List<?> list, int i, int j)`
+- **使用例**:
+  ```java
+  Collections.swap(list, 0, 1);
+  System.out.println(list); // [orange, cherry, banana]
+  ```
+  :::
+
+以上が`Collections`クラスの主要なメソッドのリストです。それぞれのメソッドを使用することで、コレクションの操作が簡単かつ効率的に行えるようになります。
+
+### 解決したい技術的課題
+
+:::details コレクションのソート
+
+**問題点**: コレクションを効率的にソートしたい。
+**解決策**: `Collections.sort()`メソッドを使用すると、リストを簡単にソートできる。逆順ソートには`Collections.reverseOrder()`を使用する。
+
+```java
+List<Integer> numbers = Arrays.asList(5, 3, 8, 1);
+Collections.sort(numbers);
+System.out.println(numbers); // [1, 3, 5, 8]
+```
+
+:::
+
+:::details コレクションの同期化
+
+**問題点**: 複数スレッドからコレクションに安全にアクセスしたい。
+**解決策**: `Collections.synchronizedList()`などを使用して、コレクションを同期化する。
+
+```java
+List<String> syncList = Collections.synchronizedList(new ArrayList<>());
+syncList.add("apple");
+synchronized(syncList) {
+    for (String item : syncList) {
+        System.out.println(item);
+    }
+}
+```
+
+:::
+:::details 不変コレクションの作成
+
+**問題点**: コレクションを変更不可にしたい。
+**解決策**: `Collections.unmodifiableList()`などを使用して、不変コレクションを作成する。
+
+```java
+List<String> list = new ArrayList<>(Arrays.asList("apple", "banana"));
+List<String> unmodifiableList = Collections.unmodifiableList(list);
+// unmodifiableList.add("cherry"); // UnsupportedOperationExceptionが発生する
+```
+
+:::
+
+:::details 最大値・最小値の取得
+
+**問題点**: コレクション内の最大値や最小値を効率的に取得したい。
+**解決策**: `Collections.max()`や`Collections.min()`を使用して、簡単に最大値・最小値を取得する。
+
+```java
+List<Integer> numbers = Arrays.asList(5, 3, 8, 1);
+int max = Collections.max(numbers);
+int min = Collections.min(numbers);
+System.out.println("Max: " + max); // Max: 8
+System.out.println("Min: " + min); // Min: 1
+```
+
+:::
 
 ## まとめ
 

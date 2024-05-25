@@ -1,5 +1,5 @@
 ---
-title: "LinkedHashMap"
+title: "LinkedHashMap クラス"
 ---
 
 ## 概要
@@ -153,6 +153,122 @@ title: "LinkedHashMap"
   lruCache.get("apple"); // 'apple'が最後にアクセスされた要素になる
   System.out.println(lruCache); // {banana=2, cherry=3, apple=1}
   ```
+
+::: details LRU キャッシュについて
+
+`LinkedHashMap`は、挿入順序またはアクセス順序を保持するためにリンクリストの特性を持つハッシュマップであり、これを利用することで、LRU（Least Recently Used）キャッシュを簡単に実装できる。
+
+### LRU キャッシュの 目的
+
+- メモリ効率を高め、頻繁にアクセスされるデータの取得速度を向上させること
+- 古くなったデータを自動的に削除することで、メモリの無駄遣いを防ぎ、システム全体のパフォーマンスを向上させる
+
+### 解決したい技術的課題
+
+1. **メモリ効率の改善**:
+
+   - 大量のデータをメモリに保持すると、メモリ不足が発生する可能性がある
+   - 古くて使用されていないデータを自動的に削除することで、メモリの使用効率を向上させる
+
+2. **データアクセスの高速化**:
+
+   - 頻繁にアクセスされるデータをキャッシュに保持することで、データベースや他の永続化ストレージへのアクセス回数を減らし、アクセス速度を向上させる
+
+3. **簡単なキャッシュ管理**:
+   - キャッシュの管理をシンプルにし、コード量を減らすことで、メンテナンスを容易にする
+
+### 実装方法
+
+1. **基本的な設定**
+   `LinkedHashMap`のコンストラクタでアクセス順序モードを有効にし、キャッシュサイズを制限する。
+
+2. **`removeEldestEntry` メソッドのオーバーライド**
+   キャッシュサイズが指定された最大サイズを超えた場合に、最も古いエントリーを削除するために`removeEldestEntry`メソッドをオーバーライドする。
+
+```java
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class LRUCache<K, V> extends LinkedHashMap<K, V> {
+    private final int maxSize;
+
+    public LRUCache(int maxSize) {
+        super(maxSize, 0.75f, true); // 初期容量、負荷係数、アクセス順序モードを設定
+        this.maxSize = maxSize;
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+        return super.size() > maxSize; // キャッシュサイズが最大サイズを超えたら最も古いエントリーを削除
+    }
+
+    public static void main(String[] args) {
+        LRUCache<String, String> cache = new LRUCache<>(3);
+
+        cache.put("A", "Apple");
+        cache.put("B", "Banana");
+        cache.put("C", "Cherry");
+        System.out.println(cache); // {A=Apple, B=Banana, C=Cherry}
+
+        cache.get("A"); // 'A'がアクセスされ、最も最近使用されたものになる
+        cache.put("D", "Date"); // キャッシュが満杯なので、最も古いエントリー（B=Banana）が削除される
+        System.out.println(cache); // {C=Cherry, A=Apple, D=Date}
+    }
+}
+```
+
+### ユースケース
+
+1. **データベースクエリの結果キャッシュ**:
+   頻繁に同じクエリが実行される場合、その結果をキャッシュすることで、クエリ実行時間を短縮し、データベースの負荷を軽減する。
+
+   ```java
+   Map<String, ResultSet> queryCache = new LRUCache<>(100);
+   String sql = "SELECT * FROM users WHERE id = ?";
+   if (queryCache.containsKey(sql)) {
+       return queryCache.get(sql); // キャッシュから結果を取得
+   } else {
+       ResultSet result = executeQuery(sql);
+       queryCache.put(sql, result);
+       return result;
+   }
+   ```
+
+2. **Web ページのキャッシュ**:
+   動的に生成される Web ページの内容をキャッシュすることで、サーバーの負荷を軽減し、レスポンス時間を短縮する。
+
+   ```java
+   Map<String, String> pageCache = new LRUCache<>(50);
+   String url = "/home";
+   if (pageCache.containsKey(url)) {
+       return pageCache.get(url); // キャッシュからページ内容を取得
+   } else {
+       String pageContent = renderPage(url);
+       pageCache.put(url, pageContent);
+       return pageContent;
+   }
+   ```
+
+3. **セッションデータのキャッシュ**:
+   ユーザーセッション情報をキャッシュすることで、セッションの読み込みと書き込みを高速化する。
+
+   ```java
+   Map<String, Session> sessionCache = new LRUCache<>(1000);
+   String sessionId = request.getSessionId();
+   if (sessionCache.containsKey(sessionId)) {
+       return sessionCache.get(sessionId); // キャッシュからセッションを取得
+   } else {
+       Session session = loadSessionFromDatabase(sessionId);
+       sessionCache.put(sessionId, session);
+       return session;
+   }
+   ```
+
+### まとめ
+
+`LinkedHashMap`を使った LRU キャッシュは、メモリ効率の向上、データアクセスの高速化、簡単なキャッシュ管理を実現するための有効な手段。特に、頻繁にアクセスされるデータを効率的に管理することで、システム全体のパフォーマンスを向上させる。データベースクエリ結果のキャッシュ、Web ページのキャッシュ、セッションデータのキャッシュなど、多くのユースケースで活用できる。
+
+:::
 
 ### スレッドセーフな操作
 
