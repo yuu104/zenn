@@ -26,6 +26,7 @@ chapters:
   - oop
   - java-lang-object
   - try-catch
+  - assert
   - enum
   - date-operation
   - collection
@@ -39,6 +40,14 @@ chapters:
   - linked-hash-map
   - tree-map
   - difference-of-linked-hash-map-and-tree-map
+  - usecase-of-array-list-map
   - set
   - thread
   - optional
+  - file-io
+  - file
+  - file-reader
+  - file-writer
+  - buffer-reader-writer
+  - path
+  - paths

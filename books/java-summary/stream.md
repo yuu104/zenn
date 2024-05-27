@@ -121,7 +121,8 @@ Java Stream API は、コレクションデータの処理を効率化し、コ�
                 .reduce(0, Integer::sum);
   System.out.println(sum); // 15
   ```
-  :::
+
+:::
 
 :::details distinct() - 重複の除去
 

@@ -128,18 +128,251 @@ public class FileOperation {
 - Java で発生する様々な種類のエラーを表すために使われるクラス
 - れらはすべて `Throwable` クラスから派生しており、Java のエラーと例外の基底クラスとなっている
 
+:::details Throwable クラスの構造
+
+```java
+public class Throwable {
+    // Throwableクラスの主要メソッド
+    public Throwable() {}
+    public Throwable(String message) {}
+    public Throwable(String message, Throwable cause) {}
+    public Throwable(Throwable cause) {}
+
+    public String getMessage() {}
+    public Throwable getCause() {}
+    public Throwable initCause(Throwable cause) {}
+    public void printStackTrace() {}
+}
+```
+
+:::
+
 ### 例外クラスの分類
 
 1. **`Exception` クラス**
 
-- アプリケーションレベルで処理すべき例外を表すクラス
-- 「チェック例外」と「ランタイム例外」の 2 つに分けられる
-- ランタイム例外は、`Exception` のサブクラスである `RuntimeException` クラスを継承している
+   - アプリケーションレベルで処理すべき例外を表すクラス
+   - **開発者が例外処理として対処すべき例外**
+   - 「チェック例外」と「ランタイム例外」の 2 つに分けられる
+   - ランタイム例外は、`Exception` のサブクラスである `RuntimeException` クラスを継承している
 
-2. **`Error` クラス**
+   :::details Exception クラスの構造
+
+   ```java
+   public class Exception extends Throwable {
+     public Exception() {}
+     public Exception(String message) {}
+     public Exception(String message, Throwable cause) {}
+     public Exception(Throwable cause) {}
+   }
+
+   ```
+
+   :::
+
+   :::details Runtime Exception クラスの構造
+
+   ```java
+   public class RuntimeException extends Exception {
+   public RuntimeException() {}
+   public RuntimeException(String message) {}
+   public RuntimeException(String message, Throwable cause) {}
+   public RuntimeException(Throwable cause) {}
+   }
+   ```
+
+   :::
+
+1. **`Error` クラス**
+
    - ステムレベルのエラーを表す
    - 通常はアプリケーションコードで捕捉または処理されることは期待されない
+   - **開発者が直接対処すべきではない例外**
    - 例：`OutOfMemoryError`, `StackOverflowError`
+
+   :::details Error クラスの構造
+
+   ```java
+   public class Error extends Throwable {
+      public Error() {}
+      public Error(String message) {}
+      public Error(String message, Throwable cause) {}
+      public Error(Throwable cause) {}
+   }
+   ```
+
+   :::
+
+### 階層構造で表すとこんな感じ
+
+```php
+java.lang.Throwable
+    ├── java.lang.Error
+    │    └── VirtualMachineError
+    │         ├── OutOfMemoryError
+    │         └── StackOverflowError
+    └── java.lang.Exception
+         ├── java.lang.RuntimeException
+         │    ├── NullPointerException
+         │    ├── ArrayIndexOutOfBoundsException
+         │    └── IllegalArgumentException
+         ├── IOException
+         └── SQLException
+```
+
+### `Exception` を継承するクラス一覧
+
+1. **チェック例外 (Checked Exceptions)**
+
+   :::details IOException ~ 入出力操作に関する例外
+
+   - **説明**: ファイル操作やネットワーク通信などの入出力操作中に発生する一般的な例外。
+   - **ユースケース**: ファイルの読み書き、ネットワーク通信、シリアライゼーション操作中に発生する例外。
+
+   :::
+
+   :::details FileNotFoundException ~ ファイルが見つからない場合の例外
+
+   - **説明**: 指定されたファイルが存在しない場合にスローされる例外。
+   - **ユースケース**: ファイルを開こうとしたが、指定されたパスにファイルが存在しない場合に発生。
+
+   :::
+
+   :::details EOFException ~ ファイルの終わりに達した場合の例外
+
+   - **説明**: 入力操作中にファイルの終わりに達した場合にスローされる例外。
+   - **ユースケース**: データ入力ストリームを読み込む際に、予期せずファイルの終わりに達した場合に発生。
+
+   :::
+
+   :::details SQLException ~ データベースアクセスエラーに関する例外
+
+   - **説明**: データベースへのアクセス中に発生する例外。
+   - **ユースケース**: データベースクエリの実行、接続の確立、トランザクション処理中に発生するエラー。
+
+   :::
+
+   :::details ClassNotFoundException ~ クラスが見つからない場合の例外
+
+   - **説明**: 指定されたクラスが見つからない場合にスローされる例外。
+   - **ユースケース**: リフレクションを使用してクラスをロードしようとしたが、クラスがクラスパスに存在しない場合に発生。
+
+   :::
+
+   :::details InstantiationException ~ インスタンス化できない場合の例外
+
+   - **説明**: クラスのインスタンス化ができない場合にスローされる例外。
+   - **ユースケース**: 抽象クラスやインターフェースをインスタンス化しようとした場合に発生。
+
+   :::
+
+   :::details IllegalAccessException ~ アクセスできない場合の例外
+
+   - **説明**: クラスやメンバにアクセスできない場合にスローされる例外。
+   - **ユースケース**: リフレクションを使用して非公開のフィールドやメソッドにアクセスしようとした場合に発生。
+
+   :::
+
+   :::details InterruptedException ~ スレッドが割り込まれた場合の例外
+
+   - **説明**: スレッドが実行を中断されることを示す例外。
+   - **ユースケース**: スレッドが待機、スリープ、または他のブロッキング操作を実行している間に割り込みが発生した場合にスローされる。
+
+   :::
+
+   :::details NoSuchMethodException ~ メソッドが見つからない場合の例外
+
+   - **説明**: 指定されたメソッドが見つからない場合にスローされる例外。
+   - **ユースケース**: リフレクションを使用してメソッドを呼び出そうとしたが、指定されたメソッドがクラスに存在しない場合に発生。
+
+   :::
+
+   :::details InvocationTargetException ~ メソッド呼び出し中に発生した例外をラップする例外
+
+   - **説明**: リフレクションを使用してメソッドを呼び出した際に、そのメソッドの内部で例外がスローされた場合にスローされる例外。
+   - **ユースケース**: リフレクションを使用してメソッドを呼び出した際、そのメソッドの内部でチェック例外や実行時例外が発生した場合に発生。
+
+   :::
+
+2. **実行時例外 (Runtime Exceptions)**
+   :::details NullPointerException ~ `null`オブジェクトにアクセスした場合の例外
+
+   - **説明**: `null`参照にアクセスしようとした場合にスローされる例外。
+   - **ユースケース**: `null`オブジェクトのメソッドを呼び出したり、`null`配列の要素にアクセスしたりする場合に発生。
+
+   :::
+
+   :::details ArrayIndexOutOfBoundsException ~ 配列の範囲外アクセスの場合の例外
+
+   - **説明**: 配列の範囲外のインデックスにアクセスした場合にスローされる例外。
+   - **ユースケース**: 配列の不正なインデックスにアクセスしようとした場合に発生。
+
+   :::
+
+   :::details IllegalArgumentException ~ メソッドに無効な引数が渡された場合の例外
+
+   - **説明**: メソッドに無効な引数が渡された場合にスローされる例外。
+   - **ユースケース**: メソッドに適切な範囲外の値や形式の引数が渡された場合に発生。
+
+   :::
+
+   :::details NumberFormatException ~ 文字列を数値に変換できない場合の例外
+
+   - **説明**: 数値に変換できない文字列が渡された場合にスローされる例外。
+   - **ユースケース**: `Integer.parseInt`や`Double.parseDouble`メソッドに不適切な文字列が渡された場合に発生。
+
+   :::
+
+   :::details IllegalStateException ~ オブジェクトが無効な状態にある場合の例外
+
+   - **説明**: オブジェクトが無効な状態でメソッドを呼び出そうとした場合にスローされる例外。
+   - **ユースケース**:
+     - オブジェクトが適切に初期化されていない状態で操作を試みた場合に発生
+     - あり得ない状態になった時に throw する（例：`switch` 文の `default` で throw する）
+
+   :::
+
+   :::details ArithmeticException ~ 算術演算が失敗した場合の例外
+
+   - **説明**: 算術演算が失敗した場合にスローされる例外。
+   - **ユースケース**: 0 で除算しようとした場合に発生。
+
+   :::
+
+   :::details ClassCastException ~ オブジェクトのキャストが失敗した場合の例外
+
+   - **説明**: オブジェクトを不適切な型にキャストしようとした場合にスローされる例外。
+   - **ユースケース**: キャスト操作が不正な場合に発生。
+
+   :::
+
+   :::details IndexOutOfBoundsException ~ インデックスが範囲外の場合の例外
+
+   - **説明**: インデックスが有効な範囲外にある場合にスローされる例外。
+   - **ユースケース**: リストや文字列の不正なインデックスにアクセスしようとした場合に発生。
+
+   :::
+
+   :::details StringIndexOutOfBoundsException ~ 文字列の範囲外アクセスの場合の例外
+
+   - **説明**: 文字列の範囲外のインデックスにアクセスしようとした場合にスローされる例外。
+   - **ユースケース**: 文字列の不正なインデックスにアクセスしようとした場合に発生。
+
+   :::
+
+   :::details UnsupportedOperationException ~ サポートされていない操作を行った場合の例外
+
+   - **説明**: 実行しようとした操作がサポートされていない場合にスローされる例外。
+   - **ユースケース**: 不変コレクションに対して変更操作を試みた場合に発生。
+
+   :::
+
+   :::details ConcurrentModificationException ~ 同時変更が検出された場合の例外
+
+   - **説明**: コレクションの反復中に不正な変更が検出された場合にスローされる例外。
+   - **ユースケース**: イテレータを使用している間にコレクションを変更しようとした場合に発生。
+
+   :::
 
 ## 例外オブジェクト
 
@@ -348,3 +581,228 @@ public static void main(String[] args) {
 ```
 
 :::
+
+## try-with-resources
+
+### 概要
+
+- Java SE 7 で導入されたリソース管理のための構文
+- この構文を使用すると、リソースを明示的にクローズする必要がなくなり、リソースリークのリスクを減らせる
+- 主に、`java.lang.AutoCloseable`インターフェースを実装しているリソース（例：ファイル、データベース接続、ソケットなど）で使用される
+
+### 目的
+
+リソースの確実な解放を保証し、リソースリークによるメモリ問題や他のリソース関連の問題を防ぐこと。
+
+### 解決したい技術的課題
+
+:::details リソースリークの防止
+
+**問題点**:
+リソース（例：ファイル、データベース接続）を使用した後に適切にクローズしないと、リソースリークが発生し、メモリ不足やリソース枯渇を引き起こす可能性がある。
+
+**解決策**:
+`try-with-resources`構文を使用すると、`try`ブロックを抜けるときに自動的にリソースがクローズされるため、リソースリークを防げる。
+
+:::
+
+### 使用方法
+
+:::details 基本的な構文
+
+```java
+try (ResourceType resource = new ResourceType()) {
+    // リソースを使用するコード
+} catch (ExceptionType e) {
+    // 例外処理
+}
+```
+
+:::
+
+:::details 例: ファイルの読み込み
+
+以下の例では、`BufferedReader`を使用してファイルを読み込みます。`BufferedReader`は`AutoCloseable`インターフェースを実装しているため、`try-with-resources`構文で使用できます。
+
+```java
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class TryWithResourcesExample {
+    public static void main(String[] args) {
+        try (BufferedReader br = new BufferedReader(new FileReader("file.txt"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+:::
+
+:::details 複数のリソースを使用する
+
+`try-with-resources`構文では、複数のリソースを宣言して使用できます。それぞれのリソースはセミコロンで区切ります。
+
+```java
+try (BufferedReader br = new BufferedReader(new FileReader("file1.txt"));
+     BufferedWriter bw = new BufferedWriter(new FileWriter("file2.txt"))) {
+    // brとbwを使用するコード
+} catch (IOException e) {
+    e.printStackTrace();
+}
+```
+
+:::
+
+### 内部動作
+
+`try-with-resources`構文は、リソースを確実にクローズするために以下のように動作する。
+
+1. `try`ブロック内のコードが実行される
+2. `try`ブロック内で例外が発生した場合、リソースは`catch`ブロックに入る前にクローズされる
+3. すべてのリソースがクローズされた後に、例外が再スローされる
+4. 例外が発生しない場合でも、`try`ブロックを抜けるときにリソースがクローズされる
+
+### まとめ
+
+- **目的**: リソースリークを防止し、リソースの確実な解放を保証する。
+- **使用方法**: `try`ブロック内でリソースを宣言し、`AutoCloseable`インターフェースを実装しているリソースを自動的にクローズする。
+- **利点**: 明示的にリソースをクローズする必要がなくなり、コードが簡潔で安全になる。
+- **適用範囲**: ファイル操作、データベース接続、ネットワークソケットなど。
+
+## カスタム例外クラス
+
+### 概要
+
+Java では、特定の状況に応じた例外を扱うために、独自のカスタム例外クラスを作成することができる。カスタム例外クラスを作成することで、エラーハンドリングをより明確かつ特定の用途に適したものにすることが可能。
+
+### 目的
+
+- 特定のエラー条件を明示的に表現し、エラーハンドリングをより詳細に制御すること
+- これにより、エラーメッセージがより理解しやすくなり、デバッグや保守が容易になる
+
+### 解決したい技術的課題
+
+**問題点**:
+
+- 標準の例外クラスでは、特定の状況に対応するエラーメッセージや処理を適切に表現できない場合がある
+- カスタム例外を使用しないと、エラーハンドリングが一般化しすぎて、具体的な問題の特定や対処が困難になる
+
+**解決策**:
+
+- カスタム例外クラスを作成し、特定のエラー条件に対して適切なエラーメッセージとハンドリングを提供する。
+
+### カスタム例外クラスの作成手順
+
+1. `Exception` or `Runtime Exception` クラスを継承する
+2. コンストラクタを定義する
+3. 必要に応じて追加のメソッドを定義する
+
+### 具体例
+
+1. **基本的なカスタム例外クラス**
+
+   ```java
+   public class MyCustomException extends Exception {
+       // デフォルトコンストラクタ
+       public MyCustomException() {
+           super();
+       }
+
+       // エラーメッセージを受け取るコンストラクタ
+       public MyCustomException(String message) {
+           super(message);
+       }
+
+       // エラーメッセージと原因を受け取るコンストラクタ
+       public MyCustomException(String message, Throwable cause) {
+           super(message, cause);
+       }
+
+       // 原因を受け取るコンストラクタ
+       public MyCustomException(Throwable cause) {
+           super(cause);
+       }
+   }
+   ```
+
+2. **カスタム実行時例外クラス**
+
+   ```java
+   public class MyCustomRuntimeException extends RuntimeException {
+       public MyCustomRuntimeException() {
+           super();
+       }
+
+       public MyCustomRuntimeException(String message) {
+           super(message);
+       }
+
+       public MyCustomRuntimeException(String message, Throwable cause) {
+           super(message, cause);
+       }
+
+       public MyCustomRuntimeException(Throwable cause) {
+           super(cause);
+       }
+   }
+   ```
+
+### 使用例
+
+1. **チェック例外の使用例**
+
+   ```java
+   public class Example {
+       public static void main(String[] args) {
+           try {
+               checkCondition(false);
+           } catch (MyCustomException e) {
+               e.printStackTrace();
+           }
+       }
+
+       public static void checkCondition(boolean condition) throws MyCustomException {
+           if (!condition) {
+               throw new MyCustomException("Condition failed");
+           }
+       }
+   }
+   ```
+
+2. **実行時例外の使用例**
+
+   ```java
+   public class Example {
+       public static void main(String[] args) {
+           try {
+               validateInput(null);
+           } catch (MyCustomRuntimeException e) {
+               e.printStackTrace();
+           }
+       }
+
+       public static void validateInput(String input) {
+           if (input == null) {
+               throw new MyCustomRuntimeException("Input must not be null");
+           }
+       }
+   }
+   ```
+
+### まとめ
+
+- **目的**: 特定のエラー条件を明示的に表現し、エラーハンドリングを詳細に制御するため。
+- **使用方法**: `Exception`または`RuntimeException`クラスを継承し、適切なコンストラクタを定義する。
+- **利点**:
+  - エラーメッセージが明確になり、デバッグが容易になる。
+  - エラーハンドリングを特定の状況に適したものにできる。
+- **ユースケース**:
+  - チェック例外として使用し、特定の条件が満たされない場合にスローする。
+  - 実行時例外として使用し、無効な入力や状態に対するエラーチェックを行う。
