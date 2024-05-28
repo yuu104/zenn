@@ -385,3 +385,9 @@ Route Cache はオプトアウトする手段がないため、動的ルート�
 
 - Data Cache をオプトアウトすると、Full Route Cache が無効になる
 - Full Route Cache のオプトアウトは Data Cache に影響しない
+
+## Next.js v15 では起こる破壊的な変更
+
+https://nextjs.org/blog/next-15-rc
+
+https://zenn.dev/akfm/articles/nextjs-cache-default-update

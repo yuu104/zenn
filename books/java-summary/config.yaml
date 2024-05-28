@@ -44,10 +44,19 @@ chapters:
   - set
   - thread
   - optional
-  - file-io
-  - file
+  - io
+  - reader
+  - writer
   - file-reader
   - file-writer
   - buffer-reader-writer
-  - path
-  - paths
+  - input-stream-reader
+  - output-stream-writer
+  - output-stream-reader
+  - file-input-stream
+  - buffered-input-stream
+  - buffered-output-stream
+  - byte-array-input-stream
+  - byte-array-output-stream
+  - file
+  - nio
