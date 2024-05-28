@@ -82,3 +82,7 @@ title: "I/O処理の全体像"
 - `java.nio.charset.Charset` は文字コードを抽象化したクラス
   - テキストファイルの読み込みや書き込みにおいて、文字コードを指定するために使用する
 - `java.nio.charset.StandardCharsets` は様々な `Charset` オブジェクトを定数として保持するクラス
+
+## 参考リンク
+
+https://zenn.dev/kawakawaryuryu/articles/8924849b88590cda4e22#fileinputstream%2Ffileoutputstream
