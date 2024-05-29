@@ -24,91 +24,393 @@ title: "List インターフェース"
 
 ## 主要メソッド
 
-:::details add() - 要素の追加
+### 基本操作
 
-- **説明**: リストの末尾に要素を追加する。
-- **シグネチャ**: `boolean add(E e)`
-- **使用例**:
+:::details of(E ...elements) ~ 不変リストの作成
+
+- **説明**
+  複数の要素を持つ不変リストを作成する。
+- **シグネチャ**
+  複数のオーバーロードがある。
+
+  ```java
+  static <E> List<E> of(E... elements)
+  static <E> List<E> of()
+  static <E> List<E> of(E e1)
+  static <E> List<E> of(E e1, E e2)
+  static <E> List<E> of(E e1, E e2, E e3)
+  static <E> List<E> of(E e1, E e2, E e3, E e4)
+  static <E> List<E> of(E e1, E e2, E e3, E e4, E e5)
+  static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6)
+  static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7)
+  static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8)
+  static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9)
+  static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10)
+  ```
+
+- **使用例**
+  ```java
+  List<String> list = List.of("one", "two", "three");
+  System.out.println(list); // [one, two, three]
+  ```
+
+:::
+
+:::details add(E e) ~ 要素の追加
+
+- **説明**:
+  - リストの末尾に指定された要素を追加します。
+- **シグネチャ**:
+  ```java
+  boolean add(E e)
+  ```
+- **例**:
   ```java
   List<String> list = new ArrayList<>();
-  list.add("apple");
-  System.out.println(list); // [apple]
+  list.add("one"); // ["one"]
+  list.add("two"); // ["one", "two"]
   ```
   :::
 
-:::details get() - 要素の取得
+:::details add(int index, E element) ~ 指定位置への要素の追加
 
-- **説明**: 指定された位置にある要素を返す。
-- **シグネチャ**: `E get(int index)`
-- **使用例**:
+- **説明**:
+  - 指定された位置に要素を挿入します。
+- **シグネチャ**:
   ```java
-  List<String> list = Arrays.asList("apple", "banana", "cherry");
-  String element = list.get(1);
-  System.out.println(element); // banana
+  void add(int index, E element)
   ```
-  :::
-
-:::details set() - 要素の更新
-
-- **説明**: 指定された位置にある要素を新しい要素で置き換える。
-- **シグネチャ**: `E set(int index, E element)`
-- **使用例**:
+- **例**:
   ```java
-  List<String> list = new ArrayList<>(Arrays.asList("apple", "banana", "cherry"));
-  list.set(1, "blueberry");
-  System.out.println(list); // [apple, blueberry, cherry]
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add(0, "two"); // ["two", "one"]
   ```
   :::
 
-:::details remove() - 要素の削除
+:::details get(int index) ~ 指定位置の要素の取得
 
-- **説明**: 指定された位置にある要素を削除する。または指定された要素を削除する。
-- **シグネチャ**: `E remove(int index)` または `boolean remove(Object o)`
-- **使用例**:
+- **説明**:
+  - 指定された位置にある要素を返します。
+- **シグネチャ**:
   ```java
-  List<String> list = new ArrayList<>(Arrays.asList("apple", "banana", "cherry"));
-  list.remove(1);
-  System.out.println(list); // [apple, cherry]
-  list.remove("apple");
-  System.out.println(list); // [cherry]
+  E get(int index)
   ```
-  :::
-
-:::details size() - 要素数の取得
-
-- **説明**: リストの要素数を返す。
-- **シグネチャ**: `int size()`
-- **使用例**:
+- **例**:
   ```java
-  List<String> list = Arrays.asList("apple", "banana", "cherry");
-  int size = list.size();
-  System.out.println(size); // 3
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  String element = list.get(0); // "one"
   ```
   :::
 
-:::details contains() - 要素の存在確認
+:::details set(int index, E element) ~ 指定位置の要素の置き換え
 
-- **説明**: リストに指定された要素が存在するかどうかを確認する。
-- **シグネチャ**: `boolean contains(Object o)`
-- **使用例**:
+- **説明**:
+  - 指定された位置の要素を指定された要素で置き換えます。
+- **シグネチャ**:
   ```java
-  List<String> list = Arrays.asList("apple", "banana", "cherry");
-  boolean containsApple = list.contains("apple");
-  System.out.println(containsApple); // true
+  E set(int index, E element)
   ```
-  :::
-
-:::details clear() - 全要素の削除
-
-- **説明**: リストからすべての要素を削除する。
-- **シグネチャ**: `void clear()`
-- **使用例**:
+- **例**:
   ```java
-  List<String> list = new ArrayList<>(Arrays.asList("apple", "banana", "cherry"));
-  list.clear();
-  System.out.println(list); // []
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.set(0, "two"); // ["two"]
   ```
   :::
+
+:::details remove(int index) ~ 指定位置の要素の削除
+
+- **説明**:
+  - 指定された位置にある要素を削除します。
+- **シグネチャ**:
+  ```java
+  E remove(int index)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  list.remove(0); // ["two"]
+  ```
+  :::
+
+:::details remove(Object o) ~ 指定された要素の削除
+
+- **説明**:
+  - リストから指定された要素の最初の出現を削除します。
+- **シグネチャ**:
+  ```java
+  boolean remove(Object o)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  list.remove("one"); // ["two"]
+  ```
+  :::
+
+### 検索操作
+
+:::details indexOf(Object o) ~ 最初の出現位置の取得
+
+- **説明**:
+  - 指定された要素が最初に出現する位置を返します。存在しない場合は`-1`を返します。
+- **シグネチャ**:
+  ```java
+  int indexOf(Object o)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  int index = list.indexOf("two"); // 1
+  ```
+  :::
+
+:::details lastIndexOf(Object o) ~ 最後の出現位置の取得
+
+- **説明**:
+  - 指定された要素が最後に出現する位置を返します。存在しない場合は`-1`を返します。
+- **シグネチャ**:
+  ```java
+  int lastIndexOf(Object o)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  list.add("one");
+  int index = list.lastIndexOf("one"); // 2
+  ```
+  :::
+
+### 範囲操作
+
+:::details subList(int fromIndex, int toIndex) ~ 部分リストの取得
+
+- **説明**:
+  - 指定された範囲内の要素を含む部分リストを返します。
+- **シグネチャ**:
+  ```java
+  List<E> subList(int fromIndex, int toIndex)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  list.add("three");
+  List<String> sublist = list.subList(1, 3); // ["two", "three"]
+  ```
+  :::
+
+### コレクション操作
+
+:::details addAll(Collection<? extends E> c) ~ すべての要素の追加
+
+- **説明**:
+  - 指定されたコレクションのすべての要素をリストの末尾に追加します。
+- **シグネチャ**:
+  ```java
+  boolean addAll(Collection<? extends E> c)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.addAll(Arrays.asList("two", "three")); // ["one", "two", "three"]
+  ```
+  :::
+
+:::details addAll(int index, Collection<? extends E> c) ~ 指定位置へのすべての要素の追加
+
+- **説明**:
+  - 指定されたコレクションのすべての要素を指定された位置に挿入します。
+- **シグネチャ**:
+  ```java
+  boolean addAll(int index, Collection<? extends E> c)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.addAll(1, Arrays.asList("two", "three")); // ["one", "two", "three"]
+  ```
+  :::
+
+:::details removeAll(Collection<?> c) ~ 指定された要素を含むすべての要素の削除
+
+- **説明**:
+  - リストから指定されたコレクションに含まれるすべての要素を削除します。
+- **シグネチャ**:
+  ```java
+  boolean removeAll(Collection<?> c)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  list.add("three");
+  list.removeAll(Arrays.asList("one", "three")); // ["two"]
+  ```
+  :::
+
+:::details retainAll(Collection<?> c) ~ 指定された要素を含む要素の保持
+
+- **説明**:
+  - リストから指定されたコレクションに含まれないすべての要素を削除します。
+- **シグネチャ**:
+  ```java
+  boolean retainAll(Collection<?> c)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  list.add("three");
+  list.retainAll(Arrays.asList("one", "three")); // ["one", "three"]
+  ```
+  :::
+
+:::details clear() ~ すべての要素の削除
+
+- **説明**:
+  - リストからすべての要素を削除します。
+- **シグネチャ**:
+  ```java
+  void clear()
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  list.clear(); // []
+  ```
+  :::
+
+### その他の操作
+
+:::details size() ~ リストのサイズの取得
+
+- **説明**:
+  - リストの要素数を返します。
+- **シグネチャ**:
+  ```java
+  int size()
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  int size = list.size(); //
+  ```
+
+:::
+
+:::details isEmpty() ~ リストが空かどうかの確認
+
+- **説明**:
+- リストが要素を含んでいない場合は`true`を返し、そうでない場合は`false`を返します。
+- **シグネチャ**:
+
+```java
+boolean isEmpty()
+```
+
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  boolean empty = list.isEmpty(); // true
+  list.add("one");
+  empty = list.isEmpty(); // false
+  ```
+  :::
+
+:::details contains(Object o) ~ 要素が含まれているかの確認
+
+- **説明**:
+  - リストに指定された要素が含まれている場合は`true`を返し、そうでない場合は`false`を返します。
+- **シグネチャ**:
+  ```java
+  boolean contains(Object o)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  boolean contains = list.contains("one"); // true
+  contains = list.contains("two"); // false
+  ```
+  :::
+
+:::details iterator() ~ イテレータの取得
+
+- **説明**:
+  - リスト内の要素を反復するためのイテレータを返します。
+- **シグネチャ**:
+  ```java
+  Iterator<E> iterator()
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  Iterator<String> iterator = list.iterator();
+  while (iterator.hasNext()) {
+      System.out.println(iterator.next());
+  }
+  ```
+  :::
+
+:::details toArray() ~ 配列への変換
+
+- **説明**:
+  - リスト内のすべての要素を含む配列を返します。
+- **シグネチャ**:
+  ```java
+  Object[] toArray()
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  Object[] array = list.toArray(); // ["one", "two"]
+  ```
+  :::
+
+:::details toArray(T[] a) ~ 指定された型の配列への変換
+
+- **説明**:
+  - リスト内のすべての要素を指定された型の配列に格納し、返します。
+- **シグネチャ**:
+  ```java
+  <T> T[] toArray(T[] a)
+  ```
+- **例**:
+  ```java
+  List<String> list = new ArrayList<>();
+  list.add("one");
+  list.add("two");
+  String[] array = list.toArray(new String[0]); // ["one", "two"]
+  ```
+  :::
+
+## まとめ
+
+`List`インターフェースは、順序付けされたコレクションを管理するための豊富なメソッドを提供します。要素の追加、削除、検索、部分リストの取得、コレクションの操作など、様々な操作を効率的に行うことができます。これらのメソッドを理解し、適切に使用することで、リストの操作を効果的に行うことができます。
 
 ## 解決したい技術的課題
 

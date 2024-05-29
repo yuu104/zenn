@@ -13,6 +13,7 @@ chapters:
   - operator
   - type-conversion
   - arrays-and-reference-types
+  - arrays
   - command-line-argument
   - string-type
   - for
@@ -42,6 +43,8 @@ chapters:
   - difference-of-linked-hash-map-and-tree-map
   - usecase-of-array-list-map
   - set
+  - lambda-style
+  - comparator
   - thread
   - optional
   - io

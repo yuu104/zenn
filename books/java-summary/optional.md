@@ -115,7 +115,66 @@ title: "Optional クラス"
       System.out.println(e.getMessage()); // Value is absent
   }
   ```
-  :::
+
+:::
+
+:::details map() ~ 値のマッピング
+
+#### 説明
+
+- `Optional` が値を持っているときに、その値に対して指定されたマッピング関数を適用し、新たな `Optional` を返す
+- 値を持っていない場合、空の `Optional` を返す
+
+#### シグネチャ
+
+```java
+public <U> Optional<U> map(Function<? super T, ? extends U> mapper)
+```
+
+#### 具体例
+
+1. **値が存在する場合の変換**
+
+   ```java
+   import java.util.Optional;
+
+   public class Main {
+       public static void main(String[] args) {
+           Optional<String> optionalString = Optional.of("hello");
+
+           // mapを使用して文字列の長さを取得
+           Optional<Integer> optionalLength = optionalString.map(String::length);
+
+           // 結果を出力
+           optionalLength.ifPresent(length -> System.out.println("長さ: " + length));
+       }
+   }
+   ```
+
+   - `optionalString` は `"hello"` を含む `Optional`
+   - `map` メソッドで文字列の長さを計算する関数 `String::length` を適用する
+   - `optionalLength` は `Optional<Integer>` 型で、`"hello"` の長さである `5` を含む
+   - `ifPresent` メソッドを使って、`optionalLength` が存在する場合にその値を出力する
+
+2. **値が存在しない場合の処理**
+
+   ```java
+   import java.util.Optional;
+
+   public class Main {
+       public static void main(String[] args) {
+           Optional<String> emptyOptional = Optional.empty();
+
+           // mapを使用して文字列の長さを取得
+           Optional<Integer> optionalLength = emptyOptional.map(String::length);
+
+           // 結果を出力（何も出力されない）
+           optionalLength.ifPresent(length -> System.out.println("長さ: " + length));
+       }
+   }
+   ```
+
+:::
 
 ## 解決したい技術的課題
 

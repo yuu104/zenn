@@ -1710,3 +1710,244 @@ public class VarargsExample {
     }
 }
 ```
+
+## 匿名クラス
+
+- 名前を持たないクラスで、**クラス宣言**と**インスタンス化**を同時に行う
+- 一度しか使用しないインターフェースや抽象クラスの実装を簡潔にできる
+- 匿名クラスは**クラスを継承するか、インターフェースを実装する**
+
+### 目的と解決したい技術的課題
+
+- 一度だけ使用するクラスの定義を簡略化する
+- 簡単なインターフェースの実装を行う際に、新たなクラスを作成する手間を省く
+- 小規模なコードの可読性とメンテナンス性を向上させる
+
+### 特徴
+
+1. クラスを継承するか、インターフェースを実装している
+2. 名前を持たないインナークラス（名前がないのでインスタンスを生成するために使用できない。別のクラスの内部で宣言を行う）
+3. 名前を持たないから再利用できない
+4. 使用時には、匿名クラスの宣言とインスタンス化を行う
+5. 一度に一つのインターフェース・抽象クラスのみを実装・継承することができる
+
+### 基本構文
+
+```java
+Sample sample = new Sample() {};
+```
+
+`new` の右側には、継承する抽象クラス名または実装するインターフェース名を記述する。
+
+### 実装例
+
+:::details 匿名クラスを使用しないインターフェースの実装
+
+```java
+interface Example{
+    public void display();  // 抽象メソッド
+}
+
+class ExampleImpl implements Example{  // 実装クラスで抽象メソッドの実装を提供
+    @Override
+    public void display(){
+        System.out.println("Hello World!");
+    }
+}
+
+public class Demo1 {
+    public static void main(String[] args){
+        Example example = new ExampleImpl();  // ポリモーフィズムの概念
+        example.display();  // Hello World!
+        new ExampleImpl().display();  // Hello World!
+    }
+}
+```
+
+:::
+
+:::details 匿名クラスを使用したインターフェースの実装 ①
+
+```java
+// 関数型インターフェースであることを宣言。省略可能。
+// 関数型インターフェース：抽象メソッドを一つだけ持つインターフェース
+@FunctionalInterface
+interface Example{
+    public void display();  // 抽象メソッド
+}
+
+public class Demo2 {
+    public static void main(String[] args){
+        // インターフェースを実装する匿名クラス
+        // 匿名クラスのインスタンスをexample変数に格納
+        Example example = new Example(){
+            // 抽象メソッドの実装を提供
+            @Override
+            public void display() {
+                System.out.println("Hello World!");
+            }
+        };
+
+        // その場でメソッドの実行
+        example.display();  // Hello World!
+    }
+}
+```
+
+- 上記匿名クラスは、`Example` インターフェースを実装とインスタンス化を同時に行なっている
+- インスタンスは変数 `example` に格納される
+- 匿名クラスの名前はコンパイラによって自動決定される
+
+:::
+
+:::details 匿名クラスを使用したインターフェースの実装 ②
+
+匿名クラスのインスタンスを変数に格納せず、以下のようにメソッドを実行することも可能。
+
+```java
+@FunctionalInterface // 関数型インターフェースであることを宣言。省略可能。
+interface Example{
+    public void display();
+}
+
+public class Demo2 {
+    public static void main(String[] args){
+        // 変数に格納しない
+        new Example(){
+            // 抽象メソッドの実装を提供
+            @Override
+            public void display() {
+                System.out.println("Hello World!");
+            }
+        }.display();  // Hello World!
+    }
+}
+```
+
+:::
+
+:::details ラムダ式を使用したインターフェースの実装（匿名関数を置き換える）
+
+関数型インターフェースの場合、ラムダ式での実装が可能となる。
+
+```java
+@FunctionalInterface // 関数型インターフェースであることを宣言。省略可能。
+interface Example{
+    public void display();
+}
+
+public class Demo2 {
+    public static void main(String[] args){
+        // 変数に格納しない
+        new Example(){
+            // 抽象メソッドの実装を提供
+            @Override
+            public void display() {
+                System.out.println("Hello World!");
+            }
+        }.display();  // Hello World!
+    }
+}
+
+```
+
+:::
+
+:::details 匿名クラスを使用しない抽象クラスの実装
+
+```java
+abstract class Animal {
+    public abstract void makeSound();  // 抽象メソッド
+}
+
+class Dog extends Animal {  // 抽象メソッドの実装を提供
+    @Override
+    public void makeSound() {
+        System.out.println("Bark");
+    }
+}
+
+public class Demo3 {
+    public static void main(String[] args) {
+        Animal dog = new Dog();  // ポリモーフィズムの概念
+        dog.makeSound();  // Bark
+        new Dog().makeSound();  // Bark
+    }
+}
+```
+
+:::
+
+:::details 匿名クラスを使用した抽象クラスの実装 ①
+
+```java
+abstract class Animal {
+    public abstract void makeSound();  // 抽象メソッド
+}
+
+public class Demo4 {
+    public static void main(String[] args) {
+        // 抽象クラスを実装する匿名クラス
+        Animal dog = new Animal() {
+            @Override
+            public void makeSound() {
+                System.out.println("Bark");
+            }
+        };
+
+        // その場でメソッドの実行
+        dog.makeSound();  // Bark
+    }
+}
+```
+
+- 上記匿名クラスは、`Animal` 抽象クラスの実装とインスタンス化を同時に行なっている
+- インスタンスは変数 `dog` に格納される
+- 匿名クラスの名前はコンパイラによって自動決定される
+
+:::
+
+:::details 匿名クラスを使用した抽象クラスの実装 ②
+
+匿名クラスのインスタンスを変数に格納せず、以下のようにメソッドを実行することも可能。
+
+```java
+abstract class Animal {
+    public abstract void makeSound();  // 抽象メソッド
+}
+
+public class Demo5 {
+    public static void main(String[] args) {
+        // 変数に格納しない
+        new Animal() {
+            @Override
+            public void makeSound() {
+                System.out.println("Bark");
+            }
+        }.makeSound();  // Bark
+    }
+}
+```
+
+:::
+
+### メリット
+
+- **簡潔さ**
+  必要な場所でクラスを即座に定義し、インスタンス化できるため、コードが簡潔になる。
+- **一時的な利用**
+  一度だけ使用するクラスに最適。
+- **柔軟性**
+  インターフェースや抽象クラスの複数のメソッドをオーバーライドできる。
+
+### デメリット
+
+- **可読性の低下**
+  多用するとコードが読みにくくなる。
+
+### ラムダ式との比較
+
+- **ラムダ式**
+  主に関数型インターフェース（抽象メソッドが 1 つだけ）に使用され、コードがさらに簡潔になる。
+- **匿名クラス**
+  複数のメソッドをオーバーライドする必要がある場合や、関数型インターフェースでない場合に使用される。
