@@ -19,11 +19,44 @@ title: "Stream API"
 2. **パイプライン処理**:
 
    - 一連の処理ステップをチェーンで繋げることができる
+   - 何らかの条件でフィルタリング → フィルタリング結果を基に何か処理するみたいなことができる
    - 各ステップは中間操作（intermediate operation）か終端操作（terminal operation）として分類される
 
 3. **遅延評価**:
    - 中間操作は遅延評価され、終端操作が呼ばれたときに初めて実行される
    - 効率的な処理を実現し、必要なデータのみを計算する
+
+## Stream API の 3 つの段階
+
+![](https://storage.googleapis.com/zenn-user-upload/baaca376448e-20240530.png)
+
+1. **ストリームの生成**
+
+   - `Stream` インターフェースを実装するオブジェクトを生成する
+   - コレクションから `stream()` メソッド等を呼び出すことで生成できる
+   - `Stream` インターフェースの静的メソッドによって直接生成することも可能
+
+2. **中間操作**
+   - 生成したストリームの各要素に対して何らかの処理を実行する
+     - 例：フィルタリング、マッピング
+   - **処理結果をストリームで出力する**
+   - **中間操作メソッドの戻り値は `Stream` インターフェースを実装している**
+   - 中間操作は複数連結可能
+3. **終端操作**
+
+   - ストリームから目的とするデータを取り出す
+   - 終端操作によって一連のパイプラインは終了する
+   - 終端操作は**リダクション**を行う
+     :::details リダクションとは？
+
+     - ストリームの要素を 1 つの結果にまとめる操作のこと
+     - 要素の集計や集約を行い、単一の値やコレクションを生成するために使用される
+     - 典型的なリダクション操作には、合計、平均、最大値、最小値などがある
+
+     :::
+
+   - よって、戻り値はプリミティブ型やコレクション
+   - **終端操作は必ず一度だけ実行する必要がある**
 
 ## 基本構成要素
 
@@ -32,23 +65,323 @@ title: "Stream API"
    - Stream の入力となるデータソース。コレクション、配列、I/O チャネルなど。
    - 例: `List<String> list = Arrays.asList("a", "b", "c");`
 
-2. **Intermediate Operations**:
+2. **中間操作**:
 
    - ストリームを変換する操作。遅延評価され、ストリームを返す。
    - 例: `filter()`, `map()`, `sorted()`
 
-3. **Terminal Operations**:
+3. **終端操作**:
    - ストリームを消費し、結果を生成する操作。これによりストリームの処理が完了する。
    - 例: `forEach()`, `collect()`, `reduce()`
+
+**中間操作・終端操作のメソッドは、ほとんどが関数型インターフェースを引数に取る。**
+よって、ラムダ式やメソッド参照を渡す。
+
+## 順次ストリームと並列ストリーム
+
+ストリームには 2 種類ある。
+
+1. **順次ストリーム**
+   - 要素を一つずつ順番に取り出して処理するストリーム
+   - ストリーム内の各要素は、ストリームが生成された時点で順序付けされる
+2. **並列ストリーム**
+   - マルチスレッドによって各要素を暗黙的に並列処理する
+   - 各要素がどのような順番で処理されるか保証されない
+
+## プリミティブ型ストリーム
+
+ストリームには特定のプリミティブ型に特化したストリームインターフェースがある。
+
+- `IntStream` : `int` に特化したストリーム
+- `LongStream` : `long` に特化したストリーム
+- `DoubleStream` : `double` に特化したストリーム
+
+これらのインターフェースには `Stream` と同様の機能を持ちつつ、プリミティブ型固有の API も用意されている。
+
+### `IntStream`
+
+:::details 主要メソッド
+
+- **`range`**
+  指定された範囲の連続した整数を生成する。
+  ```java
+  static IntStream range(int startInclusive, int endExclusive)
+  ```
+- **`rangeClosed`**
+  指定された範囲の連続した整数を生成する（終了値を含む）。
+  ```java
+  static IntStream rangeClosed(int startInclusive, int endInclusive)
+  ```
+- **`of`**
+  指定された整数のストリームを生成する。
+  ```java
+  static IntStream of(int... values)
+  ```
+
+:::
+
+:::details 使用例
+
+```java
+import java.util.stream.IntStream;
+
+public class Main {
+    public static void main(String[] args) {
+        // 1から5までの範囲の整数を生成
+        IntStream.range(1, 5).forEach(System.out::println);
+        // 出力: 1, 2, 3, 4
+
+        // 1から5までの範囲の整数を生成（終了値を含む）
+        IntStream.rangeClosed(1, 5).forEach(System.out::println);
+        // 出力: 1, 2, 3, 4, 5
+
+        // 配列からストリームを生成
+        IntStream.of(1, 2, 3, 4, 5).forEach(System.out::println);
+        // 出力: 1, 2, 3, 4, 5
+    }
+}
+```
+
+:::
+
+### `LongStream`
+
+:::details 主要メソッド
+
+- **`range`**
+  指定された範囲の連続した長整数を生成する。
+  ```java
+  static LongStream range(long startInclusive, long endExclusive)
+  ```
+- **`rangeClosed`**
+  指定された範囲の連続した長整数を生成する（終了値を含む）。
+  ```java
+  static LongStream rangeClosed(long startInclusive, long endInclusive)
+  ```
+- **`of`**
+  指定された長整数のストリームを生成する。
+  ```java
+  static LongStream of(long... values)
+  ```
+
+:::
+
+:::details 使用例
+
+```java
+import java.util.stream.LongStream;
+
+public class Main {
+    public static void main(String[] args) {
+        // 1から5までの範囲の長整数を生成
+        LongStream.range(1, 5).forEach(System.out::println);
+        // 出力: 1, 2, 3, 4
+
+        // 1から5までの範囲の長整数を生成（終了値を含む）
+        LongStream.rangeClosed(1, 5).forEach(System.out::println);
+        // 出力: 1, 2, 3, 4, 5
+
+        // 配列からストリームを生成
+        LongStream.of(1L, 2L, 3L, 4L, 5L).forEach(System.out::println);
+        // 出力: 1, 2, 3, 4, 5
+    }
+}
+```
+
+:::
+
+### `DoubleStream`
+
+:::details 主要メソッド
+
+- **`of`**
+  指定された浮動小数点数のストリームを生成する。
+  ```java
+  static DoubleStream of(double... values)
+  ```
+- **`generate`**
+  指定されたサプライヤから生成された要素を持つ無限ストリームを生成する。
+  ```java
+  static DoubleStream generate(DoubleSupplier s)
+  ```
+- **`range` は存在しない**
+
+:::
+
+:::details 使用例
+
+```java
+import java.util.stream.DoubleStream;
+
+public class Main {
+    public static void main(String[] args) {
+        // 配列からストリームを生成
+        DoubleStream.of(1.1, 2.2, 3.3, 4.4, 5.5).forEach(System.out::println);
+        // 出力: 1.1, 2.2, 3.3, 4.4, 5.5
+
+        // 無限ストリームを生成（ランダムな値）
+        DoubleStream.generate(Math::random).limit(5).forEach(System.out::println);
+        // 出力: 5つのランダムな値
+    }
+}
+```
+
+:::
+
+## ストリームの生成
+
+### コレクションから生成する
+
+`List` や `Set` には `stream()` メソッドが定義されており、これを呼び出すことで順次ストリームを生成できる。
+
+- **シグネチャ**
+
+  ```java
+  Stream<E> stream();
+  ```
+
+- **例**
+
+  ```java
+  List<String> list = Arrays.asList("a", "b", "c");
+  Stream<String> stream = list.stream();
+  ```
+
+### `Stream` インターフェースから生成する
+
+複数のファクトリメソッドが存在する。
+
+:::details of ~ 指定された値を要素に持つ、順序付けされた順次ストリームを生成
+
+- **詳細な説明**:
+  指定された値を要素として含む順次ストリームを生成する。単一の値、複数の値、または配列を指定することができる。
+- **シグネチャ**:
+  ```java
+  static <T> Stream<T> of(T t)
+  static <T> Stream<T> of(T... values)
+  ```
+- **具体例と解説**:
+
+  ```java
+  // 単一の値からストリームを生成
+  Stream<String> singleStream = Stream.of("a");
+  singleStream.forEach(System.out::println); // 出力: a
+
+  // 複数の値からストリームを生成
+  Stream<String> multiStream = Stream.of("a", "b", "c");
+  multiStream.forEach(System.out::println); // 出力: a, b, c
+
+  // 配列からストリームを生成
+  String[] array = {"a", "b", "c"};
+  Stream<String> arrayStream = Stream.of(array);
+  arrayStream.forEach(System.out::println); // 出力: a, b, c
+  ```
+
+:::
+
+:::details generate ~ サプライヤから生成された要素を持つ無限ストリームを生成
+
+- **詳細な説明**:
+  指定されたサプライヤ（供給者）を使用して生成された要素を持つ、順序付けされない無限ストリームを生成する。各要素は、サプライヤによって提供される。
+- **シグネチャ**:
+  ```java
+  static <T> Stream<T> generate(Supplier<T> s)
+  ```
+- **具体例と解説**:
+
+  ```java
+  // ランダムな値を生成する無限ストリームを生成
+  Stream<Double> randomStream = Stream.generate(Math::random);
+
+  // ストリームの先頭から10個の要素を表示
+  randomStream.limit(10).forEach(System.out::println);
+  ```
+
+:::
+
+:::details iterate ~ 初期要素と関数を基に生成された要素を持つ無限ストリームを生成
+
+- **詳細な説明**:
+  初期要素から開始し、指定された関数を適用して次の要素を生成する無限ストリームを生成する。ストリームの各要素は、前の要素に関数を適用することで得られる。
+- **シグネチャ**:
+  ```java
+  static <T> Stream<T> iterate(T seed, UnaryOperator<T> f)
+  ```
+- **具体例と解説**:
+
+  ```java
+  // 0から始まり、各要素が前の要素に1を足した値となる無限ストリームを生成
+  Stream<Integer> iterateStream = Stream.iterate(0, n -> n + 1);
+
+  // ストリームの先頭から10個の要素を表示
+  iterateStream.limit(10).forEach(System.out::println); // 出力: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+  ```
+
+:::
+
+:::details concat ~ 2 つのストリームを連結したストリームを生成
+
+- **詳細な説明**:
+  2 つのストリームを連結して 1 つのストリームを生成する。最初のストリームの要素が先に、次に 2 番目のストリームの要素が続く順序になる。
+- **シグネチャ**:
+  ```java
+  static <T> Stream<T> concat(Stream<? extends T> a, Stream<? extends T> b)
+  ```
+- **具体例と解説**:
+
+  ```java
+  // 2つのストリームを生成
+  Stream<String> stream1 = Stream.of("a", "b", "c");
+  Stream<String> stream2 = Stream.of("d", "e", "f");
+
+  // 2つのストリームを連結
+  Stream<String> concatenatedStream = Stream.concat(stream1, stream2);
+  concatenatedStream.forEach(System.out::println); // 出力: a, b, c, d, e, f
+  ```
+
+:::
+
+### 配列からの生成
+
+`Array.stream()` メソッドで生成できる。
+
+- **シグネチャ**
+  ```java
+  public static <T> Stream<T> stream(T[] array)
+  public static IntStream stream(int[] array)
+  public static LongStream stream(long[] array)
+  public static DoubleStream stream(double[] array)
+  ```
+- **具体例**
+
+  ```java
+  import java.util.Arrays;
+  import java.util.stream.IntStream;
+  import java.util.stream.Stream;
+
+  public class Main {
+      public static void main(String[] args) {
+          // オブジェクト型配列からストリームを生成
+          String[] stringArray = {"a", "b", "c"};
+          Stream<String> stringStream = Arrays.stream(stringArray);
+          stringStream.forEach(System.out::println); // 出力: a, b, c
+
+          // プリミティブ型配列からストリームを生成
+          int[] intArray = {1, 2, 3, 4, 5};
+          IntStream intStream = Arrays.stream(intArray);
+          intStream.forEach(System.out::println); // 出力: 1, 2, 3, 4, 5
+      }
+  }
+  ```
 
 ## `Stream` インターフェースの主要メソッド
 
 ### 中間操作
 
-:::details map(Function<? super T, ? extends R> mapper) ~ 要素の変換
+:::details map() ~ 要素の変換
 
 - **説明**:
-  - 各要素を指定された関数に適用した結果を含むストリームを返します。これにより、元のストリームの各要素を別の型に変換することができます。
+  - 各要素を指定された関数に適用した結果を含むストリームを返す
 - **シグネチャ**:
   ```java
   <R> Stream<R> map(Function<? super T, ? extends R> mapper)
@@ -65,10 +398,10 @@ title: "Stream API"
 
 :::
 
-:::details filter(Predicate<? super T> predicate) ~ 要素のフィルタリング
+:::details filter() ~ 要素のフィルタリング
 
 - **説明**:
-  - 指定された条件を満たす要素だけを含むストリームを返します。条件を満たさない要素は除外されます。
+  - 指定された条件を満たす要素だけを含むストリームを返す
 - **シグネチャ**:
   ```java
   Stream<T> filter(Predicate<? super T> predicate)
@@ -81,7 +414,7 @@ title: "Stream API"
                               .collect(Collectors.toList());
   System.out.println(filtered); // [three]
   ```
-  - **説明**: この例では、文字列の長さが 3 より大きい要素だけをフィルタリングしています。
+  - **説明**: この例では、文字列の長さが 3 より大きい要素だけをフィルタリングしている
 
 :::
 
@@ -125,7 +458,7 @@ title: "Stream API"
 
 :::
 
-:::details sorted(Comparator<? super T> comparator) ~ カスタムコンパレータによるソート
+:::details sorted() ~ カスタムコンパレータによるソート
 
 - **説明**:
   - ストリームの要素を指定されたコンパレータでソートします。任意の順序でソートすることができます。
@@ -145,7 +478,7 @@ title: "Stream API"
 
 :::
 
-:::details peek(Consumer<? super T> action) ~ 要素に対するアクションの実行
+:::details peek() ~ 要素に対するアクションの実行
 
 - **説明**:
   - 各要素に対して指定されたアクションを実行し、その後のストリームを返します。デバッグやログのために使用されます。
@@ -164,7 +497,7 @@ title: "Stream API"
 
 :::
 
-:::details limit(long maxSize) ~ 要素数の制限
+:::details limit() ~ 要素数の制限
 
 - **説明**:
   - ストリームの要素数を指定された最大数まで制限します。それ以降の要素は無視されます。
@@ -184,7 +517,7 @@ title: "Stream API"
 
 :::
 
-:::details skip(long n) ~ 要素のスキップ
+:::details skip() ~ 要素のスキップ
 
 - **説明**:
   - 最初の n 個の要素をスキップしたストリームを返します。それ以降の要素だけが含まれます。
@@ -204,10 +537,12 @@ title: "Stream API"
 
 :::
 
-:::details flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) ~ フラットマッピング
+:::details flatMap() ~ フラットマッピング
 
 - **説明**:
-  - 各要素をストリームにマッピングし、そのストリームをフラットに結合した結果を含むストリームを返します。ネストされたストリームを平坦化します。
+  - 各要素をストリームに変換し、それらをフラットに結合し、一つのストリームにする
+  - 各要素に対して関数を適用してストリームを生成する
+  - ネストされたストリームができるので、それらを結合してフラットにする
 - **シグネチャ**:
   ```java
   <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper)
@@ -219,7 +554,7 @@ title: "Stream API"
       Arrays.asList("three", "four")
   );
   List<String> flatMappedList = list.stream()
-                                    .flatMap(Collection::stream)
+                                    .flatMap(List::stream)
                                     .collect(Collectors.toList());
   System.out.println(flatMappedList); // [one, two, three, four]
   ```
@@ -227,10 +562,10 @@ title: "Stream API"
 
 :::
 
-:::details mapToInt(ToIntFunction<? super T> mapper) ~ int ストリームへのマッピング
+:::details mapToInt() ~ int ストリームへのマッピング
 
 - **説明**:
-  - 各要素を int に変換し、int ストリームを返します。数値データの処理に使用されます。
+  - 各要素を int に変換し、`IntStream` を返す
 - **シグネチャ**:
   ```java
   IntStream mapToInt(ToIntFunction<? super T> mapper)
@@ -247,7 +582,7 @@ title: "Stream API"
 
 :::
 
-:::details mapToDouble(ToDoubleFunction<? super T> mapper) ~ double ストリームへのマッピング
+:::details mapToDouble() ~ double ストリームへのマッピング
 
 - **説明**:
   - 各要素を double に変換し、double ストリームを返します。浮動小数点数の処理に使用されます。
@@ -270,7 +605,7 @@ title: "Stream API"
 
 :::
 
-:::details mapToLong(ToLongFunction<? super T> mapper) ~ long ストリームへのマッピング
+:::details mapToLong() ~ long ストリームへのマッピング
 
 - **説明**:
   - 各要素を long に変換し、long ストリームを返します。大きな整数値の処理に使用されます。
@@ -290,7 +625,7 @@ title: "Stream API"
 
 :::
 
-:::details flatMapToInt(Function<? super T, ? extends IntStream> mapper) ~ int ストリームへのフラットマッピング
+:::details flatMapToInt() ~ int ストリームへのフラットマッピング
 
 - **説明**:
   - 各要素を int ストリームにマッピングし、そのストリームをフラットに結合した結果を含む int ストリームを返します。ネストされた数値ストリームを平坦化します。
@@ -313,7 +648,7 @@ title: "Stream API"
 
 :::
 
-:::details flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) ~ double ストリームへのフラットマッピング
+:::details flatMapToDouble() ~ double ストリームへのフラットマッピング
 
 - **説明**:
   - 各要素を double ストリームにマッピングし、そのストリームをフラットに結合した結果を含む double ストリームを返します。ネストされた浮動小数点数のストリームを平坦化します。
@@ -336,7 +671,7 @@ title: "Stream API"
 
 :::
 
-:::details flatMapToLong(Function<? super T, ? extends LongStream> mapper) ~ long ストリームへのフラットマッピング
+:::details flatMapToLong() ~ long ストリームへのフラットマッピング
 
 - **説明**:
   - 各要素を long ストリームにマッピングし、そのストリームをフラットに結合した結果を含む long ストリームを返します。ネストされた長整数ストリームを平坦化します。
@@ -361,7 +696,7 @@ title: "Stream API"
 
 ### 終端操作
 
-:::details collect(Collector<? super T, A, R> collector) ~ 要素の収集
+:::details collect() ~ 要素の収集
 
 - **説明**:
   - ストリームの要素を収集し、リストやセットなどのコレクションに変換します。さまざまな収集方法が提供されています。
@@ -380,7 +715,7 @@ title: "Stream API"
 
 :::
 
-:::details forEach(Consumer<? super T> action) ~ 要素に対するアクションの実行
+:::details forEach() ~ 要素に対するアクションの実行
 
 - **説明**:
   - ストリームの各要素に対して指定されたアクションを実行します。終端操作であり、ストリームの処理を終了させます。
@@ -398,7 +733,7 @@ title: "Stream API"
 
 :::
 
-:::details reduce(BinaryOperator<T> accumulator) ~ 要素の畳み込み
+:::details reduce() ~ 要素の畳み込み
 
 - **説明**:
   - ストリームの要素を畳み込み（リダクション）操作を行い、一つの結果にまとめます。初期値を指定しない場合、ストリームが空の場合は`Optional.empty()`を返します。
@@ -436,7 +771,7 @@ title: "Stream API"
 
 :::
 
-:::details anyMatch(Predicate<? super T> predicate) ~ 条件を満たす要素の存在確認
+:::details anyMatch() ~ 条件を満たす要素の存在確認
 
 - **説明**:
   - ストリームのいずれかの要素が指定された条件を満たすかどうかを返します。短絡評価されます。
@@ -455,7 +790,7 @@ title: "Stream API"
 
 :::
 
-:::details allMatch(Predicate<? super T> predicate) ~ 全要素が条件を満たすかの確認
+:::details allMatch() ~ 全要素が条件を満たすかの確認
 
 - **説明**:
   - ストリームのすべての要素が指定された条件を満たすかどうかを返します。短絡評価されます。
@@ -474,7 +809,7 @@ title: "Stream API"
 
 :::
 
-:::details noneMatch(Predicate<? super T> predicate) ~ 全要素が条件を満たさないかの確認
+:::details noneMatch() ~ 全要素が条件を満たさないかの確認
 
 - **説明**:
   - ストリームのすべての要素が指定された条件を満たさないかどうかを返します。短絡評価されます。
@@ -550,7 +885,7 @@ title: "Stream API"
 
 :::
 
-:::details toArray(IntFunction<A[]> generator) ~ 指定された型の配列への変換
+:::details toArray() ~ 指定された型の配列への変換
 
 - **説明**:
   - ストリームの要素を指定された型の配列に変換します。ジェネレータ関数を使用して、特定の型の配列を作成します。
@@ -569,7 +904,7 @@ title: "Stream API"
 
 :::
 
-:::details max(Comparator<? super T> comparator) ~ 最大値の取得
+:::details max() ~ 最大値の取得
 
 - **説明**:
   - ストリームの要素のうち、指定されたコンパレータで最大の要素を返します。ストリームが空の場合は`Optional.empty()`を返します。
@@ -588,7 +923,7 @@ title: "Stream API"
 
 :::
 
-:::details min(Comparator<? super T> comparator) ~ 最小値の取得
+:::details min() ~ 最小値の取得
 
 - **説明**:
   - ストリームの要素のうち、指定されたコンパレータで最小の要素を返します。ストリームが空の場合は`Optional.empty()`を返します。
@@ -716,7 +1051,7 @@ title: "Stream API"
 
 ### 集約操作（`Collectors`を使用）
 
-:::details summingInt(ToIntFunction<? super T> mapper) ~ 合計の計算
+:::details summingInt() ~ 合計の計算
 
 - **説明**:
   - ストリームの要素を指定された関数でマッピングし、その合計を計算します。数値データの集計に使用されます。
@@ -735,7 +1070,7 @@ title: "Stream API"
 
 :::
 
-:::details averagingInt(ToIntFunction<? super T> mapper) ~ 平均の計算
+:::details averagingInt() ~ 平均の計算
 
 - **説明**:
   - ストリームの要素を指定された関数でマッピングし、その平均を計算します。数値データの平均値を取得するために使用されます。
@@ -754,7 +1089,7 @@ title: "Stream API"
 
 :::
 
-:::details summarizingInt(ToIntFunction<? super T> mapper) ~ 統計情報の取得
+:::details summarizingInt() ~ 統計情報の取得
 
 - **説明**:
   - ストリームの要素を指定された関数でマッピングし、その統計情報（合計、平均、最大値、最小値など）を取得します。数値データの統計情報を収集するために使用されます。

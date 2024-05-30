@@ -519,6 +519,113 @@ public static int test() {
 
 上記の場合、必ず `finally` ブロックが実行されるため、`3` が返る。
 
+## `cause`
+
+`cause`は、例外が発生する原因となった元の例外を指します。Java では、例外が別の例外によって引き起こされることがよくあります。このとき、新しい例外オブジェクトを作成し、その原因（`cause`）として元の例外を設定することができます。これにより、エラーメッセージやスタックトレースにどのような一連の問題が発生したのかを明確に把握できます。
+
+### なぜ cause が重要なのか？
+
+- **原因追跡**: 複数のレイヤーやモジュールをまたがるエラーの場合、元のエラーがどこで発生したのかを追跡するのに役立ちます。
+- **デバッグ**: 原因となった例外の情報を保持することで、エラーの根本原因を特定しやすくなります。
+
+### シグネチャ
+
+`Throwable`クラス（例外の基本クラス）のコンストラクタとメソッドに、`cause`を扱うものがあります。
+
+```java
+public Throwable(Throwable cause)
+public Throwable(String message, Throwable cause)
+
+public Throwable getCause()
+public Throwable initCause(Throwable cause)
+```
+
+### 具体例と解説
+
+##### 例 1: 基本的な例外のチェーン
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        try {
+            method1();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void method1() throws Exception {
+        try {
+            method2();
+        } catch (Exception e) {
+            throw new Exception("Error in method1", e);
+        }
+    }
+
+    public static void method2() throws Exception {
+        throw new Exception("Error in method2");
+    }
+}
+```
+
+- **解説**:
+  - `method2`が`Exception`をスローします。
+  - `method1`は`method2`を呼び出していて、`method2`で発生した例外をキャッチし、新しい`Exception`を原因（`cause`）としてスローします。
+  - メインメソッドで`method1`を呼び出し、例外をキャッチしてスタックトレースを出力します。
+  - 出力されるスタックトレースには、`method1`で発生した例外と、その原因である`method2`の例外が含まれます。
+
+#### 例 2: 根本原因を特定する
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        try {
+            method1();
+        } catch (Exception e) {
+            Throwable rootCause = e;
+            while (rootCause.getCause() != null) {
+                rootCause = rootCause.getCause();
+            }
+            System.out.println("Root cause: " + rootCause);
+        }
+    }
+
+    public static void method1() throws Exception {
+        try {
+            method2();
+        } catch (Exception e) {
+            throw new Exception("Error in method1", e);
+        }
+    }
+
+    public static void method2() throws Exception {
+        throw new Exception("Error in method2", new IllegalArgumentException("Root cause exception"));
+    }
+}
+```
+
+- **解説**:
+  - `method2`が`IllegalArgumentException`を原因（`cause`）としてスローします。
+  - `method1`は`method2`を呼び出していて、`method2`で発生した例外をキャッチし、新しい`Exception`を原因（`cause`）としてスローします。
+  - メインメソッドで`method1`を呼び出し、例外をキャッチしてループを使用して根本原因を特定します。
+  - 出力には、根本原因である`IllegalArgumentException`が表示されます。
+
+### まとめ
+
+- **`cause`とは**:
+
+  - `cause`は例外が発生する原因となった元の例外
+  - 例外チェーンを構成することで、エラーの連鎖を追跡し、デバッグを容易にする
+
+- **使い方**:
+
+  - 新しい例外をスローする際に、元の例外を原因として設定する
+  - `getCause`メソッドを使用して、例外の原因を取得する
+
+- **利点**:
+  - 原因の特定とエラーのデバッグが容易になる
+  - エラーの発生元を明確にすることで、問題解決の迅速化に繋がる
+
 ## `throws` 節を用いてどのような例外が発生するかを知らせる
 
 - `throws` 節はメソッドやコンストラクタのシグネチャの一部として使用される

@@ -25,6 +25,7 @@ chapters:
   - class-path
   - big-decimal
   - oop
+  - functional-interface
   - java-lang-object
   - try-catch
   - assert
@@ -63,3 +64,4 @@ chapters:
   - byte-array-output-stream
   - file
   - nio
+  - scanner
