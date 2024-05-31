@@ -1142,6 +1142,51 @@ public class StreamExample {
 4. `sorted`メソッドで、要素をソート。
 5. `collect`メソッドで、結果をリストに収集。
 
+## 並列ストリーム
+
+- 並列処理でストリームの処理が行われる
+- 暗黙的にスレッドが生成され、マルチスレッドによって各要素が並列に処理される
+- よって、ストリーム内の各要素がどのような順番で処理されるかは分からない
+
+### コレクションから並列ストリームを生成する
+
+`List` や `Set` には `parallelStream()` が定義されており、これで並列ストリームが生成できる。
+
+- **シグネチャ**
+
+  ```java
+  Stream<E> parallelStream()
+  ```
+
+- **例**
+
+  ```java
+  List<String> list = Arrays.asList("a", "b", "c", "d");
+  Stream<String> parallelStream = list.parallelStream();
+  ```
+
+  - 順次ストリームの場合、「a, b, c, d」と生成されるが...
+  - 並列ストリームのため順序は保証されず、毎回異なる順序になる
+    - 「b, c, d, a」、「a, d, b, c」...
+
+### 既存ストリームから並列ストリームを生成する
+
+- **シグネチャ**
+
+  ```java
+  Stream<T> parallel()
+  ```
+
+- **例**
+  ```java
+  List<String> list = Arrays.asList("a", "b", "c", "d");
+  Stream<String> parallelStream = list.stream().parallel();
+  ```
+
+### 並列ストリームの注意点
+
+並列ストリームによりパフォーマンス向上が期待できるが、**スレッドの生成には一定のオーバーヘッドがかかるため、一概にどちらに優位性があると決めることはできない**。
+
 ## 解決したい技術的課題
 
 ### 複雑なデータ処理の簡素化
