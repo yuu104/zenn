@@ -222,7 +222,7 @@ export const getItem = cache(async (id: string) => {
    fetch(`https://...`, { next: { revalidate: 0 } });
    ```
 
-2. **以下を Root Layout から `export` することで、特定の Root Segment のキャッシュを一括でオプトアウトできる**
+2. **Root Segment（Layout や Page など） から以下を `export` することで、その配下の Segment における Date Cache を一括でオプトアウトできる**
 
    ```ts
    // ルートセグメント内のすべてのデータリクエストのキャッシュをオプトアウトする
