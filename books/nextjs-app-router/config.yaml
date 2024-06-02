@@ -13,3 +13,5 @@ chapters:
   - static-dynamic-data-fetch
   - static-dynamic-rendering-route
   - cache
+  - router-refresh
+  - revalidate-path
