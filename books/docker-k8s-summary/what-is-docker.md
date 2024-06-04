@@ -13,16 +13,16 @@ title: "Dockerとは？"
 
 ## コンテナと Docker Engine
 
-![](https://storage.googleapis.com/zenn-user-upload/5404908f3f08-20240603.png)\
+![](https://storage.googleapis.com/zenn-user-upload/5404908f3f08-20240603.png)
 
 - 隔離した環境のことを**コンテナ**という
   - コンテナを使えるようにするための仕組みが Docker
-- Docker を仕様するには、Docker のソフトウェア（**Docker Engine**）を使用する
+- Docker を仕様するには、**Docker のソフトウェア（Docker Engine）** を使用する
   - コンテナの作成・起動が可能になる
 
 ## コンテナはイメージから作る
 
-- コンテナは**イメージ（image）**から作成する
+- コンテナは **イメージ（image）** から作成する
 - イメージはコンテナの素
 - イメージはたくさんの種類がある
   - Apache のコンテナを作成したいなら、Apache のイメージを利用する
