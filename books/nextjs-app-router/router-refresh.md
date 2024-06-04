@@ -288,7 +288,7 @@ const handleSubmit = async (e: FormEvent) => {
 
 const handleToggleDoneTask = async () => {
   const body: Task = { ...task, isCompleted: !task.isCompleted };
-  fetch(`http://localhost:3001/tasks/${task.id}`, {
+  await fetch(`http://localhost:3001/tasks/${task.id}`, {
     method: "PUT",
     body: JSON.stringify(body),
   });
@@ -355,7 +355,7 @@ const handleDeleteTask = async () => {
 :::
 
 データの追加・更新処理が成功し、DB にも正しく登録されていますが、画面には反映されていません。
-その理由はミューテーションを行っていないからです。そのため、更新系 API をクライアント側でコールした後、更新後のデータを再取得する必要があります。
+その理由はミューテーションを行っていないからです。更新系 API をクライアント側でコールした後、更新後のデータを再取得する必要があります。
 ただ、タスクのデータを取得し `TaskItem` コンポーネントに props 経由で渡している `TaskList` コンポーネントは SC です。
 
 :::details TaskList コンポーネントのコードを確認する
@@ -390,6 +390,168 @@ export async function TaskList() {
 よって、再度 `TaskList` コンポーネント上でデータを取得し、レンダリングをする必要があり、そのためには更新系 API をコールした後、新規の SC をリクエストしなければなりません。
 それを可能にするのが `router.refresh()` です。
 
-## `router.refresh()` で SC を再レンダリングする
+### `router.refresh()` で SC を再レンダリングする
+
+公式による説明は以下でした。
+
+- 現在のルートを更新する
+- サーバーに新しいリクエストを行う
+- Server Component を再レンダリングする
+- クライアントは、サーバーから受け取った新たな RSC ペイロードを、クライアント側の React（useState など）やブラウザの状態（スクロール位置など）を保持したままマージする
+
+更新系 API をコールした後に `router.refresh()` を実行することで、更新後のデータが反映された SC をサーバーにリクエストしてくれます。リクエストを受け取ったサーバーは SC を再レンダリングし、RSC ペイロードを生成してクライアントにレスポンスします。
+
+では、先ほどの API コール後に `router.refresh()` を追記します。
+
+:::details タスクを追加する
+
+```diff tsx: AddTaskForm.tsx
++ import { useRouter } from "next/navigation";
+
+  // 省略
+
++ const router = useRouter();
+  const [title, setTitle] = useState("");
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const body: Task = { id: uuidV4(), title, isCompleted: false };
+    await fetch("http://localhost:3001/tasks", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    setTitle("");
++   router.refresh();
+  };
+
+  // 省略
+```
+
+![](https://storage.googleapis.com/zenn-user-upload/8589975c45b4-20240604.gif)
+
+追加したデータが画面に反映されました！
+
+:::
+
+:::details タスクを完了/未完了にする
+
+```diff tsx: TaskItem.tsx
++ import { useRouter } from "next/navigation";
+
+  // 省略
+
++ const router = useRouter();
+
+  const handleToggleDoneTask = async () => {
+    const body: Task = { ...task, isCompleted: !task.isCompleted };
+    fetch(`http://localhost:3001/tasks/${task.id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
++   router.refresh();
+  };
+
+  // 省略
+```
+
+![](https://storage.googleapis.com/zenn-user-upload/10a6ac7d5963-20240604.gif)
+
+完了/未完了の更新処理が画面に反映されました！
+
+:::
+
+:::details タスクのタイトルを更新する
+
+```diff tsx: TaskItem:tsx
++ import { useRouter } from "next/navigation";
+
+  // 省略
+
++ const router = useRouter();
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(task.title);
+
+  const handleEditButtonClick = () => {
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = async () => {
+    setIsEditingTitle(false);
+    if (task.title === editedTitle) return;
+    const body: Task = { ...task, title: editedTitle };
+    await fetch(`http://localhost:3001/tasks/${task.id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
++   router.refresh();
+  };
+
+  // 省略
+```
+
+![](https://storage.googleapis.com/zenn-user-upload/beba8b1ae22e-20240604.gif)
+
+タイトルの更新が画面に反映されました！
+
+:::
+
+:::details タスクを削除する
+
+```diff tsx: TaskItem.tsx
++ import { useRouter } from "next/navigation";
+
+  // 省略
+
++ const router = useRouter();
+
+  const handleDeleteTask = async () => {
+    await fetch(`http://localhost:3001/tasks/${task.id}`, {
+      method: "DELETE",
+    });
++   router.refresh();
+  };
+
+  // 省略
+```
+
+![](https://storage.googleapis.com/zenn-user-upload/71c20a7b522e-20240604.gif)
+
+タスクの削除が画面に反映されました！
+
+:::
+
+`router.refresh()` により SC が再レンダリングし、更新後のデータを反映した RSC ペイロードがレスポンスされていることが確認できました。
+
+### クライアントの状態（`useState`）が保持されていることを確認する
+
+> クライアントは、更新された React Server Component のペイロードを、影響を受けないクライアント側の React（useState など）やブラウザの状態（スクロール位置など）を保持したままマージします。
+
+こちらを検証します。
+
+任意タスクのタイトルを編集中にした状態で、新たに別のタスクを作成します。
+
+![](https://storage.googleapis.com/zenn-user-upload/b66efd4307c4-20240604.gif)
+
+CC である `TaskItem` で定義した `isEditingTitle` の状態を `true` に変更しています。
+その後、タスク追加の API コールを行い `router.refresh()` で SC をリクエストし、その結果を基にクライアント側で再描画しています。
+再描画後の `isEditingTitle` は `true` のままです。ブラウザの状態が保持されたまま SC の変更がマージされています。
+
+よって、`router.refresh()` は単に現在のルートをリロード（`window.location.reload`）しているわけではないことが確認できました。CC の状態を保持した状態で SC をリクエストし、その結果をマージしているのだと思います。
 
 ## `router.refresh()` は Router Cache をパージする
+
+https://ja.next-community-docs.dev/docs/app-router/building-your-application/caching/#%E3%82%AD%E3%83%A3%E3%83%83%E3%82%B7%E3%83%A5%E3%82%92%E7%84%A1%E5%8A%B9%E3%81%AB%E3%81%99%E3%82%8B-1
+
+## Server Actions を使う場合は `revalidatePath()` を使う
+
+クライアント側で更新系 API をコールする場合は `router.refresh()` を使用すれば良いですが、Server Actions でデータ更新を行う場合は使用できません。何故なら、Server Actions の関数はサーバー側で実行されるためです。`router.refresh()` はクライアント側でのみ実行可能です。
+
+## 参考リンク
+
+https://ja.next-community-docs.dev/docs/app-router/api-reference/functions/use-router
+
+https://github.com/vercel/next.js/discussions/54075
+
+https://www.reddit.com/r/nextjs/comments/1bsf1js/how_is_revalidatepath_and_routerrefresh_different/
+
+https://github.com/vercel/next.js/discussions/58520
