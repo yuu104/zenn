@@ -99,7 +99,7 @@ export function AddTaskForm() {
 
   const handleSubmit = async () => {
     const body: Task = { id: uuidV4(), title, isCompleted: false };
-    await fetch("http://localhost:3001", {
+    await fetch("http://localhost:3001/tasks", {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -137,7 +137,6 @@ import { TaskItem } from "./TaskItem";
 
 const getTodos = async (): Promise<Task[]> => {
   const res = await fetch("http://localhost:3001/tasks", {
-    headers: { "Content-Type": "application/json" },
     cache: "no-store",
   });
   const data = await res.json();
@@ -196,7 +195,7 @@ export function TaskItem({ task }: Props) {
     setIsEditingTitle(false);
     if (task.title === editedTitle) return;
     const body: Task = { ...task, title: editedTitle };
-    await fetch(`http://localhost:3001/task/${task.id}`, {
+    await fetch(`http://localhost:3001/tasks/${task.id}`, {
       method: "PUT",
       body: JSON.stringify(body),
     });
@@ -540,11 +539,208 @@ CC である `TaskItem` で定義した `isEditingTitle` の状態を `true` に
 
 ## `router.refresh()` は Router Cache をパージする
 
+クライアント側でキャッシュされる[Router Cache](https://ja.next-community-docs.dev/docs/app-router/building-your-application/caching#router-cache)内のすべてのルートがパージされます。
+
 https://ja.next-community-docs.dev/docs/app-router/building-your-application/caching/#%E3%82%AD%E3%83%A3%E3%83%83%E3%82%B7%E3%83%A5%E3%82%92%E7%84%A1%E5%8A%B9%E3%81%AB%E3%81%99%E3%82%8B-1
 
-## Server Actions を使う場合は `revalidatePath()` を使う
+## Server Actions を使う場合は `revalidatePath()`, `revalidateTag()` を使う
 
 クライアント側で更新系 API をコールする場合は `router.refresh()` を使用すれば良いですが、Server Actions でデータ更新を行う場合は使用できません。何故なら、Server Actions の関数はサーバー側で実行されるためです。`router.refresh()` はクライアント側でのみ実行可能です。
+
+:::details revalidatePath() でタスク追加処理を実装する
+
+```diff tsx: actions/taskActions.tsx
++ "use server";
++
++ import { Task } from "@/types/task";
++ import { revalidatePath } from "next/cache";
++
++ export const addTask = async (body: Task) => {
++   "use server";
++
++   await fetch("http://localhost:3001/tasks", {
++     method: "POST",
++     body: JSON.stringify(body),
++   });
++
++   revalidatePath("/");
++ };
+```
+
+```diff tsx:TaskItem.tsx
+  "use client";
+
+  // 省略
+- import { useRouter } from "next/navigation";
++ import { addTask } from "@/actions/taskActions";
+
+  // 省略
+- const router = useRouter();
+const [title, setTitle] = useState("");
+
+- const handleSubmit = async (e: FormEvent) => {
+-   e.preventDefault();
+-   const body: Task = { id: uuidV4(), title, isCompleted: false };
+-   await fetch("http://localhost:3001/tasks", {
+-     method: "POST",
+-     body: JSON.stringify(body),
+-   });
+-   setTitle("");
+-   router.refresh();
+- };
+
++ const handleSubmit = async () => {
++   const body: Task = { id: uuidV4(), title, isCompleted: false };
++   addTask(body);
++   setTitle("");
++ };
+
+  return (
+-   <form className="flex items-center space-x-4" onSubmit={handleSubmit}>
++   <form className="flex items-center space-x-4" action={handleSubmit}>
+      // 省略
+    </form>
+  );
+}
+
+
+```
+
+:::
+
+:::details revalidateTag() でタスク追加処理を実装する
+
+```diff tsx: TaskList.tsx
+  // 省略
+
+  const getTodos = async (): Promise<Task[]> => {
+    const res = await fetch("http://localhost:3001/tasks", {
+      cache: "no-store",
++     next: { tags: ["tasks"] },
+    });
+    const data = await res.json();
+    return data;
+  };
+
+  // 省略
+```
+
+```diff tsx: actions/taskActions.tsx
++ "use server";
++
++ import { Task } from "@/types/task";
++ import { revalidateTag } from "next/cache";
++
++ export const addTask = async (body: Task) => {
++   "use server";
++
++   await fetch("http://localhost:3001/tasks", {
++     method: "POST",
++     body: JSON.stringify(body),
++   });
++
++   revalidateTag("tasks");
++ };
+```
+
+```diff tsx:TaskItem.tsx
+  "use client";
+
+  // 省略
+- import { useRouter } from "next/navigation";
++ import { addTask } from "@/actions/taskActions";
+
+  // 省略
+- const router = useRouter();
+const [title, setTitle] = useState("");
+
+- const handleSubmit = async (e: FormEvent) => {
+-   e.preventDefault();
+-   const body: Task = { id: uuidV4(), title, isCompleted: false };
+-   await fetch("http://localhost:3001/tasks", {
+-     method: "POST",
+-     body: JSON.stringify(body),
+-   });
+-   setTitle("");
+-   router.refresh();
+- };
+
++ const handleSubmit = async () => {
++   const body: Task = { id: uuidV4(), title, isCompleted: false };
++   addTask(body);
++   setTitle("");
++ };
+
+  return (
+-   <form className="flex items-center space-x-4" onSubmit={handleSubmit}>
++   <form className="flex items-center space-x-4" action={handleSubmit}>
+      // 省略
+    </form>
+  );
+}
+
+
+```
+
+:::
+
+`revalidatePath()`、`revalidateTag()` は `router.refresh()` と同様、Router Cache をパージします。
+
+## 疑問点
+
+`router.refresh()`、`revalidatePath()`、`revalidateTag()` を使用することで CC の状態を保持しつつ SC を更新できることが確認できました。
+しかし、ここで一つ疑問点があります。
+それは、「**SC 再レンダリング中のローディング制御をどのようにすれば良いのか？**」です。
+
+タスク一覧取得に時間がかかる場合を考えます。
+
+:::details TaskList.tsx を変更
+
+```diff tsx: TaskList.tsx
+  import { Task } from "@/types/task";
+  import { TaskItem } from "./TaskItem";
+
+  const getTodos = async (): Promise<Task[]> => {
+    const res = await fetch("http://localhost:3001/tasks", {
+      cache: "no-store",
+      next: { tags: ["tasks"] },
+    });
+    const data = await res.json();
+
++   await new Promise((resolve) => {
++     setTimeout(() => {
++       resolve(null);
++     }, 3000);
++   });
+
+    return data;
+  };
+
+  export async function TaskList() {
+    const tasks = await getTodos();
+
+    return (
+      <div>
+        {tasks.map((task) => (
+          <TaskItem key={task.id} task={task} />
+        ))}
+      </div>
+    );
+  }
+```
+
+:::
+
+![](https://storage.googleapis.com/zenn-user-upload/5ce85b37f8e8-20240605.gif)
+
+`TaskList` コンポーネントを `<Suspence>` で囲っているため、データ取得と SC のレンダリングが完了するまではローディング UI が表示されます。
+
+では、この状態でタスクを追加してみます。
+
+![](https://storage.googleapis.com/zenn-user-upload/3756646e301c-20240605.gif)
+
+SC の再レンダリングに時間がかかるため、画面が更新されるまで時間がかかります。
+この待機時間でローディング UI を表示したいのですが、その方法が不明です。
 
 ## 参考リンク
 
