@@ -89,7 +89,7 @@ docker container run penguin
 
 ### 引数
 
-対処に対して、持たせたい値を書く。
+「対象」に対して、持たせたい値を書く。
 
 - 文字コード
 - ポート番号
@@ -262,3 +262,51 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 | STATUS       | 現在のステータス。動いている場合は「Up」、動いていない場合は「Exited」と表示される                                                                                      |
 | PORTS        | 割り当てられているポート番号を示す。「ホストのポート番号 → コンテナのポート番号」の形式で表示される（ポート番号が同じときは、->以降は表示されない）                     |
 | NAMES        | コンテナ名                                                                                                                                                              |
+
+## イメージの削除
+
+コンテナを削除してもイメージは残り続ける。
+![](https://storage.googleapis.com/zenn-user-upload/61a5bbecf65a-20240609.png)
+
+**イメージを削除するには、削除対象のイメージを使用しているコンテナを削除する必要がある。**
+![](https://storage.googleapis.com/zenn-user-upload/a33f5b2aafbc-20240609.png)
+
+### `docker image rm`
+
+イメージを削除するには `docker image rm` を実行する。
+![](https://storage.googleapis.com/zenn-user-upload/bfa743c9bb87-20240609.png)
+
+「対象」にはイメージ名 or イメージ ID を指定する。
+
+### `docker image ls`
+
+現在保持しているイメージ一覧を確認するコマンド。
+
+```shell
+$docker image ls
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+nginx               latest              4bb46517cac3        8 days ago          133MB
+httpd               latest              a6ea92c35c43        2 weeks ago         166MB
+mysql               latest              0d64f46acfd1        2 weeks ago         544MB
+```
+
+| 項目       | 内容                                                                                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| REPOSITORY | イメージ名                                                                                                                                    |
+| TAG        | バージョン情報。イメージをダウンロードするときに指定していないと`latest`（最新版）をダウンロードしたことになる                                |
+| IMAGE ID   | イメージ ID。本来の ID は 64 文字だが、先頭 12 文字のみの表記。12 文字のみでも（もしくは他と重複しなければそれ以下でも）、ID として使用できる |
+| CREATED    | 作られてから経過した時間                                                                                                                      |
+| SIZE       | イメージのファイルサイズ                                                                                                                      |
+
+:::details 複数のバージョンを削除したいとき
+
+```shell
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+mysql               5.7              718a6da099d8        2 weeks ago         448MB
+mysql               8              0d64f46acfd1        2 weeks ago         544MB
+
+```
+
+上記のようにバージョンが異なる同じソフトウェアのイメージを保持している場合、イメージ ID or `イメージ名:バージョン` を指定して削除する。
+`docker image rm mysql` だけでは区別できず、削除不可。
+:::

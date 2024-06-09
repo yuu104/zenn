@@ -9,3 +9,7 @@ chapters:
   - how-docker-works
   - setup-docker
   - basic-operation
+  - container-communication
+  - docker-network
+  - copy-file-betweem-container-and-host
+  - mounting-volumes
