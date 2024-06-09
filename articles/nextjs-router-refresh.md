@@ -1,5 +1,9 @@
 ---
 title: "router.refresh() が何をしているのか理解する"
+emoji: "📑"
+type: "tech" # tech: 技術記事 / idea: アイデア
+topics: [nextjs]
+published: false
 ---
 
 ## 公式によると...

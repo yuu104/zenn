@@ -1,9 +1,15 @@
-title: ""
-summary: ""
-topics: []
+title: "Docker・k8s"
+summary: "Dockerとk8sのサマリ"
+topics: [docker]
 published: false
 price: 0 # 有料の場合200〜5000
 # 本に含めるチャプターを順番に並べましょう
 chapters:
   - what-is-docker
-  - example2
+  - how-docker-works
+  - setup-docker
+  - basic-operation
+  - container-communication
+  - docker-network
+  - copy-file-betweem-container-and-host
+  - mounting-volumes
