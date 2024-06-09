@@ -230,3 +230,35 @@ Docker ネットワークに関する操作を行うためのコマンド。
 コンテナを停止するコマンド。
 **コンテナを停止しなければ削除できない。**
 ![](https://storage.googleapis.com/zenn-user-upload/214be42206f4-20240608.png)
+
+### `docker container rm`
+
+コンテナを削除するコマンド。
+**`docker stop` によりコンテナを停止しなければ削除できない。**
+![](https://storage.googleapis.com/zenn-user-upload/aba23da3f561-20240609.png)
+
+### `docker ps`
+
+`docker container ls` の省略コマンド。
+コンテナ一覧を表示する。
+
+`docker ps` は現在稼働中のコンテナ一覧を表示する。
+`docker ps -a` は停止しているものを含む、コンテナ一覧を表示する。
+![](https://storage.googleapis.com/zenn-user-upload/4c920bb025aa-20240609.png)
+
+実行結果の例は以下のようになる。
+
+```shell
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+2b3b4afb0422        httpd               "httpd-foreground"       5 minutes ago       Up 5 minutes        80/tcp              apa000ex1
+```
+
+| 項目         | 内容                                                                                                                                                                    |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CONTAINER ID | コンテナ ID。ランダムな数字が振られる。本来の ID は 64 文字だが、先頭 12 文字のみの表記。12 文字のみでも（もしくは他と重複しなければそれ以下でも）、ID として使用できる |
+| IMAGE        | 元となったイメージ名                                                                                                                                                    |
+| COMMAND      | コンテナにデフォルトで起動するように構成されているプログラム名。あまり意識することはない                                                                                |
+| CREATED      | 作られてから経過した時間                                                                                                                                                |
+| STATUS       | 現在のステータス。動いている場合は「Up」、動いていない場合は「Exited」と表示される                                                                                      |
+| PORTS        | 割り当てられているポート番号を示す。「ホストのポート番号 → コンテナのポート番号」の形式で表示される（ポート番号が同じときは、->以降は表示されない）                     |
+| NAMES        | コンテナ名                                                                                                                                                              |
