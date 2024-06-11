@@ -26,14 +26,12 @@ https://arc.net/l/quote/jxtudbaj
 ### 現在のルートを更新する
 
 `router.refresh()` を実行した Root Segment（ページ）を更新するという意味です。
-しかし後述によると、「更新」と言ってもページ全体を 0 から再構築しているわけではいようです。
-つまり、単純にページをリロードしている（`window.location.reload()` を実行している）わけではないということです。
+しかし後述によると、「更新」と言ってもページ全体を 0 から再構築しているわけではいようです。つまり、単純にページをリロードしている（`window.location.reload()` を実行している）わけではないということです。
 それではこの「更新」とは一体何をしているのでしょうか？
 
 ### サーバーに新しいリクエストを行う
 
-「新たにサーバーリクエストする」という観点だと `window.location.reload()` と同じですね。
-`router.refresh()` は何をリクエストしているのでしょうか？
+「新たにサーバーリクエストする」という観点だと `window.location.reload()` と同じですが、`router.refresh()` は何をリクエストしているのでしょうか？
 
 ### Server Component を再レンダリングする
 
@@ -60,8 +58,10 @@ https://arc.net/l/quote/jxtudbaj
 :::details ルートコンポーネント
 
 ```tsx: page.tsx
+import { Suspense } from "react";
 import { AddTaskForm } from "@/components/AddTaskForm";
 import { TaskList } from "@/components/TaskList";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -70,17 +70,19 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
           TODO App
         </h1>
+        <Link href="/sample">Sample</Link>
       </header>
       <div className="flex-1 p-6 space-y-4">
         <AddTaskForm />
         <div className="bg-white dark:bg-gray-800 rounded-md shadow p-4 space-y-2">
-          <TaskList />
+          <Suspense fallback={<div>Loading...</div>}>
+            <TaskList />
+          </Suspense>
         </div>
       </div>
     </div>
   );
 }
-
 ```
 
 :::
@@ -541,6 +543,105 @@ CC である `TaskItem` で定義した `isEditingTitle` の状態を `true` に
 
 よって、`router.refresh()` は単に現在のルートをリロード（`window.location.reload`）しているわけではないことが確認できました。CC の状態を保持した状態で SC をリクエストし、その結果をマージしているのだと思います。
 
+## `router.refresh()` 中に発生するサスペンドの `fallback` が表示されない
+
+タスク一覧取得に時間がかかる場合を考えます。
+
+:::details TaskList.tsx を変更
+
+```diff tsx: TaskList.tsx
+  import { Task } from "@/types/task";
+  import { TaskItem } from "./TaskItem";
+
+  const getTodos = async (): Promise<Task[]> => {
+    const res = await fetch("http://localhost:3001/tasks", {
+      cache: "no-store",
+      next: { tags: ["tasks"] },
+    });
+    const data = await res.json();
+
++   await new Promise((resolve) => {
++     setTimeout(() => {
++       resolve(null);
++     }, 3000);
++   });
+
+    return data;
+  };
+
+  export async function TaskList() {
+    const tasks = await getTodos();
+
+    return (
+      <div>
+        {tasks.map((task) => (
+          <TaskItem key={task.id} task={task} />
+        ))}
+      </div>
+    );
+  }
+```
+
+:::
+
+![](https://storage.googleapis.com/zenn-user-upload/5ce85b37f8e8-20240605.gif)
+
+`TaskList` コンポーネントを `<Suspence>` で囲っているため、データ取得と SC のレンダリングが完了するまではローディング UI が表示されます。
+
+では、この状態でタスクを追加してみます。
+
+![](https://storage.googleapis.com/zenn-user-upload/3756646e301c-20240605.gif)
+
+SC の再レンダリングに時間がかかるため、画面が更新されるまで時間がかかります。
+この時、`TasksList` コンポーネントはサスペンド状態にあるため、`Suspence` で指定した `fallback` の表示に切り替わるはずです。
+しかし、実際は `TasksList` が表示されたままになっています。これは何故なのでしょうか？
+
+### サスペンドしているのに `fallback` が表示されないのは何故か？
+
+`router.refresh()` のソースコードを確認してみます。
+
+https://github.com/vercel/next.js/blob/canary/packages/next/src/client/components/app-router.tsx#L395-L402
+
+`startTransition()` が原因です。
+`startTransition()` を使用すると、`Suspence` 内部がサスペンド状態でも `fallback` は表示されません。
+
+https://ja.react.dev/reference/react/Suspense#preventing-already-revealed-content-from-hiding
+
+https://zenn.dev/uhyo/books/react-concurrent-handson-2/viewer/use-starttransition#%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B8%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B
+
+### `fallback` を表示させる方法
+
+`startTransition()` を使わないようにすれば良いのですが、`router.refresh()` 内部に組み込まれているため、そうはいきません...
+そこで、別の方法として `Suspence` に `key` を指定します。
+
+```diff tsx: page.tsx
+  // 省略
+
+  export default function Home() {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
+        <header className="bg-white dark:bg-gray-800 shadow py-4 px-6">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+            TODO App
+          </h1>
+          <Link href="/sample">Sample</Link>
+        </header>
+        <div className="flex-1 p-6 space-y-4">
+          <AddTaskForm />
+          <div className="bg-white dark:bg-gray-800 rounded-md shadow p-4 space-y-2">
+-           <Suspense fallback={<div>Loading...</div>}>
++           <Suspense key={Math.random()} fallback={<div>Loading...</div>}>
+              <TaskList />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    );
+  }
+```
+
+https://zenn.dev/frontendflat/articles/nextjs-suspense-use-transition#1.-suspense-%2B-rsc
+
 ## `router.refresh()` は Router Cache をパージする
 
 クライアント側でキャッシュされる[Router Cache](https://ja.next-community-docs.dev/docs/app-router/building-your-application/caching#router-cache)内のすべてのルートがパージされます。
@@ -689,62 +790,6 @@ const [title, setTitle] = useState("");
 :::
 
 `revalidatePath()`、`revalidateTag()` は `router.refresh()` と同様、Router Cache をパージします。
-
-## 疑問点
-
-`router.refresh()`、`revalidatePath()`、`revalidateTag()` を使用することで CC の状態を保持しつつ SC を更新できることが確認できました。
-しかし、ここで一つ疑問点があります。
-それは、「**SC 再レンダリング中のローディング制御をどのようにすれば良いのか？**」です。
-
-タスク一覧取得に時間がかかる場合を考えます。
-
-:::details TaskList.tsx を変更
-
-```diff tsx: TaskList.tsx
-  import { Task } from "@/types/task";
-  import { TaskItem } from "./TaskItem";
-
-  const getTodos = async (): Promise<Task[]> => {
-    const res = await fetch("http://localhost:3001/tasks", {
-      cache: "no-store",
-      next: { tags: ["tasks"] },
-    });
-    const data = await res.json();
-
-+   await new Promise((resolve) => {
-+     setTimeout(() => {
-+       resolve(null);
-+     }, 3000);
-+   });
-
-    return data;
-  };
-
-  export async function TaskList() {
-    const tasks = await getTodos();
-
-    return (
-      <div>
-        {tasks.map((task) => (
-          <TaskItem key={task.id} task={task} />
-        ))}
-      </div>
-    );
-  }
-```
-
-:::
-
-![](https://storage.googleapis.com/zenn-user-upload/5ce85b37f8e8-20240605.gif)
-
-`TaskList` コンポーネントを `<Suspence>` で囲っているため、データ取得と SC のレンダリングが完了するまではローディング UI が表示されます。
-
-では、この状態でタスクを追加してみます。
-
-![](https://storage.googleapis.com/zenn-user-upload/3756646e301c-20240605.gif)
-
-SC の再レンダリングに時間がかかるため、画面が更新されるまで時間がかかります。
-この待機時間でローディング UI を表示したいのですが、その方法が不明です。
 
 ## 参考リンク
 
