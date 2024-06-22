@@ -543,7 +543,7 @@ CC である `TaskItem` で定義した `isEditingTitle` の状態を `true` に
 
 よって、`router.refresh()` は単に現在のルートをリロード（`window.location.reload`）しているわけではないことが確認できました。CC の状態を保持した状態で SC をリクエストし、その結果をマージしているのだと思います。
 
-## `router.refresh()` 中に発生するサスペンドの `fallback` が表示されない
+## `router.refresh()` 実行中に発生するサスペンドの `fallback` が表示されない
 
 タスク一覧取得に時間がかかる場合を考えます。
 
@@ -588,7 +588,7 @@ CC である `TaskItem` で定義した `isEditingTitle` の状態を `true` に
 
 `TaskList` コンポーネントを `<Suspence>` で囲っているため、データ取得と SC のレンダリングが完了するまではローディング UI が表示されます。
 
-では、この状態でタスクを追加してみます。
+この状態でタスクを追加してみます。
 
 ![](https://storage.googleapis.com/zenn-user-upload/3756646e301c-20240605.gif)
 
@@ -641,6 +641,140 @@ https://zenn.dev/uhyo/books/react-concurrent-handson-2/viewer/use-starttransitio
 ```
 
 https://zenn.dev/frontendflat/articles/nextjs-suspense-use-transition#1.-suspense-%2B-rsc
+
+これで、ページ更新の度に `fallback` が表示されるようになりました。
+![](https://storage.googleapis.com/zenn-user-upload/3a8295e0fb2e-20240622.gif)
+
+## `useOptimistic()` で楽観的更新を行う
+
+上記のような、ページ更新の度に `fallback` による待機が発生するのは良い UX とは言えません。
+そこで、`useOptimistic()` を使用し、楽観的更新を行います。
+https://ja.react.dev/reference/react/useOptimistic
+
+`useOptimistic()` による楽観的更新は、`startTransition` または Server Actions 内で行う必要があります。
+
+```diff tsx:TaskItem.tsx
+  "use client";
+
++ import { startTransition, useOptimistic, useState } from "react";
+
+  type Props = {
+    task: Task;
+  };
+
+  export function TaskItem({ task }: Props) {
+    const router = useRouter();
+
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editedTitle, setEditedTitle] = useState(task.title);
+
++  const [optimisticTask, addOptimistic] = useOptimistic<Task | undefined>(task);
++  optimisticTask?.title === "Call mom" && console.log(optimisticTask);
+
+    const handleToggleDoneTask = async () => {
+      const body: Task = { ...task, isCompleted: !task.isCompleted };
++     startTransition(async () => {
++       addOptimistic(body);
++       await fetch(`http://localhost:3001/tasks/${task.id}`, {
++         method: "PUT",
++         body: JSON.stringify(body),
++       });
++       router.refresh();
++     });
+    };
+
+    const handleEditButtonClick = () => {
+      setIsEditingTitle(true);
+    };
+
+    const handleSaveTitle = async () => {
+      setIsEditingTitle(false);
+      if (task.title === editedTitle) return;
+      const body: Task = { ...task, title: editedTitle };
++     startTransition(async () => {
++       addOptimistic(body);
++       await fetch(`http://localhost:3001/tasks/${task.id}`, {
++         method: "PUT",
++         body: JSON.stringify(body),
++       });
++       router.refresh();
++     });
+    };
+
+    const handleDeleteTask = async () => {
++     startTransition(async () => {
++       addOptimistic(undefined);
++       await fetch(`http://localhost:3001/tasks/${task.id}`, {
++         method: "DELETE",
++       });
++       router.refresh();
++     });
+    };
+
++   if (!optimisticTask) return null;
+
+    return (
+      <div className="flex items-center space-x-4">
+        <Checkbox
++         checked={optimisticTask.isCompleted}
+          onCheckedChange={handleToggleDoneTask}
+        />
+        {isEditingTitle ? (
+          <Input
+            type="text"
+            className="flex-1 bg-white dark:bg-gray-800 dark:text-gray-200 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+          />
+        ) : (
+          <label
+            className={`flex-1 text-gray-800 dark:text-gray-200 ${
++             optimisticTask.isCompleted ? "line-through" : ""
+            }`}
+          >
++           {optimisticTask.title}
+          </label>
+        )}
+        {isEditingTitle ? (
+          <SaveButton handleClick={handleSaveTitle} />
+        ) : (
+          <EditButton handleClick={handleEditButtonClick} />
+        )}
+        <DeleteButton handleClick={handleDeleteTask} />
+      </div>
+    );
+  }
+```
+
+```diff tsx: page.tsx
+  // 省略
+
+  export default function Home() {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
+        <header className="bg-white dark:bg-gray-800 shadow py-4 px-6">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+            TODO App
+          </h1>
+          <Link href="/sample">Sample</Link>
+        </header>
+        <div className="flex-1 p-6 space-y-4">
+          <AddTaskForm />
+          <div className="bg-white dark:bg-gray-800 rounded-md shadow p-4 space-y-2">
++           <Suspense fallback={<div>Loading...</div>}>
+-           <Suspense key={Math.random()} fallback={<div>Loading...</div>}>
+              <TaskList />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    );
+  }
+```
+
+![](https://storage.googleapis.com/zenn-user-upload/db9c2a933dbd-20240623.gif)
+
+楽観的更新 → 　更新 API コール → 　`router.refresh()` の流れで処理されています。
 
 ## `router.refresh()` は Router Cache をパージする
 
@@ -800,3 +934,5 @@ https://github.com/vercel/next.js/discussions/54075
 https://www.reddit.com/r/nextjs/comments/1bsf1js/how_is_revalidatepath_and_routerrefresh_different/
 
 https://github.com/vercel/next.js/discussions/58520
+
+https://zenn.dev/uhyo/books/react-19-new/viewer/use-optimistic
