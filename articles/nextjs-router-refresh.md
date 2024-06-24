@@ -26,14 +26,12 @@ https://arc.net/l/quote/jxtudbaj
 ### 現在のルートを更新する
 
 `router.refresh()` を実行した Root Segment（ページ）を更新するという意味です。
-しかし後述によると、「更新」と言ってもページ全体を 0 から再構築しているわけではいようです。
-つまり、単純にページをリロードしている（`window.location.reload()` を実行している）わけではないということです。
+しかし後述によると、「更新」と言ってもページ全体を 0 から再構築しているわけではいようです。つまり、単純にページをリロードしている（`window.location.reload()` を実行している）わけではないということです。
 それではこの「更新」とは一体何をしているのでしょうか？
 
 ### サーバーに新しいリクエストを行う
 
-「新たにサーバーリクエストする」という観点だと `window.location.reload()` と同じですね。
-`router.refresh()` は何をリクエストしているのでしょうか？
+「新たにサーバーリクエストする」という観点だと `window.location.reload()` と同じですが、`router.refresh()` は何をリクエストしているのでしょうか？
 
 ### Server Component を再レンダリングする
 
@@ -60,8 +58,10 @@ https://arc.net/l/quote/jxtudbaj
 :::details ルートコンポーネント
 
 ```tsx: page.tsx
+import { Suspense } from "react";
 import { AddTaskForm } from "@/components/AddTaskForm";
 import { TaskList } from "@/components/TaskList";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -70,17 +70,19 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
           TODO App
         </h1>
+        <Link href="/sample">Sample</Link>
       </header>
       <div className="flex-1 p-6 space-y-4">
         <AddTaskForm />
         <div className="bg-white dark:bg-gray-800 rounded-md shadow p-4 space-y-2">
-          <TaskList />
+          <Suspense fallback={<div>Loading...</div>}>
+            <TaskList />
+          </Suspense>
         </div>
       </div>
     </div>
   );
 }
-
 ```
 
 :::
@@ -402,7 +404,7 @@ export async function TaskList() {
 - Server Component を再レンダリングする
 - クライアントは、サーバーから受け取った新たな RSC ペイロードを、クライアント側の React（useState など）やブラウザの状態（スクロール位置など）を保持したままマージする
 
-更新系 API をコールした後に `router.refresh()` を実行することで、更新後のデータが反映された SC をサーバーにリクエストしてくれます。リクエストを受け取ったサーバーは SC を再レンダリングし、RSC ペイロードを生成してクライアントにレスポンスします。
+API をコールした後に `router.refresh()` を実行することで、更新後のデータが反映された SC をサーバーにリクエストしてくれます。リクエストを受け取ったサーバーは SC を再レンダリングし、RSC ペイロードを生成してクライアントにレスポンスします。
 
 では、先ほどの API コール後に `router.refresh()` を追記します。
 
@@ -523,7 +525,7 @@ export async function TaskList() {
 
 :::
 
-`router.refresh()` により SC が再レンダリングし、更新後のデータを反映した RSC ペイロードがレスポンスされていることが確認できました。
+`router.refresh()` により SC が再レンダリングし、更新後のデータを反映した RSC ペイロードがレスポンスされていることを確認できました。
 
 ### クライアントの状態（`useState`）が保持されていることを確認する
 
@@ -540,6 +542,239 @@ CC である `TaskItem` で定義した `isEditingTitle` の状態を `true` に
 再描画後の `isEditingTitle` は `true` のままです。ブラウザの状態が保持されたまま SC の変更がマージされています。
 
 よって、`router.refresh()` は単に現在のルートをリロード（`window.location.reload`）しているわけではないことが確認できました。CC の状態を保持した状態で SC をリクエストし、その結果をマージしているのだと思います。
+
+## `router.refresh()` 実行中に発生するサスペンドの `fallback` が表示されない
+
+タスク一覧取得に時間がかかる場合を考えます。
+
+:::details TaskList.tsx を変更
+
+```diff tsx: TaskList.tsx
+  import { Task } from "@/types/task";
+  import { TaskItem } from "./TaskItem";
+
+  const getTodos = async (): Promise<Task[]> => {
+    const res = await fetch("http://localhost:3001/tasks", {
+      cache: "no-store",
+      next: { tags: ["tasks"] },
+    });
+    const data = await res.json();
+
++   await new Promise((resolve) => {
++     setTimeout(() => {
++       resolve(null);
++     }, 3000);
++   });
+
+    return data;
+  };
+
+  export async function TaskList() {
+    const tasks = await getTodos();
+
+    return (
+      <div>
+        {tasks.map((task) => (
+          <TaskItem key={task.id} task={task} />
+        ))}
+      </div>
+    );
+  }
+```
+
+:::
+
+![](https://storage.googleapis.com/zenn-user-upload/5ce85b37f8e8-20240605.gif)
+
+`TaskList` コンポーネントを `<Suspence>` で囲っているため、データ取得と SC のレンダリングが完了するまではローディング UI が表示されます。
+
+この状態でタスクを追加してみます。
+
+![](https://storage.googleapis.com/zenn-user-upload/3756646e301c-20240605.gif)
+
+SC の再レンダリングに時間がかかるため、画面が更新されるまで時間がかかります。
+この時、`TasksList` コンポーネントはサスペンド状態にあるため、`Suspence` で指定した `fallback` の表示に切り替わるはずです。
+しかし、実際は `TasksList` が表示されたままになっています。これは何故なのでしょうか？
+
+### サスペンドしているのに `fallback` が表示されないのは何故か？
+
+`router.refresh()` のソースコードを確認してみます。
+
+https://github.com/vercel/next.js/blob/canary/packages/next/src/client/components/app-router.tsx#L395-L402
+
+`startTransition()` が原因です。
+`startTransition()` を使用すると、`Suspence` 内部がサスペンド状態でも `fallback` は表示されません。
+
+https://ja.react.dev/reference/react/Suspense#preventing-already-revealed-content-from-hiding
+
+https://zenn.dev/uhyo/books/react-concurrent-handson-2/viewer/use-starttransition#%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B8%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B
+
+### `fallback` を表示させる方法
+
+`startTransition()` を使わないようにすれば良いのですが、`router.refresh()` 内部に組み込まれているため、そうはいきません...
+そこで、別の方法として `Suspence` に `key` を指定します。
+
+```diff tsx: page.tsx
+  // 省略
+
+  export default function Home() {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
+        <header className="bg-white dark:bg-gray-800 shadow py-4 px-6">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+            TODO App
+          </h1>
+          <Link href="/sample">Sample</Link>
+        </header>
+        <div className="flex-1 p-6 space-y-4">
+          <AddTaskForm />
+          <div className="bg-white dark:bg-gray-800 rounded-md shadow p-4 space-y-2">
+-           <Suspense fallback={<div>Loading...</div>}>
++           <Suspense key={Math.random()} fallback={<div>Loading...</div>}>
+              <TaskList />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    );
+  }
+```
+
+https://zenn.dev/frontendflat/articles/nextjs-suspense-use-transition#1.-suspense-%2B-rsc
+
+これで、ページ更新の度に `fallback` が表示されるようになりました。
+![](https://storage.googleapis.com/zenn-user-upload/3a8295e0fb2e-20240622.gif)
+
+## `useOptimistic()` で楽観的更新を行う
+
+上記のような、ページ更新の度に `fallback` による待機が発生するのは良い UX とは言えません。
+そこで、`useOptimistic()` を使用し、楽観的更新を行います。
+https://ja.react.dev/reference/react/useOptimistic
+
+`useOptimistic()` による楽観的更新は、`startTransition` または Server Actions 内で行う必要があります。
+
+```diff tsx:TaskItem.tsx
+  "use client";
+
++ import { startTransition, useOptimistic, useState } from "react";
+
+  type Props = {
+    task: Task;
+  };
+
+  export function TaskItem({ task }: Props) {
+    const router = useRouter();
+
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editedTitle, setEditedTitle] = useState(task.title);
+
++  const [optimisticTask, addOptimistic] = useOptimistic<Task | undefined>(task);
++  optimisticTask?.title === "Call mom" && console.log(optimisticTask);
+
+    const handleToggleDoneTask = async () => {
+      const body: Task = { ...task, isCompleted: !task.isCompleted };
++     startTransition(async () => {
++       addOptimistic(body);
++       await fetch(`http://localhost:3001/tasks/${task.id}`, {
++         method: "PUT",
++         body: JSON.stringify(body),
++       });
++       router.refresh();
++     });
+    };
+
+    const handleEditButtonClick = () => {
+      setIsEditingTitle(true);
+    };
+
+    const handleSaveTitle = async () => {
+      setIsEditingTitle(false);
+      if (task.title === editedTitle) return;
+      const body: Task = { ...task, title: editedTitle };
++     startTransition(async () => {
++       addOptimistic(body);
++       await fetch(`http://localhost:3001/tasks/${task.id}`, {
++         method: "PUT",
++         body: JSON.stringify(body),
++       });
++       router.refresh();
++     });
+    };
+
+    const handleDeleteTask = async () => {
++     startTransition(async () => {
++       addOptimistic(undefined);
++       await fetch(`http://localhost:3001/tasks/${task.id}`, {
++         method: "DELETE",
++       });
++       router.refresh();
++     });
+    };
+
++   if (!optimisticTask) return null;
+
+    return (
+      <div className="flex items-center space-x-4">
+        <Checkbox
++         checked={optimisticTask.isCompleted}
+          onCheckedChange={handleToggleDoneTask}
+        />
+        {isEditingTitle ? (
+          <Input
+            type="text"
+            className="flex-1 bg-white dark:bg-gray-800 dark:text-gray-200 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+          />
+        ) : (
+          <label
+            className={`flex-1 text-gray-800 dark:text-gray-200 ${
++             optimisticTask.isCompleted ? "line-through" : ""
+            }`}
+          >
++           {optimisticTask.title}
+          </label>
+        )}
+        {isEditingTitle ? (
+          <SaveButton handleClick={handleSaveTitle} />
+        ) : (
+          <EditButton handleClick={handleEditButtonClick} />
+        )}
+        <DeleteButton handleClick={handleDeleteTask} />
+      </div>
+    );
+  }
+```
+
+```diff tsx: page.tsx
+  // 省略
+
+  export default function Home() {
+    return (
+      <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900">
+        <header className="bg-white dark:bg-gray-800 shadow py-4 px-6">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+            TODO App
+          </h1>
+          <Link href="/sample">Sample</Link>
+        </header>
+        <div className="flex-1 p-6 space-y-4">
+          <AddTaskForm />
+          <div className="bg-white dark:bg-gray-800 rounded-md shadow p-4 space-y-2">
++           <Suspense fallback={<div>Loading...</div>}>
+-           <Suspense key={Math.random()} fallback={<div>Loading...</div>}>
+              <TaskList />
+            </Suspense>
+          </div>
+        </div>
+      </div>
+    );
+  }
+```
+
+![](https://storage.googleapis.com/zenn-user-upload/db9c2a933dbd-20240623.gif)
+
+楽観的更新 → 　更新 API コール → 　`router.refresh()` の流れで処理されています。
 
 ## `router.refresh()` は Router Cache をパージする
 
@@ -690,62 +925,6 @@ const [title, setTitle] = useState("");
 
 `revalidatePath()`、`revalidateTag()` は `router.refresh()` と同様、Router Cache をパージします。
 
-## 疑問点
-
-`router.refresh()`、`revalidatePath()`、`revalidateTag()` を使用することで CC の状態を保持しつつ SC を更新できることが確認できました。
-しかし、ここで一つ疑問点があります。
-それは、「**SC 再レンダリング中のローディング制御をどのようにすれば良いのか？**」です。
-
-タスク一覧取得に時間がかかる場合を考えます。
-
-:::details TaskList.tsx を変更
-
-```diff tsx: TaskList.tsx
-  import { Task } from "@/types/task";
-  import { TaskItem } from "./TaskItem";
-
-  const getTodos = async (): Promise<Task[]> => {
-    const res = await fetch("http://localhost:3001/tasks", {
-      cache: "no-store",
-      next: { tags: ["tasks"] },
-    });
-    const data = await res.json();
-
-+   await new Promise((resolve) => {
-+     setTimeout(() => {
-+       resolve(null);
-+     }, 3000);
-+   });
-
-    return data;
-  };
-
-  export async function TaskList() {
-    const tasks = await getTodos();
-
-    return (
-      <div>
-        {tasks.map((task) => (
-          <TaskItem key={task.id} task={task} />
-        ))}
-      </div>
-    );
-  }
-```
-
-:::
-
-![](https://storage.googleapis.com/zenn-user-upload/5ce85b37f8e8-20240605.gif)
-
-`TaskList` コンポーネントを `<Suspence>` で囲っているため、データ取得と SC のレンダリングが完了するまではローディング UI が表示されます。
-
-では、この状態でタスクを追加してみます。
-
-![](https://storage.googleapis.com/zenn-user-upload/3756646e301c-20240605.gif)
-
-SC の再レンダリングに時間がかかるため、画面が更新されるまで時間がかかります。
-この待機時間でローディング UI を表示したいのですが、その方法が不明です。
-
 ## 参考リンク
 
 https://ja.next-community-docs.dev/docs/app-router/api-reference/functions/use-router
@@ -755,3 +934,5 @@ https://github.com/vercel/next.js/discussions/54075
 https://www.reddit.com/r/nextjs/comments/1bsf1js/how_is_revalidatepath_and_routerrefresh_different/
 
 https://github.com/vercel/next.js/discussions/58520
+
+https://zenn.dev/uhyo/books/react-19-new/viewer/use-optimistic

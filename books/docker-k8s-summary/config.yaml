@@ -13,3 +13,8 @@ chapters:
   - docker-network
   - copy-file-betweem-container-and-host
   - mounting-volumes
+  - container-to-image
+  - exec-container
+  - docker-registory
+  - docker-compose
+  - express-project
