@@ -669,7 +669,6 @@ https://ja.react.dev/reference/react/useOptimistic
     const [editedTitle, setEditedTitle] = useState(task.title);
 
 +  const [optimisticTask, addOptimistic] = useOptimistic<Task | undefined>(task);
-+  optimisticTask?.title === "Call mom" && console.log(optimisticTask);
 
     const handleToggleDoneTask = async () => {
       const body: Task = { ...task, isCompleted: !task.isCompleted };
