@@ -541,7 +541,7 @@ CC である `TaskItem` で定義した `isEditingTitle` の状態を `true` に
 その後、タスク追加の API コールを行い `router.refresh()` で SC をリクエストし、その結果を基にクライアント側で再描画しています。
 再描画後の `isEditingTitle` は `true` のままです。ブラウザの状態が保持されたまま SC の変更がマージされています。
 
-よって、`router.refresh()` は単に現在のルートをリロード（`window.location.reload`）しているわけではないことが確認できました。CC の状態を保持した状態で SC をリクエストし、その結果をマージしているのだと思います。
+よって、`router.refresh()` は単に現在のルートをリロード（`window.location.reload`）しているわけではないことが確認できました。CC の状態を保ちつつ SC をリクエストし、その結果をマージしているのだと思います。
 
 ## `router.refresh()` 実行中に発生するサスペンドの `fallback` が表示されない
 
@@ -600,7 +600,7 @@ SC の再レンダリングに時間がかかるため、画面が更新され�
 
 `router.refresh()` のソースコードを確認してみます。
 
-https://github.com/vercel/next.js/blob/canary/packages/next/src/client/components/app-router.tsx#L395-L402
+https://github.com/vercel/next.js/blob/ea8020158e7f7f75242ac4dad03136b6a170b63c/packages/next/src/client/components/app-router.tsx#L404-L411
 
 `startTransition()` が原因です。
 `startTransition()` を使用すると、`Suspence` 内部がサスペンド状態でも `fallback` は表示されません。
