@@ -1,15 +1,19 @@
 ---
-title: "React Server Componentsを理解する"
+title: "React Server Componentsを理解したい"
 emoji: "📌"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [react, nextjs, typescript]
-published: false
+published: true
 ---
 
 ## はじめに
 
-- React18 から、React Server Components（RSC）が登場した
-- Next.js13 では、RSC を標準サポートしている
+App Router はこれまでの React や Pages Router による書き方と大きく異なります。これは、React Server Components（RSC） というアーキテクチャが導入され、開発の考え方が大きく変化したからです。そのため、App Router を理解するためには RSC の理解が必要になります。
+
+しかし、私は RSC の理解に苦戦しました。
+この記事は、そんな私が RSC の理解を深めるために様々な記事から学んだ内容を言語化したものです。
+
+まず初めに、CSR や SSR といったこれまでのレンダリング手法について復習し、これらが抱える問題を確認します。その後、その問題を解決する RSC が何者なのか？を理解します。
 
 ## CSR の復習
 
@@ -36,10 +40,12 @@ _引用：https://nextjs.org/learn-pages-router/basics/data-fetching/pre-renderi
 ### 処理の流れ
 
 1. クライアントからリクエストが送られる
-2. サーバから空の HTML と共に、CSS、JS が送信される
-3. JS で UI を構築し、必要なデータは API を叩いてフェッチする
+2. サーバーから空の HTML と共に、CSS、JS が送信される
+3. JS を実行して初期レンダリング
+4. 必要なデータは API を叩いてフェッチする
+5. データ取得後、際レンダリング
 
-![](https://storage.googleapis.com/zenn-user-upload/d2dc28e22865-20240506.png)
+![](https://storage.googleapis.com/zenn-user-upload/e6604ba68f83-20240626.png)
 
 ### 問題点
 
@@ -82,13 +88,13 @@ SSR では初期ロードの時点である程度のコンテンツが表示さ�
 ### 処理の流れ
 
 1. クライアントからリクエストが送られる
-2. 初期表示に必要なデータをサーバ側で API コール
+2. 初期表示に必要なデータをサーバー側で API コール
 3. API からのレスポンスによりデータを取得
-4. サーバ側でレンダリングを行い、HTML を生成
+4. サーバー側でレンダリングを行い、HTML を生成
 5. HTML、CSS、JS をクライアントに送信
 6. クライアントは HTML を表示し、ロードした JS を実行してハイドレードする
 
-![](https://storage.googleapis.com/zenn-user-upload/71fd32295596-20240506.png)
+![](https://storage.googleapis.com/zenn-user-upload/b6d8c0eec78e-20240626.png)
 
 :::details ハイドレーションは何をしているのか？
 
@@ -138,7 +144,7 @@ SSR ではプリレンダリングにより FCP が改善されています。�
 
 ![](https://storage.googleapis.com/zenn-user-upload/dd3076fa8d05-20240506.png)
 
-Next.js をはじめとするフレームワークでは、この問題を解決するために**サーバ側でデータの取得を可能にしています**。
+Next.js をはじめとするフレームワークでは、この問題を解決するために**サーバー側でデータの取得を可能にしています**。
 
 ```tsx
 // pages/products.js
@@ -168,7 +174,7 @@ export async function getServerSideProps() {
 export default Products;
 ```
 
-`getServerSideProps` はサーバ上で実行されます。この関数が実行された結果が props としてコンポーネントに渡り、プリレンダリングが開始します。
+`getServerSideProps` はサーバー上で実行されます。この関数が実行された結果が props としてコンポーネントに渡り、プリレンダリングが開始します。
 これにより、でユーザーが関心のあるコンテンツが初期表示時に含まれているため、LCP の問題が改善されます。
 
 ### SSR の問題点
@@ -217,7 +223,7 @@ export default async function ServerComponent() {
 }
 ```
 
-そのため、「**コンポーネント上から直接**外部 API のデータを取得してレンダリングする」ということが可能になり、**コンポーネント単位でのデータ取得＆レンダリング**をサーバー側で行うことができます。これは、SSR の問題点である「ページ単位という制限」を解決しています。
+そのため、**コンポーネント上から直接**外部 API のデータを取得してレンダリングすることが可能になり、**コンポーネント単位でのデータ取得＆レンダリング**をサーバー側で行うことができます。これは、SSR の問題点である「ページ単位という制限」を解決しています。
 
 ## クライアントコンポーネント（CC）
 
@@ -235,14 +241,14 @@ SSR の場合、CC はサーバ側でも実行されるため、**クライア�
 RSC を採用すると、React ツリーは以下のように SC と CC が混在するようになります。
 ![](https://storage.googleapis.com/zenn-user-upload/e93e24d24658-20230924.png)
 
-ではこの新たなアーキテクチャは一体、どのようなプロセス経てブラウザの画面に描画されるのでしょうか？
+この新たなアーキテクチャは一体、どのようなプロセス経てブラウザの画面に描画されるのでしょうか？
 
 RSC のレンダリングは、2 つの段階（stage0 と stage1）に分けて考えることができます。
 
 - stage0 : SC のレンダリング
 - stage1 : CC のレンダリング
 
-最初に stage0 である SC がサーバー側で実行され、その後 stage1 である CC がレンダリングされます。stage0 → 　 stage1 の順で段階的に実行されます。この「段階的に実行される」ということを具体例を通して見てみましょう。
+最初に stage0 である SC がサーバー側で実行され、その後 stage1 である CC がレンダリングされます。stage0 → stage1 の順で段階的に実行されます。この「段階的に実行される」ということを具体例を通して見てみましょう。
 
 ```tsx
 // Server Component
@@ -331,52 +337,52 @@ stage0 の実行内容である、SC のレンダリングプロセスについ�
 
 1. **React 要素の生成**:
 
-`React.createElement` 関数により React 要素を生成します。React 要素はオブジェクトの形式のデータであり、`type`（コンポーネントの種類や HTML タグなど）、`props`（プロパティや子要素を含む）、および`key`や`ref`などの特別なプロパティを含んでいます。
+   `React.createElement` 関数により React 要素を生成します。React 要素はオブジェクト形式のデータであり、`type`（コンポーネントの種類や HTML タグなど）、`props`（プロパティや子要素を含む）、および`key`や`ref`などの特別なプロパティを含んでいます。
 
-例として、以下のような計 2 つのコンポーネントの場合、
+   例として、以下のような計 2 つのコンポーネントの場合、
 
-```tsx
-function Greeting({ name }) {
-  return <h1 className="greeting">Hello!</h1>;
-}
+   ```tsx
+   function Greeting({ name }) {
+     return <h1 className="greeting">Hello!</h1>;
+   }
 
-export default function App() {
-  return <Greeting name="Taylor" />;
-}
-```
+   export default function App() {
+     return <Greeting name="Taylor" />;
+   }
+   ```
 
-`createElement` により以下のようなオブジェクトが生成されます。
+   `createElement` により以下のようなオブジェクトが生成されます。
 
-```json
-// App
-{
-  type: Greeting,
-  props: {
-   name: 'Taylor'
-  },
-  key: null,
-  ref: null,
-}
+   ```json
+   // App
+   {
+     type: Greeting,
+     props: {
+      name: 'Taylor'
+     },
+     key: null,
+     ref: null,
+   }
 
-// Greeting
-{
-  type: "div",
-  {className: "greeting!"},
-  "Hello!",
-}
-```
+   // Greeting
+   {
+     type: "div",
+     {className: "greeting!"},
+     "Hello!",
+   }
+   ```
 
-1. **React ツリーの構築**:
+2. **React ツリーの構築**:
    React 要素は、親子関係を持つツリー構造（React ツリー）を形成します。
    このツリーはアプリケーション内すべてのコンポーネントの階層関係を表しています。
 
-2. **仮想 DOM の構築**:
+3. **仮想 DOM の構築**:
    React ツリーは仮想 DOM の基盤となります。仮想 DOM は React ツリーから生成され、それは React が UI の状態を効率的に管理し、変更を追跡するための内部的な表現です。仮想 DOM は実際の DOM とは独立して操作が行われるため、パフォーマンスが向上します。
 
-3. **Diffing アルゴリズムによる変更点の検出**:
+4. **Diffing アルゴリズムによる変更点の検出**:
    コンポーネントの状態やプロパティが更新されると、新しい React ツリーが生成され、新旧の仮想 DOM が比較されます。この比較プロセスは、変更が必要な DOM ノードだけを特定するために行われます。
 
-4. **実 DOM への更新**:
+5. **実 DOM への更新**:
    変更が必要な部分が特定された後、React はそれらの変更を実 DOM に反映します。このステップは効率的に行われるため、パフォーマンスの低下を最小限に抑えつつ、ユーザーインターフェースが更新されます。
 
 :::
@@ -389,17 +395,17 @@ RSC は以下のような流れでレンダリングされます。
 
 SC をレンダリングした（stage0 を実行した）ことによる最終成果物は**React ツリーをシリアライズしたもの**です。[Next.js](https://nextjs.org/docs/app/building-your-application/rendering/server-components#how-are-server-components-rendered)では、これを「**RSC ペイロード**」と呼称しています。
 
-### 1. サーバがレンダリングリクエストを受け取る
+### 1. サーバーがレンダリングリクエストを受け取る
 
-- HTTP リクエストによってコンポーネントのレンダリングが開始する
-- サーバは、リクエストに含まれる情報をもとに、使用する SC と props を判断する
-- このリクエストは通常、特定の URL でページリクエストの形式で届く
-- URL 内のパスやクエリ文字列が props に対応する
+HTTP リクエストによってコンポーネントのレンダリングが開始します。
+サーバーは、リクエストに含まれる情報をもとに、使用する SC と props を判断します。
+このリクエストは通常、特定の URL でページリクエストの形式によりで届きます。
+URL 内のパスやクエリ文字列が props に対応します。
 
-### 2. サーバが React 要素を生成し、React ツリーを構築する
+### 2. サーバーが React 要素を生成し、React ツリーを構築する
 
-`React.createElement()` により生成されるのは React 要素を構成するオブジェクトである。
-`type` には、文字列なら `"div"` のような HTML タグ名が、関数なら React コンポーネントのインスタンスが入る。
+`React.createElement()` により生成されるのは React 要素を構成するオブジェクトです。
+`type` には、文字列なら `"div"` のような HTML タグ名が、関数なら React コンポーネントのインスタンスが入ります。
 
 ```tsx
 // <div>oh my</div> を返す場合
@@ -425,25 +431,22 @@ SC をレンダリングした（stage0 を実行した）ことによる最終�
 ```
 
 `type` に HTML タグではなくコンポーネントを指定した場合、`type`はコンポーネントとして定義した関数を参照する。
-しかし、**関数はシリアライズできない**。
-そのため、`type` で指定された値がコンポーネント関数である場合、シリアライズ可能な文字列に変換する。
+しかし、**関数はシリアライズできません**。SC のレンダリング結果は React ツリーをシリアライズした RSC ペイロードです。よって、構築するツリーはシリアライズ可能である必要があります。
+そのため、`type` で指定された値がコンポーネント関数である場合、シリアライズ可能な文字列に変換します。
 
-具体的には、`type` に指定された値に対し、以下の処理を行う。
+具体的には、`type` に指定された値に対し、以下の処理を行います。
 
 - **HTML タグの場合**
-  `type` には `"div"` といった文字列が入っているため、既にシリアライズ可能であり、特別な処理は必要ない。
+  `type` には `"div"` といった文字列が入っているため、既にシリアライズ可能であり、特別な処理は必要ありません。
 - **SC の場合**
-  `type` に指定されている SC 関数とその props を呼び出し、ただの HTML に変換する。
-  これは、実質的に SC のレンダリングに相当する。
+  `type` に指定されている SC 関数とその props を呼び出し、ただの HTML に変換します。これは、実質的に SC のレンダリングに相当します。
 - **CC の場合**
-  CC はサーバではレンダリングされないため、、`type` にはコンポーネント関数ではなく、**モジュール参照オブジェクト**が格納されている。
-  これはシリアライズ可能であるため、特別な処理は必要ない。
+  CC はサーバーではレンダリングされないため、`type` にはコンポーネント関数ではなく**モジュール参照オブジェクト**が格納されています。これはシリアライズ可能であるため、特別な処理は必要ありません。
 
 :::details モジュール参照オブジェクトとは？
 
-RSC では、`React.createElement()` により React 要素を生成する際、 `type` フィールドに「**モジュール参照オブジェクト**」と呼ばれるオブジェクトを導入できる。
-これは、コンポーネント関数の代わりに、コンポーネント関数へシリアライズ可能な「**参照**」を渡す。
-例えば、`ClientComponent` という要素は以下のようになる。
+RSC では、`React.createElement()` により React 要素を生成する際、 `type` フィールドに「**モジュール参照オブジェクト**」と呼ばれるオブジェクトを導入できます。これは、コンポーネント関数の代わりに、コンポーネント関数へシリアライズ可能な「**参照**」を渡しています。
+例えば、`ClientComponent` という要素は以下のようになります。
 
 ```tsx
 {
@@ -460,20 +463,19 @@ RSC では、`React.createElement()` により React 要素を生成する際、
 }
 ```
 
-モジュール参照オブジェクトの変換はバンドラーが行なっている。
-SC が CC をインポートする際、実際のインポート対象を取得する代わりに、そのファイル名とエクスポート名が含まれたモジュール参照オブジェクトだけを取得している。
+モジュール参照オブジェクトの変換はバンドラーが行なっています。
+SC が CC をインポートする際、実際のインポート対象を取得する代わりに、そのファイル名とエクスポート名が含まれたモジュール参照オブジェクトだけを取得しています。
 
 :::
 
-これにより、シリアライズ可能な React ツリーがサーバ側で構築される。
-このツリーは、**HTML タグとクライアントコンポーネントへの参照**で構成されている。
+これにより、シリアライズ可能な React ツリーがサーバ側で構築されます。
+このツリーは、**HTML タグとクライアントコンポーネントへの参照**で構成されています。
 ![](https://storage.googleapis.com/zenn-user-upload/9213030c02b4-20231015.png =500x)
 _引用：https://postd.cc/how-react-server-components-work/_
 
 ### 3. 構築した React ツリーをシリアライズする
 
-サーバ側で構築した React ツリーは以下のような形式でシリアライズされ、RSC ペイロードが生成されます。
-詳しくは[こちら](https://postd.cc/how-react-server-components-work/#11)の記事を参照。
+サーバ側で構築した React ツリーは以下のような形式でシリアライズされ、RSC ペイロードが生成されます。（詳しくは[こちら](https://postd.cc/how-react-server-components-work/#11)の記事を参照）
 
 ```
 M1:{"id":"./src/ClientComponent.client.js","chunks":["client1"],"name":""}
@@ -505,11 +507,11 @@ J0:["$","@1",null,{"children":["$","span",null,{"children":"Hello from server la
    あとはこれまで通り、仮想 DOM 構築 → 実 DOM 構築 → 描画を行います。
 
 ここまでの流れを図示すると、以下のようになります。
-![](https://storage.googleapis.com/zenn-user-upload/5a214ff7cd8f-20240512.png)
+![](https://storage.googleapis.com/zenn-user-upload/95a867704d9b-20240626.png)
 
 ## RSC（SSR あり）のレンダリングプロセス
 
-ここでは Next.js を使用した際にレンダリングプロセスを説明します。
+ここでは Next.js を使用した際のレンダリングプロセスを説明します。
 https://nextjs.org/docs/app/building-your-application/rendering/server-components#how-are-server-components-rendered
 
 1. **サーバー側で SC をレンダリング**
@@ -519,17 +521,18 @@ https://nextjs.org/docs/app/building-your-application/rendering/server-component
    ここでは、RSC ペイロードを参照しつつ React ツリーを再構築します。
    その結果を HTML として生成します。
 3. **生成した HTML と RSC ペイロード、 CC の JS バンドルをクライアントに送信する**
-   SSR では、サーバー側で stage1 を実行した結果である HTML も返却します。 JS バンドルの中身は、SSR なしのときと同様、CC のハイドレーション用です。
+   SSR では、サーバー側で stage1 を実行した結果である HTML を返却します。 JS バンドルの中身は、SSR なしのときと同様、CC のハイドレーション用です。
 4. **クライアントは受け取った HTML をブラウザレンダリングする**
    この HTML は、高速に非インタラクティブなプレビューを表示するために使用されます。
 5. **React ツリーを再構築する**
-   SSR なしのときと同様、RSC ペイロードと JS バンドルを基に React ツリーを再構築します。
-6. **バンドル JS を基に CC をインタラクティブにする**
-7. **DOM を構築し、描画する**
-   仮想 DOM 構築 → 実 DOM の更新 → 描画を行います。
+   SSR なしのときと同様、RSC ペイロードと JS バンドルを基に React ツリーを再構築し、その後仮想 DOM を構築します。
+6. **DOM の比較と必要に応じた更新**
+   構築した仮想 DOM と実 DOM に不一致がないか比較します。
+   比較により不一致があれば DOM の再構築を行います。
+7. **バンドル JS を基に CC をインタラクティブにする**
 
 ここまでの流れを図示すると、以下のようになります。
-![](https://storage.googleapis.com/zenn-user-upload/ebf15cd55ea4-20240519.png)
+![](https://storage.googleapis.com/zenn-user-upload/711b5a1ccb76-20240626.png)
 
 ## SC と CC の境界
 
@@ -544,7 +547,9 @@ export const Button = () => {
 ```
 
 `"use client"` は、宣言したファイル内のコンポーネントが CC であり、JS バンドルに含める必要があることを React に知らせます。
+:::message
 SC を使用する際は、 `"use server"` のようなディレクティブを指定する必要はありません。
+:::
 
 `"use client"` を宣言するうえで重要なのは、**SC と CC の境界となるコンポーネントファイルで使用する**ことです。すべてのコンポーネントファイルに対し、ディレクティブを宣言する必要はありません。
 実は、**CC から import されたコンポーネントは、自動的に CC になります**。
@@ -647,50 +652,10 @@ export default function ClientComponent({
 }
 ```
 
-しかし、SC を CC の props として渡すことはできる。
+### SC が受け取る props は全てシリアライズ可能であること
 
-```tsx
-"use client";
-
-import { useState } from "react";
-
-export default function ClientComponent({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [count, setCount] = useState(0);
-
-  return (
-    <>
-      <button onClick={() => setCount(count + 1)}>{count}</button>
-      {children}
-    </>
-  );
-}
-```
-
-```tsx
-// This pattern works:
-// You can pass a Server Component as a child or prop of a
-// Client Component.
-import ClientComponent from "./client-component";
-import ServerComponent from "./server-component";
-
-// Pages in Next.js are Server Components by default
-export default function Page() {
-  return (
-    <ClientComponent>
-      <ServerComponent />
-    </ClientComponent>
-  );
-}
-```
-
-### props は全てシリアライズ可能であること
-
-- SC はシリアライズされるため、子コンポーネントや HTML タグに渡す props もシリアライズ可能でなければならない
-- つまり、SC からイベントハンドラを props として渡すことはできない
+SC は RSC ペイロードにシリアライズされるため、子コンポーネントや HTML タグに渡す props もシリアライズ可能でなければならなりません。
+そのため、以下のように SC からイベントハンドラを props として渡すことはできません。
 
 ```tsx
 // 悪い例: サーバーコンポーネントは props として子孫コンポーネントに関数を渡すことができません。なぜなら関数はシリアライズできないからです。
@@ -701,90 +666,10 @@ function SomeServerComponent() {
 
 ### その他の制約
 
-- インタラクティブ機能とイベントリスナーを使用できない
+SC はクライアント側で実行されることがないという性質上、以下のような制限もあります。
+
 - 状態管理（`useState`）や副作用（`useEffect`）は使用できない
 - ブラウザ専用の API を使用できない
-
-## RSC のメリット
-
-- JS のバンドルサイズの削減
-- データフェッチスピードの高速化
-- セキュリティ
-- 設計面のメリット
-
-### JS のバンドルサイズの削減
-
-- CC は空の HTML から JS コードにより、コンポーネントを構築している
-- しかし、SC はサーバ側でコンポーネントの構築が完結するため、クライアントに JS コードを持っておく必要がない
-- 従って、SC 分の JS コード（レンダリング処理）を削減できる
-- これにより、パフォーマンスが向上する
-
-### データフェッチスピードの高速化
-
-- SC はサーバで行う処理なので、当然データソースとの距離も近い
-- 従って、クライアントから取得を行うよりも高速
-- クライアントが行うデータリクエストの量も削減できる
-
-### セキュリティ
-
-- トークンや API キーなどの機密データやロジックをサーバだけで完結でき、サービスの安全性が向上する
-
-### キャッシュ
-
-- サーバでレンダリングされたコンポーネントのキャッシュを行う
-- これにより、レンダリング時間やデータフェッチ量が削減され、リクエストから表示までが高速になる
-
-### 設計面のメリット
-
-「**データの取得処理とそのデータを用いた DOM の表現が簡潔になる**」
-
-これまでは、データフェッチは以下のような実装を行う必要があった。
-
-```tsx
-const Component = (id) => {
-  const [data, setData] = useState(null);
-
-  useEffect(() => {
-    axios.get(`/endpoints/${id}`).then((result) => {
-      setData(result.data);
-    });
-  }, []);
-
-  return data ? <div>Hello {data.name}</div> : null;
-};
-```
-
-上記では、データ取得 → 表示までに
-
-- 状態（`useState`）
-- 副作用（`useEffect`）
-
-という二つの概念を意識して実装する必要がある。
-
-また、このコードはブラウザで実行されるため、
-
-- DB へ直接アクセスできない
-- 故に、API を用意してアクセスする必要がある
-
-という問題がある。
-
-SC ではこの「データアクセス → 　 DOM を構築」というプロセスをより簡潔かつコンポーネントという単位に閉じた実装が可能になる。
-
-```tsx: Server Componentの実装
-const ServerComponent = async ({ id }) => {
-  const { data } = await axios.get(`/endpoints/${id}`)
-
-  return(
-    <ClientComponent data={data} />
-  )
-}
-```
-
-```tsx: Client Componentの実装
-const ServerComponents = ({ data }) => {
-  return <div>Hello {data.name}</div>;
-};
-```
 
 ## Streaming HTML と RSC
 
@@ -835,6 +720,85 @@ export default function Home() {
 そして、`<ServerComponent />` の非同期処理・レンダリングが完了すると、追加の HTML を送信します。
 ![](https://storage.googleapis.com/zenn-user-upload/be423a51ebac-20240513.png)
 
+## RSC のメリット
+
+結局、RSC により何が嬉しくなるのか？をまとめると以下になります。
+
+- JS のバンドルサイズの削減
+- データフェッチスピードの高速化
+- 初期表示の改善
+- セキュリティ
+- 設計面のメリット
+
+### JS のバンドルサイズの削減
+
+SC の処理はサーバー側で簡潔するため、SC 用の JS はクライアント側には必要ありません。よって、クライアントに送信する JS バンドルを削減でき、パフォーマンスが向上します。
+これは、インターネットの速度が遅いユーザーや性能の低いデバイスを使用しているユーザーにとって有益です。
+
+### データフェッチスピードの高速化
+
+SC 上でデータフェッチする場合、クライアント側でのフェッチと比べると当然データソースへの距離も近くなります。これにより、レンダリングに必要なデータのフェッチにかかる時間が短縮され、クライアントが行うデータリクエストの量も削減できます。
+
+### 初期表示の改善
+
+Streaming HTML との組み合わせにより、FCP や TTI を改善できます。
+
+### セキュリティ
+
+トークンや API キーなどの機密データやロジックをサーバだけで完結できます。クライアントへ公開することによるリスクがなくなり、サービスの安全性が向上します。
+
+### 設計面のメリット
+
+**データの取得処理とそのデータを用いた DOM の表現が簡潔になります。**
+
+これまでは、データフェッチは以下のような実装を行う必要がありました。
+
+```tsx
+const Component = (id) => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    axios.get(`/endpoints/${id}`).then((result) => {
+      setData(result.data);
+    });
+  }, []);
+
+  return data ? <div>Hello {data.name}</div> : null;
+};
+```
+
+上記では、データ取得 → 表示までに
+
+- 状態（`useState`）
+- 副作用（`useEffect`）
+
+という二つの概念を意識して実装する必要があります。
+
+また、このコードはブラウザで実行されるため、
+
+- DB へ直接アクセスできない
+- 故に、API を用意してアクセスする必要がある
+
+という問題もあります。
+
+SC ではこの「データアクセス → DOM を構築」というプロセスをより簡潔かつコンポーネントという単位に閉じた実装が可能になります。
+
+```tsx: Server Componentの実装
+const ServerComponent = async ({ id }) => {
+  const { data } = await axios.get(`/endpoints/${id}`)
+
+  return(
+    <ClientComponent data={data} />
+  )
+}
+```
+
+```tsx: Client Componentの実装
+const ServerComponents = ({ data }) => {
+  return <div>Hello {data.name}</div>;
+};
+```
+
 ## SC と CC の使い分け
 
 ポイントとして、**UX を実現するための JS が必要な場合**のみ CC にすると考えれば良いでしょう。UX に関係ないコンポーネントは基本サーバ側の処理だけで完結するので、JS バンドル削減のためにも SC にするのが適切です。
@@ -859,3 +823,5 @@ https://ja.react.dev/reference/rsc/server-components#noun-labs-1201738-(2)
 https://demystifying-rsc.vercel.app/
 
 https://ja.react.dev/blog/2021/12/17/react-conf-2021-recap#streaming-server-rendering-with-suspense
+
+https://qiita.com/getty104/items/74d975ff02bdf4fa9b2b
