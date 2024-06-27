@@ -144,7 +144,7 @@ SSR ではプリレンダリングにより FCP が改善されています。�
 
 ![](https://storage.googleapis.com/zenn-user-upload/dd3076fa8d05-20240506.png)
 
-Next.js をはじめとするフレームワークでは、この問題を解決するために**サーバー側でデータの取得を可能にしています**。
+Next.js をはじめとするフレームワークでは、この問題を解決するために**サーバー側でのデータ取得を可能にしています**。
 
 ```tsx
 // pages/products.js
