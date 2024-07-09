@@ -16,3 +16,4 @@ chapters:
   - router-refresh
   - revalidate-path
   - security
+  - server-actions
