@@ -112,7 +112,7 @@ YAML 形式は、**スペースに意味がある言語**。
 | image | イメージ引数 | 利用するイメージを指定する |
 | build | なし | Dockerfile を使用してイメージをビルドする |
 | networks | --net | 接続するネットワークを指定する |
-| volumes | -v, --mount | 記憶領域のマウントを設定する |
+| volumes | -v, --mount | [記憶領域のマウントを設定する](https://amateur-engineer-blog.com/docer-compose-volumes) |
 | ports | -p | ポートのマッピングを設定する |
 | environment | -e | 環境変数を設定する |
 | depends_on | なし | 別のサービスに依存することを示す。指定したサービスが先に起動される。 |

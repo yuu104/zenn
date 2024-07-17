@@ -133,6 +133,95 @@ docker container run penguin
 | ls         | 自分がダウンロードしたイメージ一覧を表示する              | 不可           | あまり指定しない |
 | build      | Docker イメージを作成する                                 | 可             | -t               |
 
+:::details build コマンド
+
+`docker image build`コマンドは、Dockerfile を基にして Docker イメージをビルドするためのコマンドです。このコマンドを使用することで、アプリケーションの依存関係や設定を含むイメージを作成し、コンテナとしてデプロイできます。
+
+### 基本構文
+
+```bash
+docker build [OPTIONS] PATH | URL | -
+```
+
+### 主なオプションとその説明
+
+- `-t, --tag`: イメージに名前とタグを付けます。例: `myapp:latest`
+- `-f, --file`: Dockerfile の場所を指定します。デフォルトは現在のディレクトリの Dockerfile です。
+- `--build-arg`: ビルド時に利用する引数を指定します。例: `--build-arg VAR_NAME=value`
+- `--no-cache`: キャッシュを使用せずにイメージをビルドします。
+- `--rm`: 中間コンテナを削除します。デフォルトで有効です。
+- `--pull`: 最新のベースイメージを常にプルします。
+
+### 使用例
+
+#### 1. 基本的なビルド
+
+```bash
+docker build -t myapp:latest .
+```
+
+現在のディレクトリにある Dockerfile を使用して、`myapp:latest`というタグを付けたイメージをビルドします。
+
+#### 2. Dockerfile を指定する
+
+```bash
+docker build -f ./Dockerfile.dev -t myapp:dev .
+```
+
+`./Dockerfile.dev`という名前の Dockerfile を使用してビルドします。
+
+#### 3. ビルド引数の使用
+
+```Dockerfile
+# Dockerfile
+FROM node:14
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
+COPY . /app
+WORKDIR /app
+RUN npm install
+CMD ["node", "app.js"]
+```
+
+```bash
+docker build --build-arg APP_VERSION=1.0.0 -t myapp:1.0.0 .
+```
+
+この例では、`APP_VERSION`引数を使用してバージョン情報をイメージに埋め込みます。
+
+#### 4. キャッシュを無効にしてビルド
+
+```bash
+docker build --no-cache -t myapp:latest .
+```
+
+キャッシュを使用せずにイメージをビルドします。
+
+### 実行例
+
+以下は、典型的な`docker build`コマンドの実行例です。
+
+```bash
+docker build -t my-web-app:latest .
+```
+
+このコマンドは、現在のディレクトリにある Dockerfile を基に`my-web-app:latest`というタグを付けた Docker イメージをビルドします。
+
+### トラブルシューティング
+
+- **エラーのデバッグ**:
+
+  - ビルドエラーが発生した場合、エラーメッセージを注意深く読み、Dockerfile の該当する部分を確認します。
+
+- **キャッシュ問題**:
+
+  - 変更が反映されない場合、キャッシュが原因であることが多いです。`--no-cache`オプションを使用してキャッシュを無効にしてビルドします。
+
+- **ネットワーク問題**:
+  - パッケージのダウンロードが失敗する場合、ネットワークの接続状態やプロキシ設定を確認します。
+
+:::
+
 ### ボリューム操作関連（`voluem`）
 
 :::details ボリュームとは？
@@ -224,6 +313,7 @@ Docker ネットワークに関する操作を行うためのコマンド。
 | `-i` | コンテナに操作端末（キーボード）をつなぐ |
 | `-t` | 特殊キーを使用可能にする |
 | `--help` | 使い方を表示する |
+| `--rm` | コンテナが停止した時（`docker stop`）に自動的にコンテナを削除する |
 
 ### `docker container stop`
 
