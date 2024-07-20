@@ -13,15 +13,16 @@ Express, TypeScript, PostgreSQL を使用したバックエンド開発をコン
 ```
 my-backend-api/
 ├── src/
-│   ├── controllers/
-│   ├── models/
-│   ├── routes/
 │   └── index.ts
 ├── Dockerfile
 ├── docker-compose.yml
+├── .dockerignore
 ├── package.json
+├── package.lock.json
 ├── tsconfig.json
+├── Makefile
 ├── .env.example
+├── .env
 └── README.md
 ```
 
@@ -52,22 +53,6 @@ my-backend-api/
     "ts-node-dev": "^1.1.1",
     "typescript": "^4.2.4"
   }
-}
-```
-
-**`tsconfig.json`**
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES6",
-    "module": "commonjs",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true
-  },
-  "exclude": ["node_modules", "dist"]
 }
 ```
 
@@ -112,7 +97,6 @@ services:
     build: .
     volumes:
       - .:/usr/src/app
-      - /usr/src/app/node_modules
     ports:
       - "3000:3000"
     environment:
@@ -133,9 +117,6 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=mydatabase
-
-volumes:
-  db-data:
 ```
 
 **`.env.example`**
