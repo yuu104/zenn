@@ -2,31 +2,47 @@
 title: "Node.jsのバックエンドプロジェクトをコンテナ環境で作成する"
 ---
 
-Express, TypeScript, PostgreSQL を使用したバックエンド開発をコンテナ環境で実現し、チーム開発を行う手順について、これまでの内容を細かくまとめます。以下の内容は、コンテナ環境の構築、依存関係の管理、コード変更の反映、パッケージの追加、テストの実行、およびデプロイ手順を含みます。
+Express, TypeScript, PostgreSQL を使用したバックエンド開発をコンテナ環境で実現し、チーム開発を行う手順についてまとめる。
 
 ## プロジェクトのセットアップ
 
 ### 1. フォルダ構成
 
-プロジェクトの基本的なフォルダ構成は以下の通りです。
+プロジェクトの基本的なフォルダ構成は以下の通り。
 
 ```
 my-backend-api/
 ├── src/
 │   └── index.ts
+├── package.json
+├── package.lock.json
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .dockerignore
-├── package.json
-├── package.lock.json
 ├── tsconfig.json
 ├── Makefile
-├── .env.example
 ├── .env
 └── README.md
 ```
 
 ### 2. 必要なファイルの作成
+
+**`src/index.ts`**
+
+```ts
+import express from "express";
+
+const app = express();
+const port = 3000;
+
+app.get("/", (req, res) => {
+  res.send("Hello, World!");
+});
+
+app.listen(port, () => {
+  console.log(`App listening at http://localhost:${port}`);
+});
+```
 
 **`package.json`**
 
@@ -46,46 +62,69 @@ my-backend-api/
   },
   "devDependencies": {
     "@types/express": "^4.17.11",
-    "@types/jest": "^26.0.23",
-    "jest": "^26.6.3",
     "nodemon": "^2.0.7",
-    "ts-jest": "^26.5.5",
-    "ts-node-dev": "^1.1.1",
+    "ts-node": "^10.9.2",
     "typescript": "^4.2.4"
   }
 }
 ```
 
+**`.dockerignore`**
+
+```.dockerignore
+# すべてを無視する
+**
+
+# ただし、以下は許可する
+!src/**
+!package.*json
+```
+
 **`Dockerfile`**
 
+マルチステージビルドを採用。
+以下のステージに分かれている。
+
+- `base` :
+  - すべてのベースとなるイメージ
+  - dev 環境ではこちらを利用する
+  - 今回は全てのファイルをバインドマウントするため、ビルド時には何も入れない
+- `build` :
+  - ビルド用（イメージの「ビルド」ではない）のイメージ
+- `prod` :
+  - 本番環境用のイメージ
+  - `build` イメージのビルドで生成されたファイルを利用する
+  - これにより、ts ファイルなどの余計なファイルが取り除くことができ、イメージサイズを削減できる
+
 ```Dockerfile
-FROM node:14
+###############
+#    base     #
+###############
+FROM node:14 as base
 
 WORKDIR /usr/src/app
 
-COPY package*.json ./
-RUN npm install
+
+###############
+#    build    #
+###############
+FROM base as build
 
 COPY . .
 
-EXPOSE 3000
+RUN npm install
 
-CMD ["npm", "run", "dev"]
+RUN npm run build
+
+###############
+#    prod     #
+###############
+FROM node:14 as prod
+
+COPY --from=build /usr/src/app/dist .
+
+ENTRYPOINT [ "node", "index.js" ]
 ```
-
-:::details 「COPY . .」は必要なのか？
-
-今回、コンテナ作成時にプロジェクトのファイルをバインドマウントしている。（`docker-compose.yml` を参照）
-そのため、イメージの中にプロジェクトのファイル必要ないように思える。
-何故必要なのか？
-
-それは、**デプロイ用の Docker イメージを構築するために必要**だからである。
-
-開発時には、バインドマウントを使用してホストマシンのファイル変更をリアルタイムで反映させる設定を行う。これにより、ホストマシンのエディタでコードを編集しながら、すぐにその変更をコンテナ内でテストできる。
-
-デプロイ時には、`COPY . .` を使用してすべてのソースコードや設定ファイルを Docker イメージにコピーする。これにより、どの環境にデプロイしても同じファイル構成が維持され、動作が保証される。
-
-:::
 
 **`docker-compose.yml`**
 
@@ -94,32 +133,39 @@ version: "3"
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: base
     volumes:
-      - .:/usr/src/app
+      - type: bind
+        source: .
+        target: /usr/src/app
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=mydatabase
+    env_file:
+      - .env
     depends_on:
       - db
+    command: npm run dev
+
+  app-build:
+    build:
+      context: .
+      target: build
 
   db:
     image: postgres:13
     volumes:
-      - db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=mydatabase
+      - type: volume
+        source: db-data
+        target: /var/lib/postgresql/data
+    env_file:
+      - .env
+volumes:
+  db-data:
 ```
 
-**`.env.example`**
+**`.env`**
 
 ```env
 NODE_ENV=development
@@ -128,39 +174,63 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=mydatabase
+
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=mydatabase
 ```
 
-## 初期設定とリポジトリの共有
+**`Makefile`**
 
-### 1. リポジトリの初期化とプッシュ
+```Makefile
+init:
+	make clean
+	docker-compose run --rm app npm install
+	docker-compose down
 
-```sh
-git init
-git add .
-git commit -m "Initial commit with Docker setup"
-git remote add origin <your-repository-url>
-git push -u origin master
+clean:
+	docker-compose down --rmi all
+
+dev:
+	docker-compose up db -d --build
+	docker-compose up app --build
+
+bash-app:
+	docker-compose exec app /bin/bash
+
+bash-db:
+	docker-compose exec db /bin/bash
+
+build:
+	docker build --target build -t app-builder .
+
+prod:
+	docker build --target prod -t app-prod .
 ```
 
-### 2. リモートリポジトリからのクローンと環境設定
+:::details init
 
-チームメンバーは以下の手順でリポジトリをクローンし、環境をセットアップします。
+初期化用のコマンド。
+`node_modules` を更新したい場合にも使用する。
 
-```sh
-git clone <your-repository-url>
-cd my-backend-api
-cp .env.example .env
-```
+- `make clean`
+  - 一度コンテナ・イメージを削除して綺麗にする
+- `docker-compose run --rm app npm install`
+  - ホスト側に `node_modules` を生成するためのコマンド
+  - コンテナを起動し、コンテナ側に `node_modules` を生成する
+  - コンテナ側で `node_modules` が生成されると、バインドマウントによりホスト側にも生成される
+  - `--rm` により実行後はコンテナを削除する
+  - これにより、後でコンテナを立ち上げた際にバインドマウントでコンテナ側に `node_modules` が入る
+- `docker-compose down`
+  - `db` サービスのコンテナを停止 → 削除するためのコマンド
+  - `docker-compose run --rm app npm install` により、`db` サービスのコンテナも起動する
+  - `--rm` で `app` のコンテナは削除されるが、`db` は起動したままになる
 
-## Docker コンテナのビルドと起動
+:::
 
-### 1. ビルドと起動
+:::details dev
 
-```sh
-docker-compose up --build
-```
-
-:::details なぜビルドする必要があるのか？
+**なぜビルドする必要があるのか？**
 
 初回は `--build` を指定しなくても、Dockerfile からイメージがビルドされ、コンテナの作成・起動が行われる。
 しかし、次回以降はイメージの再ビルドがされない。
@@ -169,61 +239,107 @@ docker-compose up --build
 
 :::
 
-### 2. 開発中のコード変更の反映
+## 初期設定とリポジトリの共有
 
-ホストマシンのエディタでコードを変更し、バインドマウントにより変更をリアルタイムでコンテナに反映させます。
+1. **リポジトリの初期化とプッシュ**
 
-## パッケージの追加とテストの実
+   ```sh
+   git init
+   git add .
+   git commit -m "Initial commit with Docker setup"
+   git remote add origin <your-repository-url>
+   git push -u origin master
+   ```
 
-### 1. コンテナにシェルを開く
+2. **リモートリポジトリからのクローンと環境設定**
+   チームメンバーは以下の手順でリポジトリをクローンし、環境をセットアップする。
 
-コンテナのベースイメージに応じて適切なシェルを使用します。
+   ```sh
+   git clone <your-repository-url>
+   cd my-backend-api
+   cp .env.example .env
+   ```
 
-- **Debian 系、Node.js 公式イメージ**:
+## Docker コンテナ環境の初期化と起動
 
-  ```sh
-  docker-compose exec app /bin/bash
-  ```
+1. **コンテナ環境の初期化**
+   ホスト側に `node_modules` を生成する。
 
-- **Alpine Linux**:
-  ```sh
-  docker-compose exec app /bin/sh
-  ```
+   ```sh
+   make init
+   ```
 
-### 2. 新しいパッケージのインストール
+   コンテナを生成・起動する
 
-```sh
-npm install <パッケージ名>
-```
+   ```sh
+   make dev
+   ```
 
-### 3. テストの実行
+2. **開発中のコード変更の反映**
+   ホストマシンのエディタでコードを変更し、バインドマウントにより変更をリアルタイムでコンテナに反映させる。
 
-```sh
-npm run test
-```
+## パッケージの追加
 
-### 4. 変更のコミットとプッシュ
+1. **コンテナ環境でシェルを開く**
 
-```sh
-git add package.json package-lock.json
-git commit -m "Add new package"
-git push origin master
-```
+   ```sh
+   make bash-app
+   ```
+
+2. **新しいパッケージのインストール**
+
+   ```sh
+   npm install <パッケージ名>
+   ```
+
+3. **変更のコミットとプッシュ**
+   コンテナ環境外で行う。
+
+   ```sh
+   git add package.json package-lock.json
+   git commit -m "Add new package"
+   git push origin master
+   ```
+
+## ローカルリポジトリの更新
+
+1. **リモートリポジトリをプル**
+   ```sh
+   git pull origin master
+   ```
+2. **コンテナ環境を初期化**
+   Docker の設定や `node_modules` を更新する。
+   ```sh
+   make init
+   ```
 
 ## デプロイ
 
-### 1. Docker イメージのビルドとプッシュ
+1. **ビルド用イメージの生成**
 
-```sh
-docker build -t my-backend-api .
-docker tag my-backend-api:latest <your-repository-url>:latest
-docker push <your-repository-url>:latest
-```
+   ```sh
+   make build
+   ```
 
-### 2. デプロイ先への展開
+   コンテナを起動し、`dist/` フォルダが生成されているかを確認する。
 
-AWS ECS や他のクラウドサービスに展開します。具体的な手順はデプロイ先のドキュメントに従います。
+   ```sh
+   # コンテナを起動し、シェルに入る
+   $ docker-compose run --rm app-build /bin/bash
 
-## まとめ
+   # `/dist` が存在するかどうかを確認する
+   $ ls
+   dist  node_modules  package-lock.json  package.json  src  tsconfig.json
+   ```
 
-このガイドに従うことで、Express、TypeScript、PostgreSQL を使用したバックエンド開発をコンテナ環境で効率的に行うことができます。開発環境のセットアップから、パッケージの管理、コードの変更の反映、テストの実行、デプロイまで、一貫してコンテナを活用することで、チーム全体での開発効率を向上させることができます。
+2. **本番環境用イメージを生成とレジストリへのプッシュ**
+
+   ```sh
+   $ make prod
+   $ docker tag app-prod <your-repository-url>/app-prod:latest
+   $ docker push <your-repository-url>/app-prod:latest
+   ```
+
+3. **デプロイ先への展開**
+   AWS ECS や他のクラウドサービスに展開する。
+   具体的な手順はデプロイ先のドキュメントに従う。
