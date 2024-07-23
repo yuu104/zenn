@@ -464,9 +464,37 @@ public class Main {
   Collections.swap(list, 0, 1);
   System.out.println(list); // [orange, cherry, banana]
   ```
-  :::
 
-以上が`Collections`クラスの主要なメソッドのリストです。それぞれのメソッドを使用することで、コレクションの操作が簡単かつ効率的に行えるようになります。
+:::
+
+:::details removeIf() - 条件を満たす要素を削除する
+
+- **説明**: コレクション内の要素を条件に基づいて削除する
+- **シグネチャ**: `boolean removeIf(Predicate<? super E> filter)`
+- **使用例**
+
+  ```java
+  import java.util.ArrayList;
+  import java.util.List;
+
+  public class Main {
+      public static void main(String[] args) {
+          List<String> list = new ArrayList<>();
+          list.add("apple");
+          list.add("banana");
+          list.add("cherry");
+
+          // "banana"を含む要素を削除する
+          boolean removed = list.removeIf(s -> s.equals("banana"));
+
+          // 結果を出力して確認
+          System.out.println("Removed: " + removed);
+          System.out.println("List after removal: " + list);
+      }
+  }
+  ```
+
+:::
 
 ### 解決したい技術的課題
 
