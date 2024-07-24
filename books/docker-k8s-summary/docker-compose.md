@@ -220,3 +220,7 @@ docker-compose -f <定義ファイルのパス> stop <オプション>
 | scale    | コンテナ用コンテナの数を指定する             |
 | events   | コンテナからリアルタイムにイベントを受信する |
 | help     | ヘルプ表示                                   |
+
+## Compose V2
+
+https://zenn.dev/miroha/articles/whats-docker-compose-v2s
