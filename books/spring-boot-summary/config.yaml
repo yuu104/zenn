@@ -1,0 +1,13 @@
+title: "Spring Boot"
+summary: "Spring Bootのサマリ"
+topics: [java, springboot]
+published: false
+price: 0 # 有料の場合200〜5000
+# 本に含めるチャプターを順番に並べましょう
+chapters:
+  - what-is-spring-boot
+  - hello-world
+  - get-request
+  - post-request
+  - h2-database
+  - di

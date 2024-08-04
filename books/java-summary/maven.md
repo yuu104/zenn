@@ -113,3 +113,68 @@ title: "Maven"
 
 - **npm**: 新しい`package.json`ファイルを生成し、プロジェクトを初期化する
 - **Maven**: 新しいプロジェクトを初期化するために、`pom.xml`ファイルを作成するか、IDE のテンプレート機能を使用する
+
+## Maven Wrapper
+
+Maven Wrapper は、プロジェクト内で特定のバージョンの Maven を使用するためのツールです。これにより、以下のメリットが得られます：
+
+- 開発者がローカルに Maven をインストールする必要がなくなる
+- プロジェクト全体で一貫した Maven のバージョンを使用できる
+- CI/CD 環境での設定が簡単になる
+
+### Maven Wrapper の主要コンポーネント
+
+Maven Wrapper は主に以下の 3 つのコンポーネントで構成されています：
+
+1. `.mvn` ディレクトリ
+2. `mvnw` スクリプト（Unix 系システム用）
+3. `mvnw.cmd` スクリプト（Windows 用）
+
+それぞれの詳細は以下の通りです：
+
+1. **`.mvn` ディレクトリ**
+
+   - **目的**: Maven Wrapper の設定と必要なファイルを格納
+   - **主な内容**:
+     - `wrapper/maven-wrapper.jar`: Wrapper の実行に必要な JAR ファイル
+     - `wrapper/maven-wrapper.properties`: Wrapper の設定ファイル（使用する Maven のバージョンなど）
+   - **役割**:
+     - プロジェクト固有の Maven 設定を保持
+     - Wrapper の動作に必要なファイルを提供
+
+2. **`mvnw` スクリプト（Unix 系システム用）**
+
+   - **目的**: Unix 系システム（Linux, macOS）で Maven Wrapper を起動するためのシェルスクリプト
+   - **使用方法**: `./mvnw [Maven コマンド]`
+     例: `./mvnw clean install`
+   - **役割**:
+     - システムにインストールされた Maven の代わりに Wrapper 版の Maven を使用
+     - 必要に応じて指定されたバージョンの Maven をダウンロード
+     - Maven コマンドを実行
+
+3. **`mvnw.cmd` スクリプト（Windows 用）**
+
+   - **目的**: Windows システムで Maven Wrapper を起動するためのバッチスクリプト
+   - **使用方法**: `mvnw.cmd [Maven コマンド]`
+     例: `mvnw.cmd clean install`
+   - **役割**:
+     - `mvnw` と同様の機能を Windows 環境で提供
+
+### Maven Wrapper の利点
+
+1. **環境の一貫性**: 全開発者が同じバージョンの Maven を使用
+2. **簡単なセットアップ**: Maven のインストールが不要
+3. **CI/CD との統合**: ビルドサーバーでの Maven インストールが不要
+4. **バージョン管理**: プロジェクトごとに異なる Maven バージョンの使用が可能
+
+### 使用例
+
+```bash
+# Unix系システムの場合
+./mvnw clean install
+
+# Windowsの場合
+mvnw.cmd clean install
+```
+
+これらのコンポーネントにより、Maven がインストールされていない環境でもプロジェクトのビルドやテストが可能になり、開発プロセスの一貫性と効率性が向上します。
