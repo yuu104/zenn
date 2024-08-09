@@ -7,6 +7,7 @@ price: 0 # 有料の場合200〜5000
 chapters:
   - what-is-spring-boot
   - hello-world
+  - main-anotation
   - get-request
   - post-request
   - h2-database
