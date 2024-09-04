@@ -22,3 +22,5 @@ chapters:
   - view
   - bad-know-how-in-logic-design
   - gray-know-how-in-logic-design
+  - anti-pattern-flag
+  - anti-pattern-state
