@@ -127,6 +127,8 @@ YAML 形式は、**スペースに意味がある言語**。
 | extra_hosts | --add-host | 外部ホストの IP アドレスを明示的に指定する |
 | logging | --log-driver | ログ出力先を設定する |
 | network_mode | --network | ネットワークモードを設定する |
+| stdin_open | -i |`tty: true` とすることで、コンテナとホストマシンの標準入力を繋ぐことができる |
+| tty | -t | `stdin_open` とすることで、コンテナとホストマシンの標準出力を繋ぐことができる |
 
 `image` と `build` を同時に利用した場合、
 
