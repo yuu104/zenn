@@ -1,0 +1,10 @@
+title: "良いコード/悪いコードで学ぶ設計入門"
+summary: "ミノ駆動本のサマリ"
+topics: []
+published: false
+price: 0 # 有料の場合200〜5000
+# 本に含めるチャプターを順番に並べましょう
+chapters:
+  - adverse-effects-of-bad-structures
+  - rundiments-of-design
+  - class-design
