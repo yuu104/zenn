@@ -22,6 +22,8 @@ chapters:
   - view
   - bad-know-how-in-logic-design
   - gray-know-how-in-logic-design
+  - sortable-data-design
   - anti-pattern-lost-facts
   - anti-pattern-flag
   - anti-pattern-state
+  - anti-pattern-json
