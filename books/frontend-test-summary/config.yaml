@@ -13,3 +13,4 @@ chapters:
   - unit-test
   - mock
   - ui-component-test
+  - e2e-test
