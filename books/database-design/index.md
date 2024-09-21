@@ -341,3 +341,7 @@ SELECT * FROM SomeTable WHERE col_1 = CAST(10, AS CHAR(2));
 ### B+tree
 
 https://mond.how/ja/topics/sv7z7ljlcyjax3q/otzqmzpvmse5oip
+
+## その他参考リンク
+
+https://zenn.dev/calloc134/articles/4f96b0fe093489#b-tree(b%2Btree)-%E3%82%A4%E3%83%B3%E3%83%87%E3%83%83%E3%82%AF%E3%82%B9%E3%81%AE%E4%BB%95%E7%B5%84%E3%81%BF
