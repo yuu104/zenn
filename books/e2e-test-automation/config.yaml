@@ -1,0 +1,10 @@
+title: "テスト自動化完全ガイド"
+summary: "E2Eテスト自動化によって継続的にWebアプリケーションを改善するための知識と技法"
+topics: []
+published: false
+price: 0 # 有料の場合200〜5000
+# 本に含めるチャプターを順番に並べましょう
+chapters:
+  - introduction
+  - test-objectives
+  - automated-testing
