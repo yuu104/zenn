@@ -8,3 +8,5 @@ chapters:
   - introduction
   - test-objectives
   - automated-testing
+  - think-about-what-you-are-testing
+  - what-e2e-test
