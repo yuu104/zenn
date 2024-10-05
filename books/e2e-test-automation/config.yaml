@@ -1,5 +1,5 @@
-title: "テスト自動化完全ガイド"
-summary: "E2Eテスト自動化によって継続的にWebアプリケーションを改善するための知識と技法"
+title: "E2E自動テスト"
+summary: "E2E自動テストに関するサマリ"
 topics: []
 published: false
 price: 0 # 有料の場合200〜5000
@@ -10,3 +10,4 @@ chapters:
   - automated-testing
   - think-about-what-you-are-testing
   - what-e2e-test
+  - playwright
