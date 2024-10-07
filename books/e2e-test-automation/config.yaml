@@ -11,3 +11,7 @@ chapters:
   - think-about-what-you-are-testing
   - what-e2e-test
   - playwright
+  - playwright-locator
+  - playwright-navigation
+  - playwright-action
+  - playwright-matcher
