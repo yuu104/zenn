@@ -25,7 +25,7 @@ E2E 自動テストは、1〜7 までを「ヘッドレスブラウザ」+「UI 
 :::message alert
 
 E2E テストの定義は人や組織、文脈によってバラバラです。
-そのため、上記の説明が明確な定義ではないことをご了承ください 🙇‍♂️
+そのため、上記の説明が明確な定義ではない可能性があることをご了承ください 🙇‍♂️
 
 :::
 
@@ -305,7 +305,7 @@ E2E テストにおいて、テストケースの基となるのはユーザー�
 そのため、まずはユーザーストーリーの定義から始めるのです。
 
 :::details EC サイトの例
-「既存ユーザーが EC サイトにログインし、商品を検索して購入する」
+「既存ユーザーが商品を検索して購入する」
 :::
 
 ### ② ユーザーストーリーをテストするための手順を定義する
@@ -376,9 +376,7 @@ E2E テストにおいて、テストケースの基となるのはユーザー�
 ```ts
 const { test, expect } = require("@playwright/test");
 
-test("既存ユーザーが EC サイトにログインし、商品を検索して購入する", async ({
-  page,
-}) => {
+test("既存ユーザーが商品を検索して購入する", async ({ page }) => {
   // 1. ログインページにアクセスする
   await page.goto("https://example-ec-site.com/login");
 
@@ -532,101 +530,443 @@ E2E に限らず、**自動テストにおいて信頼性の高い実行結果�
 では、壊れにくく、信頼性を保ち続けられるような E2E テストを作るにはどうすれば良いのでしょうか？
 主要な取り組みとして、以下が挙げられます。
 
+- アクセシビリティ属性に基づいた要素特定を行う
 - テストごとにデータを用意する
-- 内部構造に依拠しない
+- テストをリトライする
 
-### テストごとにテストデータを用意する
+### アクセシビリティ属性に基づいた要素特定を行う
 
-壊れにく
+アクセシビリティ属性を利用して要素を特定することは、壊れにくい E2E テストを作成する上で非常に重要な手法です。
+
+アクセシビリティ属性には、ボタン、リンク、テキストボックスなどがあり、これらの要素は、HTML のタグが持つ役割（Role）によって定義されます。
+例えば、`<button>` タグには自動的に `button` というロールが割り当てられます。
+
+HTML タグや `class`、`id` など、DOM の具体的な構造に強く依存したテストコードを記述していると、些細な内部実装の変化ですぐにテストが失敗するようになります。
+
+```diff html
+- <input id="user-email" type="email" />
++ <input type="email" />
+```
+
+```ts
+// `id=user-email`が変化したらテストは失敗する
+await page.fill("#user-email", "test@example.com");
+```
+
+そのため、DOM の構造ではなく役割（Role）に依存したテストコードを記述するようにしましょう。
+
+Playwright では、`getByRole()`、`getByLabel()` メソッドを提供しており、これらを使用すると明示的にアクセシビリティに基づいた要素特定ができます。
+
+先ほどの EC サイトを例にしたテストコードは、DOM の構造に強く依存していたため、改善します。
+
+:::details 改善後のテストコード
+
+```diff ts
+const { test, expect } = require("@playwright/test");
+
+ test("既存ユーザーが EC サイトにログインし、商品を検索して購入する", async ({
+   page,
+ }) => {
+   // 1. ログインページにアクセスする
+   await page.goto("https://example-ec-site.com/login");
+
+   // 2. ユーザー名とパスワードを入力する
+-  await page.fill("#email", "user@example.com");
+-  await page.fill("#password", "password123");
++  await page.getByLabel('メールアドレス').fill("user@example.com");
++  await page.getByLabel('パスワード').fill("password123");
+
+   // 3. ログインボタンをクリックする
+-  await page.click("#login-button");
++  await page.getByRole('button', { name: 'ログイン' }).click();
+
+   // 4. ホームページが表示されることを確認する
+   await expect(page).toHaveURL("https://example-ec-site.com/home");
+-  await expect(page.locator(".user-greeting")).toContainText(
+-    "Welcome, user@example.com"
+-  );
++  await expect(page.getByText("Welcome, user@example.com")).toBeVisible();
+
+   // 5. 検索バーに商品名を入力する
+-  await page.fill("#search-input", "ワイヤレスイヤホン");
++  await page.getByPlaceholder('商品を検索').fill("ワイヤレスイヤホン");
+
+   // 6. 検索ボタンをクリックする
+-  await page.click("#search-button");
++  await page.getByRole('button', { name: '検索' }).click();
+
+   // 7. 検索結果ページが表示されることを確認する
+   await expect(page).toHaveURL(
+     "https://example-ec-site.com/search?q=ワイヤレスイヤホン"
+   );
+-  await expect(page.locator(".search-results")).toBeVisible();
++  await expect(page.getByRole('region', { name: '検索結果' })).toBeVisible();
+
+   // 8. 目的の商品をクリックする
+-  await page.click("text=Sony WF-1000XM4");
++  await page.getByRole('link', { name: 'Sony WF-1000XM4' }).click();
+
+   // 9. 商品詳細ページが表示されることを確認する
+   await expect(page).toHaveURL(/\/product\/sony-wf-1000xm4/);
+-  await expect(page.locator("h1")).toContainText("Sony WF-1000XM4");
++  await expect(page.getByRole('heading', { name: 'Sony WF-1000XM4', level: 1 })).toBeVisible();
+
+   // 10. 「カートに追加」ボタンをクリックする
+-  await page.click("#add-to-cart-button");
++  await page.getByRole('button', { name: 'カートに追加' }).click();
+
+   // 11. カートページに遷移することを確認する
+   await expect(page).toHaveURL("https://example-ec-site.com/cart");
+-  await expect(page.locator(".cart-items")).toContainText("Sony WF-1000XM4");
++  await expect(page.getByRole('region', { name: 'カート' })).toContainText("Sony WF-1000XM4");
+
+   // 12. 「購入手続きへ」ボタンをクリックする
+-  await page.click("#proceed-to-checkout");
++  await page.getByRole('button', { name: '購入手続きへ' }).click();
+
+   // 13. 配送先情報を入力する
+-  await page.fill("#shipping-address", "東京都渋谷区テスト町 1-1-1");
++  await page.getByLabel('配送先住所').fill("東京都渋谷区テスト町 1-1-1");
+
+   // 14. 支払い方法を選択する
+-  await page.selectOption("#payment-method", "credit-card");
+-  await page.fill("#card-number", "4111111111111111");
+-  await page.fill("#card-expiry", "12/25");
+-  await page.fill("#card-cvc", "123");
++  await page.getByLabel('支払い方法').selectOption('credit-card');
++  await page.getByLabel('カード番号').fill("4111111111111111");
++  await page.getByLabel('有効期限').fill("12/25");
++  await page.getByLabel('セキュリティコード').fill("123");
+
+   // 15. 「注文確定」ボタンをクリックする
+-  await page.click("#place-order-button");
++  await page.getByRole('button', { name: '注文確定' }).click();
+
+   // 16. 注文完了ページが表示されることを確認する
+   await expect(page).toHaveURL(
+     "https://example-ec-site.com/order-confirmation"
+   );
+-  await expect(page.locator(".order-confirmation")).toContainText(
+-    "ご注文ありがとうございます"
+-  );
+-  await expect(page.locator(".order-details")).toContainText("Sony WF-1000XM4");
++  await expect(page.getByRole('heading', { name: 'ご注文ありがとうございます' })).toBeVisible();
++  await expect(page.getByRole('region', { name: '注文詳細' })).toContainText("Sony WF-1000XM4");
+ });
+```
+
+:::
+
+### テストごとにテスト専用データを用意する
+
+テストごとに専用データを用意することで、**テストの独立性を高めることができます**。
+すでに存在するデータや、他のテストで準備したデータを利用すると、依存関係が生まれ、実行結果が不安定になる可能性があります。
+
+そのため、**既存のデータを利用することを避け、新しいデータを作成する**ようにしましょう。
+
+Playwright では、テストごとに前処理及び後処理を行えるメソッド `test.beforeEach()`、`test.afterAll()` が存在します。
+こちらを使用して、テスト用データの作成やテスト完了後のデータ削除処理を行うと良いでしょう。
+
+EC サイトを例にしたテストコードの改善を行います。
+
+:::details 改善後のテストコード
+
+```diff ts
+const { test, expect } = require("@playwright/test");
+
++test.describe('ECサイトの購入フロー', () => {
++let productId;
++
++
++  test.beforeEach(async ({ request }) => {
++    // テストデータ作成用のAPIリクエスト
++    const response = await request.post('https://example-ec-site.com/api/products', {
++      data: {
++        name: "Sony WF-1000XM4",
++        price: 29980,
++        stock: 10
++      },
++      headers: {
++        'Content-Type': 'application/json',
++        'Authorization': 'Bearer test-api-key'
++      }
++    });
++    // レスポンスのステータスコードを確認
++    expect(response.ok()).toBeTruthy();
++    const responseBody = await response.json();
++    productId = responseBody.id;
++  });
++
++  test.afterEach(async ({ request }) => {
++    // テストデータのクリーンアップ
++    const response = await request.delete(`https://example-ec-site.com/api/products/${productId}`, {
++      headers: {
++        'Authorization': 'Bearer test-api-key'
++      }
++    });
++    expect(response.ok()).toBeTruthy();
++  });
++
+   test("既存ユーザーが商品を検索して購入する", async ({
+     page,
+   }) => {
+     // 1. ログインページにアクセスする
+     await page.goto("https://example-ec-site.com/login");
+
+     // 2. ユーザー名とパスワードを入力する
+     await page.getByLabel('メールアドレス').fill("user@example.com");
+     await page.getByLabel('パスワード').fill("password123");
+
+     // 3. ログインボタンをクリックする
+     await page.getByRole('button', { name: 'ログイン' }).click();
+
+     // 4. ホームページが表示されることを確認する
+     await expect(page).toHaveURL("https://example-ec-site.com/home");
+     await expect(page.getByText("Welcome, user@example.com")).toBeVisible();
+
+     // 5. 検索バーに商品名を入力する
+     await page.getByPlaceholder('商品を検索').fill("ワイヤレスイヤホン");
+
+     // 6. 検索ボタンをクリックする
+     await page.getByRole('button', { name: '検索' }).click();
+
+     // 7. 検索結果ページが表示されることを確認する
+     await expect(page).toHaveURL(
+       "https://example-ec-site.com/search?q=ワイヤレスイヤホン"
+     );
+     await expect(page.getByRole('region', { name: '検索結果' })).toBeVisible();
+
+     // 8. 目的の商品をクリックする
+     await page.getByRole('link', { name: 'Sony WF-1000XM4' }).click();
+
+     // 9. 商品詳細ページが表示されることを確認する
+     await expect(page).toHaveURL(/\/product\/sony-wf-1000xm4/);
+     await expect(page.getByRole('heading', { name: 'Sony WF-1000XM4', level: 1 })).toBeVisible();
+
+     // 10. 「カートに追加」ボタンをクリックする
+     await page.getByRole('button', { name: 'カートに追加' }).click();
+
+     // 11. カートページに遷移することを確認する
+     await expect(page).toHaveURL("https://example-ec-site.com/cart");
+     await expect(page.getByRole('region', { name: 'カート' })).toContainText("Sony WF-1000XM4");
+
+     // 12. 「購入手続きへ」ボタンをクリックする
+     await page.getByRole('button', { name: '購入手続きへ' }).click();
+
+     // 13. 配送先情報を入力する
+     await page.getByLabel('配送先住所').fill("東京都渋谷区テスト町 1-1-1");
+
+     // 14. 支払い方法を選択する
+     await page.getByLabel('支払い方法').selectOption('credit-card');
+     await page.getByLabel('カード番号').fill("4111111111111111");
+     await page.getByLabel('有効期限').fill("12/25");
+     await page.getByLabel('セキュリティコード').fill("123");
+
+     // 15. 「注文確定」ボタンをクリックする
+     await page.getByRole('button', { name: '注文確定' }).click();
+
+     // 16. 注文完了ページが表示されることを確認する
+     await expect(page).toHaveURL(
+       "https://example-ec-site.com/order-confirmation"
+     );
+     await expect(page.getByRole('heading', { name: 'ご注文ありがとうございます' })).toBeVisible();
+     await expect(page.getByRole('region', { name: '注文詳細' })).toContainText("Sony WF-1000XM4");
+   });
++});
+```
+
+:::
+
+### テストをリトライする
+
+E2E テストは、多層のシステムコンポーネントと外部要因が複雑に相互作用する状況でテストを行なっています。
+それ故に、ネットワークの遅延、非同期処理、UI の描画遅延など、様々な要因でどうしても実行結果がランダムに失敗することもあります。
+そのため、1 回の失敗で「信頼性のないテスト」とみなすのは現実的ではないテストも存在するでしょう。
+
+そのような場合に、テストのリトライを行うことは有効な手段です。
+「3 回の施行で 1 回でも正解すればテスト成功とみなす」といったルールを設定しておけば、不安定な E2E テストを削減できるでしょう。
+
+[Playwright](https://playwright.dev/docs/test-retries#retries) では、以下のように様々な形式でリトライを設定することが可能です。
+
+:::details テスト実行時にリトライ回数を設定する
+
+```shell
+# Give failing tests 3 retry attempts
+npx playwright test --retries=3
+```
+
+:::
+
+:::details Playwright の config ファイルでリトライ回数を設定する
+
+```ts: playwright.config.ts
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  // Give failing tests 3 retry attempts
+  retries: 3,
+});
+```
+
+:::
+
+:::details テストグループ単位でリトライを設定する
+
+```ts
+import { test, expect } from "@playwright/test";
+
+test.describe(() => {
+  // All tests in this describe group will get 2 retry attempts.
+  test.describe.configure({ retries: 2 });
+
+  test("test 1", async ({ page }) => {
+    // ...
+  });
+
+  test("test 2", async ({ page }) => {
+    // ...
+  });
+});
+```
+
+:::
+
+:::message
+
+Playwright では、テスト結果をカテゴライズしてくれます。（便利！！）
+
+- `passed` : 1 回目のテストで成功したことを示す
+- `flaky` : リトライにより成功したことを示す
+- `failed` : リトライしても失敗したことを示す
+
+```shell
+Running 3 tests using 1 worker
+
+  ✓ example.spec.ts:4:2 › first passes (438ms)
+  x example.spec.ts:5:2 › second flaky (691ms)
+  ✓ example.spec.ts:5:2 › second flaky (522ms)
+  ✓ example.spec.ts:6:2 › third passes (932ms)
+
+  1 flaky
+    example.spec.ts:5:2 › second flaky
+  2 passed (4s)
+```
+
+:::
 
 ## テストコードの可読性を高める
 
-次は、先ほどの EC サイトの例を例にしたテストコードの**可読性**を高める方法について解説していきます。
+次は、先ほどの EC サイトの例を続きに、テストコードの**可読性**を高める方法についていくつか解説していきます。
 
 :::details 改善するテストコードはこちら
 
 ```ts
 const { test, expect } = require("@playwright/test");
 
-test("既存ユーザーが EC サイトにログインし、商品を検索して購入する", async ({
-  page,
-}) => {
-  // 1. ログインページにアクセスする
-  await page.goto("https://example-ec-site.com/login");
+test.describe("ECサイトの購入フロー", () => {
+  let productId;
 
-  // 2. ユーザー名とパスワードを入力する
-  await page.fill("#email", "user@example.com");
-  await page.fill("#password", "password123");
+  {
+    /* 専用データの事前・事後処理は省略 */
+  }
 
-  // 3. ログインボタンをクリックする
-  await page.click("#login-button");
+  test("既存ユーザーが商品を検索して購入する", async ({ page }) => {
+    // 1. ログインページにアクセスする
+    await page.goto("https://example-ec-site.com/login");
 
-  // 4. ホームページが表示されることを確認する
-  await expect(page).toHaveURL("https://example-ec-site.com/home");
-  await expect(page.locator(".user-greeting")).toContainText(
-    "Welcome, user@example.com"
-  );
+    // 2. ユーザー名とパスワードを入力する
+    await page.getByLabel("メールアドレス").fill("user@example.com");
+    await page.getByLabel("パスワード").fill("password123");
 
-  // 5. 検索バーに商品名を入力する
-  await page.fill("#search-input", "ワイヤレスイヤホン");
+    // 3. ログインボタンをクリックする
+    await page.getByRole("button", { name: "ログイン" }).click();
 
-  // 6. 検索ボタンをクリックする
-  await page.click("#search-button");
+    // 4. ホームページが表示されることを確認する
+    await expect(page).toHaveURL("https://example-ec-site.com/home");
+    await expect(page.getByText("Welcome, user@example.com")).toBeVisible();
 
-  // 7. 検索結果ページが表示されることを確認する
-  await expect(page).toHaveURL(
-    "https://example-ec-site.com/search?q=ワイヤレスイヤホン"
-  );
-  await expect(page.locator(".search-results")).toBeVisible();
+    // 5. 検索バーに商品名を入力する
+    await page.getByPlaceholder("商品を検索").fill("ワイヤレスイヤホン");
 
-  // 8. 目的の商品をクリックする
-  await page.click("text=Sony WF-1000XM4");
+    // 6. 検索ボタンをクリックする
+    await page.getByRole("button", { name: "検索" }).click();
 
-  // 9. 商品詳細ページが表示されることを確認する
-  await expect(page).toHaveURL(/\/product\/sony-wf-1000xm4/);
-  await expect(page.locator("h1")).toContainText("Sony WF-1000XM4");
+    // 7. 検索結果ページが表示されることを確認する
+    await expect(page).toHaveURL(
+      "https://example-ec-site.com/search?q=ワイヤレスイヤホン"
+    );
+    await expect(page.getByRole("region", { name: "検索結果" })).toBeVisible();
 
-  // 10. 「カートに追加」ボタンをクリックする
-  await page.click("#add-to-cart-button");
+    // 8. 目的の商品をクリックする
+    await page.getByRole("link", { name: "Sony WF-1000XM4" }).click();
 
-  // 11. カートページに遷移することを確認する
-  await expect(page).toHaveURL("https://example-ec-site.com/cart");
-  await expect(page.locator(".cart-items")).toContainText("Sony WF-1000XM4");
+    // 9. 商品詳細ページが表示されることを確認する
+    await expect(page).toHaveURL(/\/product\/sony-wf-1000xm4/);
+    await expect(
+      page.getByRole("heading", { name: "Sony WF-1000XM4", level: 1 })
+    ).toBeVisible();
 
-  // 12. 「購入手続きへ」ボタンをクリックする
-  await page.click("#proceed-to-checkout");
+    // 10. 「カートに追加」ボタンをクリックする
+    await page.getByRole("button", { name: "カートに追加" }).click();
 
-  // 13. 配送先情報を入力する
-  await page.fill("#shipping-address", "東京都渋谷区テスト町 1-1-1");
+    // 11. カートページに遷移することを確認する
+    await expect(page).toHaveURL("https://example-ec-site.com/cart");
+    await expect(page.getByRole("region", { name: "カート" })).toContainText(
+      "Sony WF-1000XM4"
+    );
 
-  // 14. 支払い方法を選択する
-  await page.selectOption("#payment-method", "credit-card");
-  await page.fill("#card-number", "4111111111111111");
-  await page.fill("#card-expiry", "12/25");
-  await page.fill("#card-cvc", "123");
+    // 12. 「購入手続きへ」ボタンをクリックする
+    await page.getByRole("button", { name: "購入手続きへ" }).click();
 
-  // 15. 「注文確定」ボタンをクリックする
-  await page.click("#place-order-button");
+    // 13. 配送先情報を入力する
+    await page.getByLabel("配送先住所").fill("東京都渋谷区テスト町 1-1-1");
 
-  // 16. 注文完了ページが表示されることを確認する
-  await expect(page).toHaveURL(
-    "https://example-ec-site.com/order-confirmation"
-  );
-  await expect(page.locator(".order-confirmation")).toContainText(
-    "ご注文ありがとうございます"
-  );
-  await expect(page.locator(".order-details")).toContainText("Sony WF-1000XM4");
+    // 14. 支払い方法を選択する
+    await page.getByLabel("支払い方法").selectOption("credit-card");
+    await page.getByLabel("カード番号").fill("4111111111111111");
+    await page.getByLabel("有効期限").fill("12/25");
+    await page.getByLabel("セキュリティコード").fill("123");
+
+    // 15. 「注文確定」ボタンをクリックする
+    await page.getByRole("button", { name: "注文確定" }).click();
+
+    // 16. 注文完了ページが表示されることを確認する
+    await expect(page).toHaveURL(
+      "https://example-ec-site.com/order-confirmation"
+    );
+    await expect(
+      page.getByRole("heading", { name: "ご注文ありがとうございます" })
+    ).toBeVisible();
+    await expect(page.getByRole("region", { name: "注文詳細" })).toContainText(
+      "Sony WF-1000XM4"
+    );
+  });
 });
 ```
 
 :::
 
-現状には以下の点でまだ改善することが可能です。
+### テストケースの意図を記述する
 
-- テストコードが**コメントに頼りすぎている**
-- テストコードの中に**ユーザー目線でない**箇所が含まれている
-- テストコードの随所に**暗黙の文脈**が見られる
-- テストコードがテストしたいポイントに対して**長すぎる**
+`test("購入テスト")`　ではなく、`test("既存ユーザーが商品を購入する")`。
+目的を具体的に書く。
+
+1 つのテストケースで確認するのは 1 つに絞る。
+同じ画面にあるからと、あれこれチェックするのは良くない。
+失敗したときの原因を特定しづらくなる。
+
+### テストを構造化する
+
+構造化のしすぎは良くないが、「テストの目的を達成するための事前・事後処理を行うとめのコード」は構造化し、本質的な部分は分ける。
+
+Playwright の場合、`beforeEach()` や `beforeAll()`、`afterEach()`、`afterAll()` を活用する。
+
+### コメントを付ける
+
+ユーザーの振る舞いが把握しにくいコードが存在する場合はコメントを付与しする。
+
+E2E テストコードは、ソフトウェアの使い方や機能を示す「生きたドキュメント」としての役割も果たします。
+そのため、理解を補助するという意味でも、コメントの付与は有効な手段です。
 
 ## 【アンチパターン】腐りやすい E2E テスト
 
