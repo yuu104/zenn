@@ -447,7 +447,7 @@ test("既存ユーザーが商品を検索して購入する", async ({ page }) 
 
 :::
 
-## テストコードの設計方針
+<!-- ## テストコードの設計方針
 
 ここまででとりあえずテストコードを書き、テストを実施させることは出来ました。
 続いては、ここでは、テストコードを書く際に意識すべき主要な設計方針について解説します。
@@ -494,16 +494,16 @@ Playwright などのフレームワークは、テストのスキップや特定
    - 共通処理の変更が多くのテストに影響を与えるような設計は避ける
 
 これらの方針に従うことで、テストコードの可読性が向上し、メンテナンスが容易になります。
-また、新しくチームに加わったメンバーでも個々のテストの意図を理解しやすくなります。
+また、新しくチームに加わったメンバーでも個々のテストの意図を理解しやすくなります。 -->
 
-### 3. 壊れにくいテストを目指す
+<!-- ### 3. 壊れにくいテストを目指す
 
 E2E テストは環境の変化や小さな修正で失敗しやすい傾向があります。
 以下のような点に注意して、壊れにくいテストを設計しましょう。
 
 - より抽象度の高いセレクタを使用する（例：クラス名よりもロールベースのセレクタ）
 - CSS や DOM 構造の変更に強いテストを書く
-- 固定の待ち時間ではなく、Playwright のタイムアウト機能を適切に使用する
+- 固定の待ち時間ではなく、Playwright のタイムアウト機能を適切に使用する -->
 
 ## 壊れにくいテストを作る
 
@@ -864,8 +864,6 @@ Running 3 tests using 1 worker
 const { test, expect } = require("@playwright/test");
 
 test.describe("ECサイトの購入フロー", () => {
-  let productId;
-
   {
     /* 専用データの事前・事後処理は省略 */
   }
@@ -948,78 +946,195 @@ test.describe("ECサイトの購入フロー", () => {
 
 ### テストケースの意図を記述する
 
-`test("購入テスト")`　ではなく、`test("既存ユーザーが商品を購入する")`。
-目的を具体的に書く。
+`test()` や `test.describe()` 関数の第一引数にはテストケース名・テストグループ（テストスイート）名を指定します。
+どんな文言を指定するか悩みますよね...
 
-1 つのテストケースで確認するのは 1 つに絞る。
-同じ画面にあるからと、あれこれチェックするのは良くない。
-失敗したときの原因を特定しづらくなる。
+基本的な方針として、「**目的を具体的に書く**」ことを意識しましょう。
+何を確認するためのテストなのかを一目で判断できる状態に保つことが重要です。
 
-### テストを構造化する
+今回の例だと、`test("購入テスト")`　ではなく、`test("既存ユーザーが商品を検索して購入する")` といった感じです。
+「購入テスト」だけではユーザーシナリオが伝わりづらいですよね...
 
-構造化のしすぎは良くないが、「テストの目的を達成するための事前・事後処理を行うとめのコード」は構造化し、本質的な部分は分ける。
+E2E テストでは、どんなシナリオを確認するのかを明確にすると良いです 👍
 
-Playwright の場合、`beforeEach()` や `beforeAll()`、`afterEach()`、`afterAll()` を活用する。
+### 「目的のためのコード」と「事前・事後処理」を分離する
+
+テストの本質的な部分（目的のためのコード）とそれを実行するための準備や後片付け（事前・事後処理）を明確に分離することで、可読性が向上します。
+
+Playwright の場合、`beforeEach()` や `beforeAll()`、`afterEach()`、`afterAll()` を活用することで、事前・事後処理として必要なコードを `test()` 関数から切り離すことができます。
+
+今回の例だと、テストの目的は「既存ユーザーが商品を検索して購入する」というシナリオを検証することです。
+そのため、ログイン処理やテスト専用データの準備・後片付けを行うためのコードは `test()` 関数から切り離します。
+
+:::details 改善後のテストコード
+
+```diff ts
+  const { test, expect } = require("@playwright/test");
+
+  test.describe("ECサイトの購入フロー", () => {
+    {
+      /* 専用データの事前・事後処理は省略 */
+    }
+
++   beforeAll(() => {
++     // 1. ログインページにアクセスする
++     await page.goto("https://example-ec-site.com/login");
++
++     // 2. ユーザー名とパスワードを入力する
++     await page.getByLabel("メールアドレス").fill("user@example.com");
++     await page.getByLabel("パスワード").fill("password123");
++
++     // 3. ログインボタンをクリックする
++     await page.getByRole("button", { name: "ログイン" }).click();
++
++     // 4. ホームページが表示されることを確認する
++     await expect(page).toHaveURL("https://example-ec-site.com/home");
++     await expect(page.getByText("Welcome, user@example.com")).toBeVisible();
++   });
+
+    test("既存ユーザーが商品を検索して購入する", async ({ page }) => {
+-     // 1. ログインページにアクセスする
+-     await page.goto("https://example-ec-site.com/login");
+-
+-     // 2. ユーザー名とパスワードを入力する
+-     await page.getByLabel("メールアドレス").fill("user@example.com");
+-     await page.getByLabel("パスワード").fill("password123");
+-
+-     // 3. ログインボタンをクリックする
+-     await page.getByRole("button", { name: "ログイン" }).click();
+
+-     // 4. ホームページが表示されることを確認する
+-     await expect(page).toHaveURL("https://example-ec-site.com/home");
+-     await expect(page.getByText("Welcome, user@example.com")).toBeVisible();
+
+      // 5. 検索バーに商品名を入力する
+      await page.getByPlaceholder("商品を検索").fill("ワイヤレスイヤホン");
+
+      // 6. 検索ボタンをクリックする
+      await page.getByRole("button", { name: "検索" }).click();
+
+      // 7. 検索結果ページが表示されることを確認する
+      await expect(page).toHaveURL(
+        "https://example-ec-site.com/search?q=ワイヤレスイヤホン"
+      );
+      await expect(page.getByRole("region", { name: "検索結果" })).toBeVisible();
+
+      // 8. 目的の商品をクリックする
+      await page.getByRole("link", { name: "Sony WF-1000XM4" }).click();
+
+      // 9. 商品詳細ページが表示されることを確認する
+      await expect(page).toHaveURL(/\/product\/sony-wf-1000xm4/);
+      await expect(
+        page.getByRole("heading", { name: "Sony WF-1000XM4", level: 1 })
+      ).toBeVisible();
+
+      // 10. 「カートに追加」ボタンをクリックする
+      await page.getByRole("button", { name: "カートに追加" }).click();
+
+      // 11. カートページに遷移することを確認する
+      await expect(page).toHaveURL("https://example-ec-site.com/cart");
+      await expect(page.getByRole("region", { name: "カート" })).toContainText(
+        "Sony WF-1000XM4"
+      );
+
+      // 12. 「購入手続きへ」ボタンをクリックする
+      await page.getByRole("button", { name: "購入手続きへ" }).click();
+
+      // 13. 配送先情報を入力する
+      await page.getByLabel("配送先住所").fill("東京都渋谷区テスト町 1-1-1");
+
+      // 14. 支払い方法を選択する
+      await page.getByLabel("支払い方法").selectOption("credit-card");
+      await page.getByLabel("カード番号").fill("4111111111111111");
+      await page.getByLabel("有効期限").fill("12/25");
+      await page.getByLabel("セキュリティコード").fill("123");
+
+      // 15. 「注文確定」ボタンをクリックする
+      await page.getByRole("button", { name: "注文確定" }).click();
+
+      // 16. 注文完了ページが表示されることを確認する
+      await expect(page).toHaveURL(
+        "https://example-ec-site.com/order-confirmation"
+      );
+      await expect(
+        page.getByRole("heading", { name: "ご注文ありがとうございます" })
+      ).toBeVisible();
+      await expect(page.getByRole("region", { name: "注文詳細" })).toContainText(
+        "Sony WF-1000XM4"
+      );
+    });
+  });
+```
+
+:::
+
+### 1 つのテストケースに複数のシナリオを詰め込まない
+
+基本的に、1 つのテストケースには 1 つシナリオを検証するようにしましょう。
+
+同じ画面にあるからと、あれこれチェックしたりするのはアンチパターンです。
+（商品の購入とレビューの投稿を一緒にするなど）
+
+何を確認するためのテストなのかが分かりにくくなりますし、失敗したときの原因も特定しづらくなります。
 
 ### コメントを付ける
 
-ユーザーの振る舞いが把握しにくいコードが存在する場合はコメントを付与しする。
+ユーザーの振る舞いが把握しにくいコードが存在する場合、コメントを付与は可読性を高めるための有効な手段です。
+要素特定を行う上で内部実装が原因でやむおえず複雑なコードになってしまう場合などです。
+
+```ts
+const complexSelector = await page.locator(
+  "div.product-container > div.product-list > div.product-row:nth-child(3) > div.product-cell:nth-child(2) > div.product-info > div.product-actions > button.view-details"
+);
+```
 
 E2E テストコードは、ソフトウェアの使い方や機能を示す「生きたドキュメント」としての役割も果たします。
-そのため、理解を補助するという意味でも、コメントの付与は有効な手段です。
+そのため、理解を補助するという意味でも、コメントは重要です。
 
-## 【アンチパターン】腐りやすい E2E テスト
+### ページ単位で構造化する
 
-### ① 開発サイクルの中で実行しない
+テストコードの再利用性と可読性を向上させるためのデザインパターンとして、**Page Object Models（POM）**というものがあります。
+POM は、各ページをオブジェクトとして表現し、そのページの要素をプロパティ、操作をメソッドとして定義します。
 
-何故アンチパターンか？
-それは、「**アプリケーションの変更に対してテストが追従できなくなる**」から
+ログインページを例にすると以下のようになります。
 
-開発サイクルの外、つまり、リリースサイクルの中で E2E テストを行うと、リリース直線までシステムの E2E レベルの振る舞いが変更されたかどうかがわからない。
+```ts: LoginPage.ts
+class LoginPage {
+  readonly page: Page;
+  readonly mailInput: Locator;
+  readonly passwordInput: Locator;
+  readonly loginButton: Locator;
 
-E2E テストのコードが最新の振る舞いに追従しているかどうかも、リリースのタイミングでしか分からなくなる。
+  constructor(page: Page) {
+    this.page = page;
+    this.mailInput = page.getByLabel("メールアドレス");
+    this.passwordInput = page.getByLabel("パスワード");
+    this.loginButton = page.getByRole("button", { name: "ログイン" });
+  }
 
-開発サイクルの中でも E2E テストが実行され、メンテナンスがされていれば、開発者は自身の変更がシステムレベルの振る舞いを変えていないこと（または、変えていること）をチェックした上で開発を進めることができる。
+  async navigateTo() {
+    await this.page.goto("/login");
+  }
 
-### ②「振る舞い」に依拠しないテストコード
-
-何故アンチパターンか？
-それは、**「頻繁なメンテナンスが必要になる**」からです。
-
-E2E テストは、ユーザーの「**振る舞い**」をテストするものです。
-内部構造をテストするものではありません。
-
-「振る舞いをテストしない」とはどういうことか？
-以下のフォームの `<input type="submit" value="送信" />` を例に考える。
-
-```html
-<form>
-  <input type="text" placeholder="名前" />
-  <input type="text" placeholder="会社名" />
-  <input type="number" placeholder="年齢" />
-  <input type="submit" value="送信" />　
-</form>
+  async login(username: string, password: string) {
+    await this.page.fill('input[name="username"]', username);
+    await this.page.fill('input[name="password"]', password);
+    await this.page.click('button[type="submit"]');
+    await this.mailInput.fill("user@example.com");
+    await this.passwordInput.fill("password123");
+    await this.loginButton.click();
+  }
+}
 ```
-
-テストコードにて、以下はアンチパターン。
 
 ```ts
-findElement('input[type="submit"]').click();
+test("ユーザーが正常にログインできる", async ({ page }) => {
+  const loginPage = new LoginPage(page);
+  await loginPage.navigateTo();
+  await loginPage.login("testuser", "password123");
+
+  await expect(page).toHaveURL("/dashboard");
+});
 ```
 
-上記は壊れにくい。
-`type="submit"` を削除したらテストは失敗する。
-
-以下も若干アンチパターン。
-
-```ts
-findElement('input[value="送信"]');
-```
-
-実装が `button` タグになったらテストは失敗する。
-
-理想は下記のように、「ボタン」という役割を持つコンポーネントのうち、「送信」ラベルを持つものを探索するコード。
-
-```ts
-findElement(role: button, label: "送信").click();
-```
+ページ単位で要素特定を隠蔽し、操作を抽象化することで、UI の変更が発生しても、テストコードそのものには影響せず、ページオブジェクトをの方を修正すれば良いため、可読性とメンテナンス性が向上するという考え方です。
