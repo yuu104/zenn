@@ -20,3 +20,4 @@ chapters:
   - playwright-run-only-the-necessary-tests
   - playwright-naming-of-test-files
   - playwright-testing-with-certification
+  - playwright-parallel-execution
