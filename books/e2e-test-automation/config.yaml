@@ -10,8 +10,13 @@ chapters:
   - automated-testing
   - think-about-what-you-are-testing
   - what-e2e-test
-  - playwright
+  - playwight-what-is-playwright
   - playwright-locator
   - playwright-navigation
   - playwright-action
   - playwright-matcher
+  - playwright-wait-and-retry
+  - playwright-how-to-assemble-test-code
+  - playwright-run-only-the-necessary-tests
+  - playwright-naming-of-test-files
+  - playwright-testing-with-certification
