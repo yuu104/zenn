@@ -10,7 +10,7 @@ chapters:
   - automated-testing
   - think-about-what-you-are-testing
   - what-e2e-test
-  - playwight-what-is-playwright
+  - playwright-what-is-playwright
   - playwright-locator
   - playwright-navigation
   - playwright-action
