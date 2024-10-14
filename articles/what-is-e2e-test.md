@@ -1201,6 +1201,10 @@ https://www.amazon.co.jp/%EF%BC%BB%E5%85%A5%E9%96%80%EF%BC%BDWeb%E3%83%95%E3%83%
 
 https://www.amazon.co.jp/%E3%83%95%E3%83%AD%E3%83%B3%E3%83%88%E3%82%A8%E3%83%B3%E3%83%89%E9%96%8B%E7%99%BA%E3%81%AE%E3%81%9F%E3%82%81%E3%81%AE%E3%83%86%E3%82%B9%E3%83%88%E5%85%A5%E9%96%80-%E4%BB%8A%E3%81%8B%E3%82%89%E3%81%A7%E3%82%82%E7%9F%A5%E3%81%A3%E3%81%A6%E3%81%8A%E3%81%8D%E3%81%9F%E3%81%84%E8%87%AA%E5%8B%95%E3%83%86%E3%82%B9%E3%83%88%E6%88%A6%E7%95%A5%E3%81%AE%E5%BF%85%E9%A0%88%E7%9F%A5%E8%AD%98-%E5%90%89%E4%BA%95-%E5%81%A5%E6%96%87/dp/4798178187
 
+https://speakerdeck.com/autifyhq/tesutozi-dong-hua-kara-kai-fa-wozhi-eruji-sok-de-tesutohe
+
+https://speakerdeck.com/tsuemura/tesutowozi-dong-hua-surufalsewoyame-zi-dong-tesutowozuo-rou
+
 https://levtech.jp/media/article/column/detail_496/#ttl_2
 
 https://qiita.com/tsuemura/items/c6703efc107314b66d7b
