@@ -308,12 +308,12 @@ _引用: https://codezine.jp/article/detail/19909_
 1. **安全にリリースできる状態を持続可能なコストにキープし続ける**
 2. **開発者がテストによるフィードバックを素早く受けられるようにする**
 
-### 手動テストにできて自動テストには出来ないこと
+### 手動テストに出来て自動テストには出来ないこと
 
 手動テストは自動テストの完全な下位互換なのでしょうか？
 
 いいえ、そんなことはありません。
-テスト自動化研究会が作成した、[テスト自動化の 8 原則](https://sites.google.com/site/testautomationresearch/test_automation_principle)の中に、以下があります。
+[テスト自動化研究会](https://sites.google.com/site/testautomationresearch/home)が作成した、[テスト自動化の 8 原則](https://sites.google.com/site/testautomationresearch/test_automation_principle)の中に、以下の 2 つがあります。
 
 - **自動テストは書いたことしかテストしない**
 - **自動テストで新種のバグが見つかることは稀である**
