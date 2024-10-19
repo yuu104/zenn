@@ -3,7 +3,7 @@ title: "E2E自動テストを理解したい"
 emoji: "😽"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [test, e2e, playwright, devops, typescript]
-published: false
+published: true
 ---
 
 ## E2E テストとは？
