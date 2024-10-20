@@ -1388,14 +1388,14 @@ https://www.amazon.co.jp/%E3%83%95%E3%83%AD%E3%83%B3%E3%83%88%E3%82%A8%E3%83%B3%
 
 https://speakerdeck.com/autifyhq/tesutozi-dong-hua-kara-kai-fa-wozhi-eruji-sok-de-tesutohe
 
-https://qiita.com/tsuemura/items/c6703efc107314b66d7b
+https://speakerdeck.com/tsuemura/tesutowozi-dong-hua-surufalsewoyame-zi-dong-tesutowozuo-rou
 
 https://levtech.jp/media/article/column/detail_496/#ttl_2
-
-https://speakerdeck.com/tsuemura/tesutowozi-dong-hua-surufalsewoyame-zi-dong-tesutowozuo-rou
 
 https://agilejourney.uzabase.com/entry/2024/06/25/103000
 
 https://speakerdeck.com/rhumie/introduction-to-e2e-testing-with-playwright
+
+https://qiita.com/tsuemura/items/c6703efc107314b66d7b
 
 https://tech.smarthr.jp/entry/2024/06/18/140311
