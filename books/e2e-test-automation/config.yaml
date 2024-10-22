@@ -21,3 +21,4 @@ chapters:
   - playwright-naming-of-test-files
   - playwright-testing-with-certification
   - playwright-parallel-execution
+  - measurement-and-reflection
