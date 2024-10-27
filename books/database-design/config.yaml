@@ -20,10 +20,15 @@ chapters:
   - index
   - statistics
   - view
-  - bad-know-how-in-logic-design
-  - gray-know-how-in-logic-design
   - sortable-data-design
+  - anti-pattern-non-scalar-value
+  - anti-pattern-double-naming
+  - anti-pattern-double-master
+  - anti-pattern-single-reference-table
+  - anti-pattern-table-partitioning
+  - anti-pattern-variable-length-string-for-key-type
   - anti-pattern-lost-facts
   - anti-pattern-flag
   - anti-pattern-state
   - anti-pattern-json
+  - gray-know-how-in-logic-design
