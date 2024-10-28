@@ -24,10 +24,8 @@ Playwright では、以下のようなマッチャーが提供されています
 マッチャーは検査したいロケーターを、生成関数の `expect()` に渡して取得します。
 マッチャーのメソッドは、この `expect()` が返すオブジェクトのメソッドです。
 
-ロケーターの結果の取得には `await` を付けていましたが、マッチャーを利用する場合は、引数のロケーターには await を付けずに、マッチャーの実行結果に 1 つだけ `await` を付与すれば正しく動くようになっています。
+ロケーターの結果の取得には `await` を付けていましたが、マッチャーを利用する場合は、引数のロケーターには `await` を付けずに、マッチャーの実行結果に 1 つだけ `await` を付与すれば正しく動くようになっています。
 もちろん、ロケーターのほうに `await` を重複して付与しても問題はありません。
-
-承知しました。より分かりやすく説明し直します。
 
 ## テキストと要素の存在を確認するマッチャー
 
@@ -40,7 +38,7 @@ Playwright では、ページ上のテキストや要素の存在を確認する
 
 ### 使い方の例
 
-例えば、ページに "Success" という見出しがある場合：
+例えば、ページに `"Success"` という見出しがある場合：
 
 ```html
 <h1>Success</h1>
@@ -64,20 +62,19 @@ await expect(page.getByRole("heading")).toBeAttached();
 
 ### 違いと注意点
 
-1. **toContainText() vs toHaveText()**:
+1. **`toContainText()` vs `toHaveText()`**:
 
-   - toContainText(): 部分一致で OK
-   - toHaveText(): 完全一致が必要
+   - `toContainText()`: 部分一致で OK
+   - `toHaveText()`: 完全一致が必要
 
 2. **空のテキスト**:
 
-   - toContainText(), toHaveText(): 空のテキストではマッチしない
-   - toBeVisible(): テキストがないと「見えない」と判断
-   - toBeAttached(): テキストの有無に関係なく、要素の存在だけで判断
+   - `toContainText()`, `toHaveText()`: 空のテキストではマッチしない
+   - `toBeVisible()`: テキストがないと「見えない」と判断
+   - `toBeAttached()`: テキストの有無に関係なく、要素の存在だけで判断
 
 3. **複数要素**:
-   複数の要素をまとめてチェックできます。例：
-
+   複数の要素をまとめてチェックできます。
    ```javascript
    await expect(page.getByRole("listitem")).toHaveText([
      "りんご",
@@ -88,17 +85,15 @@ await expect(page.getByRole("heading")).toBeAttached();
 
 ### まとめ
 
-- テキストの内容を確認: `toContainText() または toHaveText()
-- 要素が見えるか確認: toBeVisible()
-- 要素の存在だけ確認: toBeAttached()
-
-はい、`not`についての解説をします。
+- テキストの内容を確認: `toContainText()` または toHaveText()`
+- 要素が見えるか確認: `toBeVisible()`
+- 要素の存在だけ確認: `toBeAttached()`
 
 ## not
 
-`not`は、マッチャーの結果を反転させるために使用される重要な機能です。
+`not` は、マッチャーの結果を反転させるために使用される重要な機能です。
 
-`expect`とマッチャーの間に`not`を挿入することで、テストの意味が否定になります。
+`expect` とマッチャーの間に `not` を挿入することで、テストの意味が否定になります。
 
 ```javascript
 // Success と書かれた見出しが存在しないことを確認
@@ -152,8 +147,6 @@ await expect(
 await expect(page.getByRole("button", { name: /送信/ })).toBeDisabled();
 await expect(page.getByRole("button", { name: /リセット/ })).toBeEnabled();
 ```
-
-はい、toBeEmpty()と toBeHidden()について説明します。
 
 ## toBeEmpty() と toBeHidden()
 
@@ -217,8 +210,6 @@ await expect(page.getByRole("button")).toBeFocused();
 await expect(page.getByRole("listitem")).toHaveCount(7);
 ```
 
-はい、`toHaveValue()`と`toHaveValues()`について分かりやすく簡潔に説明します。
-
 ## toHaveValue() と toHaveValues()
 
 1. **`toHaveValue()`**
@@ -238,19 +229,20 @@ await expect(page.getByRole("listitem")).toHaveCount(7);
 
 2. **`toHaveValues()`**
 
-- 用途：複数選択可能な`<select multiple>`要素の選択結果を確認します。
-- 使用例：
-  ```javascript
-  // 項目を複数選択するアクション
-  await page
-    .getByRole("listbox", { name: /飲み物/ })
-    .selectOption(["紅茶", "抹茶"]);
-  // 確認
-  await expect(page.getByRole("listbox", { name: /飲み物/ })).toHaveValues([
-    "紅茶",
-    "抹茶",
-  ]);
-  ```
+   - 用途：複数選択可能な`<select multiple>`要素の選択結果を確認します。
+   - 使用例：
+
+   ```javascript
+   // 項目を複数選択するアクション
+   await page
+     .getByRole("listbox", { name: /飲み物/ })
+     .selectOption(["紅茶", "抹茶"]);
+   // 確認
+   await expect(page.getByRole("listbox", { name: /飲み物/ })).toHaveValues([
+     "紅茶",
+     "抹茶",
+   ]);
+   ```
 
 3. **主な違い**
    - `toHaveValue()`：単一の値を確認
