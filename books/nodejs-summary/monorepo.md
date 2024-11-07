@@ -13,3 +13,5 @@ https://qiita.com/frozenbonito/items/8230d4a3cb5ea1b32802#typescript-%E3%82%92%E
 https://zenn.dev/takanori_is/articles/tsconfig-in-monorepo
 
 https://note.shiftinc.jp/n/nbecb007ac2ee
+
+https://zenn.dev/shoma46/articles/8a85daecda362d
