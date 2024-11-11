@@ -8,3 +8,4 @@ chapters:
   - express-error-handling
   - express-project-structure
   - pnpm
+  - monorepo

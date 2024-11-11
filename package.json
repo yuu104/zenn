@@ -18,8 +18,7 @@
   },
   "homepage": "https://github.com/yuu104/zenn#readme",
   "dependencies": {
-    "zenn": "file:",
-    "zenn-cli": "^0.1.153"
+    "zenn-cli": "^0.1.157"
   },
   "volta": {
     "node": "18.17.0"
