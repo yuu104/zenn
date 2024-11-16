@@ -1399,3 +1399,5 @@ https://speakerdeck.com/rhumie/introduction-to-e2e-testing-with-playwright
 https://qiita.com/tsuemura/items/c6703efc107314b66d7b
 
 https://tech.smarthr.jp/entry/2024/06/18/140311
+
+https://blog.autify.jp/article/best-practices-for-element-locating-in-e2e-testing
