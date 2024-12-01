@@ -459,7 +459,7 @@ _引用: https://agilejourney.uzabase.com/entry/2024/06/25/103000_
 テストをフェーズとして捉えていると、「手動テストをそのまま自動化しただけ」になってしまいます。DevOps のサイクルだと、「RELEASE」や「DEPLOY」のフェーズのみで実行することになります。
 ![](https://storage.googleapis.com/zenn-user-upload/25619e49e59b-20241019.png =500x)
 \
-テストを単なる 1 フェーズとしてではなく、開発プロセス全体を支える「活動」として捉え、DevOps サイクルの右側（「BUILD」「MERGE」「CODE」）でも実行できるようにすることで、自動テストは開発者を支える武器となります。
+テストを単なる 1 フェーズとしてではなく、開発プロセス全体を支える「活動」として捉え、DevOps サイクルの左側（「BUILD」「MERGE」「CODE」）でも実行できるようにすることで、自動テストは開発者を支える武器となります。
 ![](https://storage.googleapis.com/zenn-user-upload/c53ac0f959a4-20241019.png)
 
 :::
