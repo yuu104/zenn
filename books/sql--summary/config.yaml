@@ -24,5 +24,7 @@ chapters:
   - in
   - limit
   - sub-query
+  - with
+  - with-recursive
   - lock
   - query-order
