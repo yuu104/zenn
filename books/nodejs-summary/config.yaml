@@ -9,3 +9,4 @@ chapters:
   - express-project-structure
   - pnpm
   - monorepo
+  - npm-init-create
