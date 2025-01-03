@@ -8,8 +8,7 @@ published: true
 
 ## 公式によると...
 
-https://arc.net/l/quote/jxtudbaj
-
+https://ja.next-community-docs.dev/docs/app/api-reference/functions/use-router#:~:text=router.refresh()%3A%20%E7%8F%BE%E5%9C%A8%E3%81%AE%E3%83%AB%E3%83%BC%E3%83%88%E3%82%92%E6%9B%B4%E6%96%B0%E3%81%97%E3%81%BE%E3%81%99%E3%80%82%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E3%81%AB%E6%96%B0%E3%81%97%E3%81%84%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%E3%82%92%E8%A1%8C%E3%81%84%E3%80%81%E3%83%87%E3%83%BC%E3%82%BF%E3%83%AA%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88%E3%82%92%E5%86%8D%E5%8F%96%E5%BE%97%E3%81%97%E3%80%81Server%20Component%20%E3%82%92%E5%86%8D%E3%83%AC%E3%83%B3%E3%83%80%E3%83%AA%E3%83%B3%E3%82%B0%E3%81%97%E3%81%BE%E3%81%99%E3%80%82%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88%E3%81%AF%E3%80%81%E6%9B%B4%E6%96%B0%E3%81%95%E3%82%8C%E3%81%9F%20React%20Server%20Component%20%E3%81%AE%E3%83%9A%E3%82%A4%E3%83%AD%E3%83%BC%E3%83%89%E3%82%92%E3%80%81%E5%BD%B1%E9%9F%BF%E3%82%92%E5%8F%97%E3%81%91%E3%81%AA%E3%81%84%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88%E5%81%B4%E3%81%AE%20React%EF%BC%88useState%E3%81%AA%E3%81%A9%EF%BC%89%E3%82%84%E3%83%96%E3%83%A9%E3%82%A6%E3%82%B6%E3%81%AE%E7%8A%B6%E6%85%8B%EF%BC%88%E3%82%B9%E3%82%AF%E3%83%AD%E3%83%BC%E3%83%AB%E4%BD%8D%E7%BD%AE%E3%81%AA%E3%81%A9%EF%BC%89%E3%82%92%E4%BF%9D%E6%8C%81%E3%81%97%E3%81%9F%E3%81%BE%E3%81%BE%E3%83%9E%E3%83%BC%E3%82%B8%E3%81%97%E3%81%BE%E3%81%99%E3%80%82
 > `router.refresh()`: 現在のルートを更新します。サーバーに新しいリクエストを行い、データリクエストを再取得し、Server Component を再レンダリングします。クライアントは、更新された React Server Component のペイロードを、影響を受けないクライアント側の React（useState など）やブラウザの状態（スクロール位置など）を保持したままマージします。
 
 上記内容を箇条書きでまとめると以下の通りになります。
@@ -19,7 +18,7 @@ https://arc.net/l/quote/jxtudbaj
 - Server Component を再レンダリングする
 - クライアントは、サーバーから受け取った新たな RSC ペイロードを、クライアント側の React（useState など）やブラウザの状態（スクロール位置など）を保持したままマージする
 
-## どういうこと？
+## ん？どーゆーこと？
 
 箇条書きでまとめた項目を一つずつ見ていきます。
 
