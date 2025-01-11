@@ -1,6 +1,6 @@
 ---
-title: "E2E自動テストを理解したい"
-emoji: "😽"
+title: "【Playwrightの前に】E2Eテストを理解したい"
+emoji: "🎭"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [test, e2e, playwright, devops, typescript]
 published: true
@@ -8,11 +8,18 @@ published: true
 
 ## はじめに
 
-E2E（End-to-End）自動テストは、ソフトウェア開発における重要な品質保証手法の一つです。
-しかし、その導入と実践には多くの課題があります。
-本記事では、E2E 自動テストの基本的な概念から実践的なテクニックまでを包括的に理解するために、私が様々な書籍や記事から学んだ内容を言語化したものです。
+最近よく聞く[Playwright](https://playwright.dev/)。
+公式サイトを見ると、見出しには以下の記述があります。
 
-具体的には、以下の内容を取り上げます：
+> Playwright enables reliable end-to-end testing for modern web apps.
+> Playwright は、最新の Web アプリケーションに対して信頼性の高いエンドツーエンドテストを実現します。
+
+あれ「end-to-end testing」ってそもそも何だっけ...?🤔
+どうやら、Playwright を学ぶ前に、E2E テストについて理解する必要があるようです...
+
+本記事では、E2E テストの基本的な概念から実践的なテクニックまでを包括的に理解するために、私が様々な書籍や記事から学んだ内容を言語化したものです。
+
+具体的には以下の内容を取り上げます。
 
 1. E2E テストとは何か、その特徴とメリット・デメリット
 2. E2E テスト導入の戦略と継続的テストの概念
