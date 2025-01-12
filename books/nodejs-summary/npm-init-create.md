@@ -597,10 +597,24 @@ node_modules/
 
 ### 初期化コマンドのスクリプト実装
 
+ファイル操作を便利にしてくれるライブラリ `fs-extra` をインストールします。
+
 ```shell: shell
 npm install fs-extra
 npm install --save-dev @types/fs-extra
 ```
+
+\
+`src/bin/create-rext.ts` を作成し、以下のロジックを実装します。
+
+1. コマンド入力のバリデーション
+2. `template/` をコピーしてプロジェクトフォルダーに配置
+3. `package.json` の `name` フィールドを変更
+4. `npm install` 実行
+
+なお、スクリプトファイルには
+
+:::details src/bin/create-rext.ts
 
 ````ts: src/bin/create-rext.ts
 #!/usr/bin/env node
@@ -694,6 +708,8 @@ function updatePackageJson(projectPath: string, projectName: string): void {
 
 main();
 ````
+
+:::
 
 ## CLI ツールの設計と実装
 
