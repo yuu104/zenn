@@ -4,16 +4,16 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 
 ## はじめに
 
-`create-next-app` や `npm init playwright` のような便利なツールを使ったことはありませんか？
+`create-next-app` や `npm init playwright` のような便利なセットアップコマンドを利用した経験はありませんか？
 これらのコマンドは、たった数秒でプロジェクトをセットアップし、開発の第一歩を大きく加速させてくれます。
 そして、その裏側を「どうやって作られているのだろう？」と考えたことがある方もいるのではないでしょうか。
 
 本記事では、そんな「`npx create-xxx` で始める npm パッケージの自作方法」について私が学んだ内容を言語化したものです。
 以下の内容について、シンプルなパッケージの自作をしながら解説します。
 
-1. `npx create-xxx` 形式の初期化コマンドを作成する方法
-2. プロジェクト内で利用できる CLI ツールの設計と実装
-3. インポートして利用する関数を提供する方法
+1. `npx create-xxx` によるセットアップコマンドを作成する方法
+2. モジュール関数を提供する方法
+3. プロジェクト内で利用できる CLI ツールの設計と実装
 4. 作成したパッケージを npm レジストリへ公開する方法
 
 ## 今回自作する npm パッケージについて
@@ -21,19 +21,19 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 文字列をリバースするシンプルな npm パッケージ「`rext`」を作成します。
 このパッケージは、以下の特徴を備えています。
 
-- **`npx create-xxx` による初期化コマンド**
+- **`npx create-xxx` によるセットアップ**
   プロジェクトを簡単にセットアップできるコマンドを提供します。
-  必要なフォルダやファイルを自動生成し、初期化後すぐに CLI ツールやモジュール機能を利用可能です。
-- **CLI ツールとしての利用**
-  プロジェクト内で実行できるコマンドを提供します。
+  必要なフォルダやファイルを自動生成し、すぐに CLI ツールやモジュール機能を利用可能です。
 - **モジュールとしての利用**
   関数をインポートし、プログラム内で利用可能です。
+- **CLI ツールとしての利用**
+  プロジェクト内で実行できるコマンドを提供します。
 - **TypeScript に対応**
   型定義を提供します。
 
 ### 提供する機能
 
-1. **初期化コマンド: `npx create-rext [プロジェクト名]`**
+1. **セットアップコマンド: `npx create-rext [プロジェクト名]`**
    このコマンドを実行することで、以下のフォルダ構造を持つプロジェクトが自動生成されます。
 
    ```text
@@ -54,9 +54,25 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
    }
    ```
 
-   初期化後、すぐに CLI を使った操作やモジュールの利用を開始できます。
+   セットアップ後、すぐに CLI を使った操作やモジュールの利用を開始できます。
 
-2. **CLI ツール**
+2. **モジュール関数**
+   `reverseText` 関数をモジュールとして提供します。
+   TypeScript の型定義も含まれており、安全に利用できます。
+
+   ```ts
+   export declare function reverseText(text: string): string;
+   ```
+
+   ```ts
+   import { reverseText } from "rext";
+
+   const original = "typescript";
+   const reversed = reverseText(original);
+   console.log(reversed); // => "tpircsepyt"
+   ```
+
+3. **CLI ツール**
    プロジェクト内で動作する CLI ツールとして、以下の機能を提供します。
 
    - **`rext reverse-console` :**
@@ -97,22 +113,6 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
          "typescript": "tpircsepyt"
        }
        ```
-
-3. **モジュール機能**
-   `reverseText` 関数をモジュールとして提供します。
-   TypeScript の型定義も含まれており、安全に利用できます。
-
-   ```ts
-   export declare function reverseText(text: string): string;
-   ```
-
-   ```ts
-   import { reverseText } from "rext";
-
-   const original = "typescript";
-   const reversed = reverseText(original);
-   console.log(reversed); // => "tpircsepyt"
-   ```
 
 ## 新規パッケージの作成
 
@@ -285,15 +285,14 @@ MAJOR.MINOR.PATCH
 
 ```json
 {
-  "main": "dist/index.js"
+  "main": "index.js"
 }
 ```
 
-他のプロジェクトでこのパッケージをインポートすると、`dist/index.js` が読み込まれます。
+他のプロジェクトでこのパッケージをインポートすると、`/index.js` が読み込まれます。
 
 ```ts
 const rext = require("rext");
-// 実際には `rext/dist/index.js` が読み込まれる
 ```
 
 :::
@@ -421,10 +420,13 @@ npm 検索でパッケージが見つかりやすくなります。
    ```json: tsconfig.json
    {
      "extends": "@tsconfig/node22/tsconfig.json",
-        "compilerOptions": {
-       "outDir": "dist",
-      },
-      "include": ["src/**/*"]
+     "compilerOptions": {
+       "outDir": "./dist",
+       "rootDir": "./src",
+       "declaration": true,
+       "declarationMap": true
+     },
+     "include": ["src/**/*.ts"]
    }
    ```
 
@@ -432,17 +434,27 @@ npm 検索でパッケージが見つかりやすくなります。
    JS にコンパイルする必要があるので、`package.json` と `.gitignore` を修正します。
 
    ```diff json: package.json
-      {
+     {
+       "name": "@yuu/rext",
+       "version": "0.1.0",
+       "description": "Simple text reverse library",
+   -   "main": "index.js",
+   +   "main": "./dist/index.js",
        "scripts": {
-   +      "build": "tsc",
-   +      "prepare": "npm run build"
+   -     "test": "echo \"Error: no test specified\" && exit 1"
+   +     "build": "tsc",
+   +     "prepare": "npm run build",
        },
-      }
+       "keywords": ["reverse", "text", "cli"],
+       "author": "yuu",
+       "license": "ISC"
+       ....
+     }
    ```
 
-   ```.gitignore: .gitignore
-   node_modules/
-   .gitignore
+   ```diff .gitignore: .gitignore
+    node_modules/
+   + dist/
    ```
 
 \
@@ -450,20 +462,20 @@ npm 検索でパッケージが見つかりやすくなります。
 
 ```
 .
-├── node_modules
+├── node_modules/
 ├── .gitignore
 ├── package-lock.json
 ├── package.json
 └── tsconfig.json
 ```
 
-## 初期化コマンド `npx create-xxx` の設計と実装
+## `npx create-xxx` の実装
 
 この章では、`create-rext` コマンドを実装し、プロジェクトのテンプレートを生成する仕組みを構築します。
 
-### 初期化コマンドの概要
+### セットアップコマンドの概要
 
-初期化コマンドは、開発者が以下のような手順を短縮するために使用します。
+セットアップコマンドは、開発者が以下のような手順を短縮するために使用します。
 
 - 必要なディレクトリやファイルを作成
 - デフォルトの設定ファイル（`package.json`、`tsconfig.json` など）を用意
@@ -471,30 +483,30 @@ npm 検索でパッケージが見つかりやすくなります。
 
 具体例を挙げると、
 
-- Next.js では `create-next-app`
-- Playwright では `npm init playwright`
+- Next.js では [`npx create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)
+- Playwright では [`npm init playwright`](https://playwright.dev/docs/intro#installing-playwright)
 
-でプロジェクの初期化ができますよね。
+でプロジェクのセットアップが可能ですよね。
 
 ### パッケージのディレクトリ構成
 
-初期化コマンドを実現するため、`rext` パッケージのディレクトリを次のように構成します。
+セットアップコマンドを実現するため、`rext` パッケージのディレクトリを次のように構成します。
 
 ```diff
   .
-  ├── node_modules
-  ├── .gitignore
-  ├── package-lock.json
-  ├── package.json
+  ├── node_modules/
 + ├── src
 + │   └── bin
-+ │       └── create-rext.ts  # 初期化コマンドのエントリーポイント
++ │       └── create-rext.ts  # セットアップコマンドのエントリーポイント
 + ├── template
 + │   ├── package.json
 + │   ├── reverse-output
 + |   |   └── .gitkeep
-+ │   ├── texts
-+ │   │   └── sample.json
++ │   └── texts
++ │       └── sample.json
+  ├── .gitignore
+  ├── package-lock.json
+  ├── package.json
   └── tsconfig.json
 ```
 
@@ -548,10 +560,21 @@ npm パッケージで CLI を提供する場合、`package.json` の `bin` フ�
 
 `create-rext` コマンドを追加するために、以下の設定を行います。
 
-```json: package.json
-"bin": {
-  "create-rext": "./dist/bin/create-rext.js",
-}
+```diff json: package.json
+  {
+    "name": "@yuu/rext",
+    "version": "0.1.0",
+    "description": "Simple text reverse library",
+    "main": "./dist/index.js",
+    "scripts": {
+      "build": "tsc",
+      "prepare": "npm run build"
+    },
++   "bin": {
++     "create-rext": "./dist/bin/create-rext.js",
++   },
+    ....
+  }
 ```
 
 - **キー（`create-rext`）**
@@ -582,7 +605,7 @@ node_modules/
 ```
 
 \
-「シンボリックリンクと」は、ファイルやディレクトリへのショートカットや参照のようなものです。
+「シンボリックリンク」とは、ファイルやディレクトリへのショートカットや参照のようなものです。
 ローカルモードの場合、`npm run` や `npx` を実行すると `node_modules/.bin/` が優先的に参照され、該当するスクリプトファイルを実行してくれます。
 
 \
@@ -595,7 +618,7 @@ node_modules/
 
 :::
 
-### 初期化コマンドのスクリプト実装
+### セットアップコマンドのスクリプト実装
 
 ファイル操作を便利にしてくれるライブラリ `fs-extra` をインストールします。
 
@@ -611,8 +634,6 @@ npm install --save-dev @types/fs-extra
 2. `template/` をコピーしてプロジェクトフォルダーに配置
 3. `package.json` の `name` フィールドを変更
 4. `npm install` 実行
-
-なお、スクリプトファイルには
 
 :::details src/bin/create-rext.ts
 
@@ -711,9 +732,330 @@ main();
 
 :::
 
-## CLI ツールの設計と実装
+### `npx create-xxx` と `npm init xxx` の関連性
 
-## モジュール機能の設計と実装
+パッケージによって、セットアップコマンドが `npx create-xxx` と `npm init xxx` だったりします。
+例えば、
+
+- Next.js では [`npx create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)
+- Playwright では [`npm init playwright`](https://playwright.dev/docs/intro#installing-playwright)
+
+でセットアップを行うようにと記載されています。
+
+違いは何でしょうか？
+↓↓↓
+**両者に違いはなく、同じです。**
+
+実は、`npm init xxx` は内部的に `npx create-xxx` へ変換しています。
+
+- `npm init foo` -> `npx create-foo`
+- `npm init @usr/foo` -> `npx @usr/create-foo`
+- `npm init @usr` -> `npx @usr/create`
+- `npm init @usr@2.0.0` -> `npx @usr/create@2.0.0`
+- `npm init @usr/foo@2.0.0` -> `npx @usr/create-foo@2.0.0`
+
+\
+また、npm v7 以降では、`npx` は内部的に `npm exec` を実行するようになりました。
+そのため、以下のような関係になります。
+
+- `npm init foo` -> `npx create-foo` -> `npm exec create-foo`
+- `npm init @usr/foo` -> `npx @usr/create-foo` -> `npm exec @usr/create-foo`
+- `npm init @usr` -> `npx @usr/create` -> `npm exec @usr/create`
+- `npm init @usr@2.0.0` -> `npx @usr/create@2.0.0` -> `npm exec @usr/create@2.0.0`
+- `npm init @usr/foo@2.0.0` -> `npx @usr/create-foo@2.0.0` -> `npm exec @usr/create-foo@2.0.0`
+
+つまり、**内部的にはどちらも `npm exec` を実行するため、違いはない**ということです。
+
+## モジュール関数の実装
+
+続いて、引数に指定した文字列をリバースした文字列を返却する関数 `reverseText()` を実装します。
+
+以下のように、`reverseText` をパッケージ名である `rext` からインポートして利用されるようにします。
+
+```ts
+import { reverseText } from "rext";
+
+const original = "typescript";
+const reversed = reverseText(original);
+console.log(reversed); // => "tpircsepyt"
+```
+
+この `rext` が指し示すのは、`package.json` の `main` フィールドに指定した `./dist/index.js` です。
+この場所がエントリーポイントとなります。
+
+そのため、`src/index.ts` に `reverseText` を実装します。
+
+```diff
+  .
+  ├── node_modules/
+  ├── src
+  │   ├── bin
+  │   |    └── create-rext.ts  # セットアップコマンドのエントリーポイント
++ |   └── index.ts
+  ├── template
+  │   ├── package.json
+  │   ├── reverse-output
+  |   |   └── .gitkeep
+  │   └── texts
+  │       └── sample.json
+  ├── .gitignore
+  ├── package-lock.json
+  ├── package.json
+  └── tsconfig.json
+```
+
+```ts: src/index.ts
+export function reverseText(text: string): string {
+  return text.split("").reverse().join("");
+}
+```
+
+\
+ビルド（`npm run build`）を行うと、`dist/index.js` が生成されます。
+
+```
+.
+└── dist
+    ├── index.d.ts
+    ├── index.d.ts.map
+    └── index.js
+```
+
+## CLI ツールの実装
+
+最後に、`rext` コマンドによる以下の CLI ツールを実装します。
+
+1. **`rext reverse-console` :**
+   指定した JSON ファイルに記載された文字列をリバースし、その結果を標準出力に表示する。
+2. **`rext reverse-text` :**
+   リバース結果をテキストファイルとして保存する。
+3. **`rext reverse-json` :**
+   リバース結果を JSON ファイルとして保存する。
+
+### スクリプトの実装
+
+`rext` パッケージのプロジェクトに以下を追加します。
+
+```diff
+  .
+  ├── node_modules/
+  ├── src
+  │   └── bin
+  │       ├── create-rext.ts  # 初期化コマンドのエントリーポイント
++ |       └── rext.ts
+  ├── template
+  │   ├── package.json
+  │   ├── reverse-output
+  |   |   └── .gitkeep
+  │   └── texts
+  │       └── sample.json
+  ├── .gitignore
+  ├── package-lock.json
+  ├── package.json
+  └── tsconfig.json
+```
+
+:::details src/bin/rext.ts
+
+```ts: src/bin/rext.ts
+
+#!/usr/bin/env node
+
+import * as fs from "fs";
+import * as path from "path";
+import { reverseText } from "../index";
+
+function main() {
+  // `process.argv`は Node.js プロセスが実行されたときに渡されたコマンドライン引数を含む配列
+  // `process.argv[0]` : Node.jsの実行ファイル(node)の絶対パス
+  // `process.argv[1]` : 実行中スクリプトファイルのパス
+  // `process.argv[2]以降 : ユーザーがスクリプト実行時に渡した引数
+  const [, , subCommand, ...args] = process.argv;
+
+  switch (subCommand) {
+    case "reverse-console":
+      reverseConsole(args);
+      break;
+    case "reverse-text":
+      reverseTextFile(args);
+      break;
+    case "reverse-json":
+      reverseJsonFile(args);
+      break;
+    default:
+      console.error(
+        "Unknown command. Use one of: reverse-console, reverse-text, reverse-json"
+      );
+      process.exit(1);
+  }
+}
+
+function reverseConsole(args: string[]) {
+  if (args.length < 1) {
+    console.error("Usage: rext reverse-console <jsonFilePath>");
+    process.exit(1);
+  }
+
+  const jsonFilePath = args[0];
+  const jsonData = loadJsonFile(jsonFilePath);
+  jsonData.texts.forEach((txt: string) => {
+    console.log(`${txt} -> ${reverseText(txt)}`);
+  });
+}
+
+function reverseTextFile(args: string[]) {
+  if (args.length < 2) {
+    console.error("Usage: rext reverse-text <jsonFilePath> <outputFileName>");
+    process.exit(1);
+  }
+
+  const jsonFilePath = args[0];
+  const outputFileName = args[1];
+  const jsonData = loadJsonFile(jsonFilePath);
+
+  let output = "";
+  jsonData.texts.forEach((txt: string) => {
+    output += `${txt} -> ${reverseText(txt)}\n`;
+  });
+
+  const outputPath = path.join("reverse-output", `${outputFileName}.text`);
+  fs.writeFileSync(outputPath, output);
+  console.log(`Saved reversed text to ${outputPath}`);
+}
+
+function reverseJsonFile(args: string[]) {
+  if (args.length < 2) {
+    console.error("Usage: rext reverse-json <jsonFilePath> <outputFileName>");
+    process.exit(1);
+  }
+
+  const jsonFilePath = args[0];
+  const outputFileName = args[1];
+  const jsonData = loadJsonFile(jsonFilePath);
+
+  const reversedObject: Record<string, string> = {};
+  jsonData.texts.forEach((txt: string) => {
+    reversedObject[txt] = reverseText(txt);
+  });
+
+  const outputPath = path.join("reverse-output", `${outputFileName}.json`);
+  fs.writeFileSync(outputPath, JSON.stringify(reversedObject, null, 2));
+  console.log(`Saved reversed JSON to ${outputPath}`);
+}
+
+function loadJsonFile(filePath: string) {
+  const content = fs.readFileSync(filePath, "utf-8");
+  return JSON.parse(content);
+}
+
+main();
+```
+
+:::
+
+### bin の設定
+
+`create-rext` コマンドと同様、`package.json` に追記します。
+
+```diff json: package.json
+  {
+    "name": "@yuu/rext",
+    "version": "0.1.0",
+    "description": "Simple text reverse library",
+    "main": "./dist/index.js",
+    "scripts": {
+      "build": "tsc",
+      "prepare": "npm run build"
+    },
+    "bin": {
+      "create-rext": "./dist/bin/create-rext.js",
++     "rext": "./dist/bin/rext.js",
+    },
+    ....
+  }
+```
+
+\
+以上でロジックの実装は完了です 🎉
+
+## README を作成する
+
+続いて、README を作成します。
+README はユーザーがパッケージを理解するために触れる最初の情報です。
+
+以下の内容等を記述します。
+
+- インストール方法
+- 設定方法
+- 使用方法
+- その他、ユーザーに役立つ情報
+
+GitHub リポジトリと同様、`README.md` ファイルは npm レジストリのページ上に表示されます。
+
+:::message
+**npm パッケージの README.md ファイルは、パッケージのルートディレクトリに配置する必要があります。**
+:::
+
+:::message
+**README の更新を npm レジストリのページに反映するためには、パッケージのバージョンの更新も必要です。**
+:::
+
+```diff
+  .
+  ├── node_modules/
+  ├── src
+  │   └── bin
+  │       ├── create-rext.ts  # 初期化コマンドのエントリーポイント
+  |       └── rext.ts
+  ├── template
+  │   ├── package.json
+  │   ├── reverse-output
+  |   |   └── .gitkeep
+  │   └── texts
+  │       └── sample.json
+  ├── .gitignore
+  ├── package-lock.json
+  ├── package.json
++ ├── README.md
+  └── tsconfig.json
+```
+
+:::details README.md
+
+```md: README.md
+
+```
+
+:::
+
+## パッケージに含めるファイルを指定する
+
+パッケージを公開する際に、不要なファイルやディレクトリが含まれないようにするため、公開対象のファイルを明示的に指定します。
+これにより、パッケージのサイズが最適化され、不要なファイルの公開を防ぐことができます。
+
+設定方法としては 2 通り存在します。
+
+### ① `.npmignore` を使用する
+
+`.gitignore` と同じ形式で、**除外したいファイルやディレクトリ**を指定します。
+
+```.npmignore: .npmignore
+node_modules/
+src/
+.gitignore
+tsconfig.json
+```
+
+:::message
+**`.npmignore` が存在しない場合、`.gitignore` の内容が適用されます。**
+`.npmignore` が存在する場合は、`.gitignore` は無視されます。
+:::
+
+### ② `package.json` の `files` フィールドを指定する
+
+### 絶対に含まれるファイル・含まれないファイル
+
+## 作成したパッケージをローカルで動作検証する
 
 ## npm レジストリへ公開する
 
@@ -732,3 +1074,11 @@ https://zenn.dev/taroshun32/articles/npm-package-original
 https://dev.to/mikhaelesa/create-your-own-npm-create-cli-like-create-vite-3ig7
 
 https://docs.npmjs.com/cli/v8/commands/npm-init
+
+https://docs.npmjs.com/about-package-readme-files
+
+https://docs.npmjs.com/cli/v11/using-npm/developers
+
+https://qiita.com/hoshimado/items/c6f1484297d974f44f19
+
+https://qiita.com/masato_makino/items/656f4fbb1595cbcdc23d
