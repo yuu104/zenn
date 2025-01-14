@@ -6,14 +6,14 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 
 `create-next-app` や `npm init playwright` のような便利なセットアップコマンドを利用した経験はありませんか？
 これらのコマンドは、たった数秒でプロジェクトをセットアップし、開発の第一歩を大きく加速させてくれます。
-そして、その裏側を「どうやって作られているのだろう？」と考えたことがある方もいるのではないでしょうか。
+ただ、その裏側を「どうやって作られているのだろう？」と考えたことがある方もいるのではないでしょうか。
 
 本記事では、そんな「`npx create-xxx` で始める npm パッケージの自作方法」について私が学んだ内容を言語化したものです。
 以下の内容について、シンプルなパッケージの自作をしながら解説します。
 
 1. `npx create-xxx` によるセットアップコマンドを作成する方法
 2. モジュール関数を提供する方法
-3. プロジェクト内で利用できる CLI ツールの設計と実装
+3. プロジェクト内で利用できる CLI ツールを提供する方法
 4. 作成したパッケージを npm レジストリへ公開する方法
 
 ## 今回自作する npm パッケージについて
@@ -23,7 +23,7 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 
 - **`npx create-xxx` によるセットアップ**
   プロジェクトを簡単にセットアップできるコマンドを提供します。
-  必要なフォルダやファイルを自動生成し、すぐに CLI ツールやモジュール機能を利用可能です。
+  必要なフォルダやファイルを自動生成し、すぐにモジュール関数や CLI ツールを利用可能です。
 - **モジュールとしての利用**
   関数をインポートし、プログラム内で利用可能です。
 - **CLI ツールとしての利用**
@@ -38,17 +38,16 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 
    ```text
    <プロジェクト>
-   ├── package.json
-   ├── texts/                    # 入力データ用フォルダ
-   │   └── sample.json           # サンプルデータ
+   ├── node_modules/
    ├── reverse-output/           # リバース結果を保存するフォルダ
    │   └── .gitkeep              # 空フォルダをGitで管理
-   ├── tsconfig.json
+   ├── texts/                    # 入力データ用フォルダ
+   │   └── sample.json           # サンプルデータ
    ├── .gitignore
-   └── node_modules/
+   └── package.json
    ```
 
-   ```json: sample.json
+   ```json: texts/sample.json
    {
      "texts": ["hello", "world", "typescript"]
    }
@@ -58,10 +57,17 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 
 2. **モジュール関数**
    `reverseText` 関数をモジュールとして提供します。
-   TypeScript の型定義も含まれており、安全に利用できます。
+   TypeScript の型定義も含まれて
 
-   ```ts
+   ```ts: index.d.ts
+   /**
+    * 指定された文字列をリバースします。
+    *
+    * @param {string} text - リバースする文字列。
+    * @returns {string} リバースされた文字列。
+    */
    export declare function reverseText(text: string): string;
+   //# sourceMappingURL=index.d.ts.map
    ```
 
    ```ts
@@ -79,7 +85,7 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
      指定した JSON ファイルに記載された文字列をリバースし、その結果を標準出力に表示します。
      - 実行例:
        ```shell
-       rext reverse-console texts/sample.json
+       npx rext reverse-console texts/sample.json
        ```
      - 実行結果:
        ```shell
@@ -91,7 +97,7 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
      リバース結果をテキストファイルとして保存します。
      - 実行例:
        ```shell
-       rext reverse-text texts/sample.json sample
+       npx rext reverse-text texts/sample.json sample
        ```
      - 実行結果:
        ```text: reverse-output/sample.text
@@ -103,7 +109,7 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
      リバース結果を JSON ファイルとして保存します。
      - 実行例:
        ```shell
-       rext reverse-json texts/sample.json sample
+       npx rext reverse-json texts/sample.json sample
        ```
      - 実行結果:
        ```json: reverse-output/sample.json
@@ -140,7 +146,7 @@ npm パッケージを自作する第一歩として、新規のプロジェク�
 @[スコープ名]/[パッケージ名]
 ```
 
-例えば、スコープ名が `my-org` で、パッケージ名が `my-package` の場合、その完全な名前は次のようになります。
+例えば、スコープ名が `my-org` でパッケージ名が `my-package` の場合、次のようになります。
 
 ```
 @my-org/my-package
@@ -148,13 +154,13 @@ npm パッケージを自作する第一歩として、新規のプロジェク�
 
 スコープは主に次の目的で使用されます。
 
-1. **名前の競合を回避**
-   スコープ付きの名前は一意である必要があるため、他のユーザーのパッケージ名と競合するリスクを回避できます。
+1. **パッケージ名の競合を回避**
+   スコープ名は一意である必要があるため、パッケージ名は必然的にユニークとなります。
 2. **パッケージの整理**
    スコープを使用することで、特定の組織やプロジェクトに関連するパッケージを簡単に識別できます。
 3. **プライベートパッケージ**
    スコープを使用することで、npm レジストリ上でプライベートパッケージを管理できます。
-   これにより、組織内のメンバーのみがアクセスできるパッケージを作成することが可能になります。
+   これにより、組織内のメンバーのみがアクセスできるパッケージを作成することが可能です。
 
 スコープ付きパッケージを依存関係に含めた場合、`node_modules` ディレクトリには次のように反映されます。
 
@@ -579,7 +585,6 @@ npm パッケージで CLI を提供する場合、`package.json` の `bin` フ�
 
 - **キー（`create-rext`）**
   コマンド名を指定します。
-  この場合、`npx create-rext` または `create-rext` による実行可能になります。
 - **値（`./dist/bin/create-rext.js`）**
   実行されるスクリプトファイルのパスを指定します。
 
@@ -756,7 +761,7 @@ main();
 
 \
 また、npm v7 以降では、`npx` は内部的に `npm exec` を実行するようになりました。
-そのため、以下のような関係になります。
+そのため、以下のような関係となります。
 
 - `npm init foo` -> `npx create-foo` -> `npm exec create-foo`
 - `npm init @usr/foo` -> `npx @usr/create-foo` -> `npm exec @usr/create-foo`
@@ -780,8 +785,7 @@ const reversed = reverseText(original);
 console.log(reversed); // => "tpircsepyt"
 ```
 
-この `rext` が指し示すのは、`package.json` の `main` フィールドに指定した `./dist/index.js` です。
-この場所がエントリーポイントとなります。
+`rext` が指し示すのは、`package.json` の `main` フィールドに指定した `./dist/index.js` です。この場所がエントリーポイントとなります。
 
 そのため、`src/index.ts` に `reverseText` を実装します。
 
@@ -805,13 +809,19 @@ console.log(reversed); // => "tpircsepyt"
 ```
 
 ```ts: src/index.ts
+/**
+ * 指定された文字列をリバースします。
+ *
+ * @param {string} text - リバースする文字列
+ * @returns {string} リバースされた文字列
+ */
 export function reverseText(text: string): string {
   return text.split("").reverse().join("");
 }
 ```
 
 \
-ビルド（`npm run build`）を行うと、`dist/index.js` が生成されます。
+ビルド（`npm run build`）すると、`dist/index.js` が生成されます。
 
 ```
 .
@@ -826,11 +836,11 @@ export function reverseText(text: string): string {
 最後に、`rext` コマンドによる以下の CLI ツールを実装します。
 
 1. **`rext reverse-console` :**
-   指定した JSON ファイルに記載された文字列をリバースし、その結果を標準出力に表示する。
+   指定した JSON ファイルに記載された文字列をリバースし、その結果を標準出力する。
 2. **`rext reverse-text` :**
-   リバース結果をテキストファイルとして保存する。
+   指定した JSON ファイルに記載された文字列をリバースし、その結果をテキストファイルとして保存する。
 3. **`rext reverse-json` :**
-   リバース結果を JSON ファイルとして保存する。
+   指定した JSON ファイルに記載された文字列をリバースし、その結果を JSON ファイルとして保存する。
 
 ### スクリプトの実装
 
@@ -858,7 +868,6 @@ export function reverseText(text: string): string {
 :::details src/bin/rext.ts
 
 ```ts: src/bin/rext.ts
-
 #!/usr/bin/env node
 
 import * as fs from "fs";
@@ -890,7 +899,11 @@ function main() {
   }
 }
 
-function reverseConsole(args: string[]) {
+/**
+ * 指定した JSON ファイルに記載された文字列をリバースし、その結果を標準出力する。
+ * @param args - コマンドライン引数。 args[0]: JSON ファイルのパス
+ */
+function reverseConsole(args: string[]): void {
   if (args.length < 1) {
     console.error("Usage: rext reverse-console <jsonFilePath>");
     process.exit(1);
@@ -903,6 +916,10 @@ function reverseConsole(args: string[]) {
   });
 }
 
+/**
+ * 指定した JSON ファイルに記載された文字列をリバースし、その結果をテキストファイルとして保存する。
+ * @param args - コマンドライン引数。 args[0]: JSON ファイルのパス, args[1]: 出力ファイル名
+ */
 function reverseTextFile(args: string[]) {
   if (args.length < 2) {
     console.error("Usage: rext reverse-text <jsonFilePath> <outputFileName>");
@@ -923,6 +940,10 @@ function reverseTextFile(args: string[]) {
   console.log(`Saved reversed text to ${outputPath}`);
 }
 
+/**
+ * 指定した JSON ファイルに記載された文字列をリバースし、その結果を JSON ファイルとして保存する。
+ * @param args - コマンドライン引数。 args[0]: JSON ファイルのパス, args[1]: 出力ファイル名
+ */
 function reverseJsonFile(args: string[]) {
   if (args.length < 2) {
     console.error("Usage: rext reverse-json <jsonFilePath> <outputFileName>");
@@ -943,7 +964,12 @@ function reverseJsonFile(args: string[]) {
   console.log(`Saved reversed JSON to ${outputPath}`);
 }
 
-function loadJsonFile(filePath: string) {
+/**
+ * 指定したパスの JSON ファイルを読み込み、オブジェクトを返す。
+ * @param filePath　- JSON ファイルのパス
+ * @returns　JSONオブジェクト
+ */
+function loadJsonFile(filePath: string): Record<string, string[]> {
   const content = fs.readFileSync(filePath, "utf-8");
   return JSON.parse(content);
 }
@@ -990,10 +1016,10 @@ README はユーザーがパッケージを理解するために触れる最初�
 - 使用方法
 - その他、ユーザーに役立つ情報
 
-GitHub リポジトリと同様、`README.md` ファイルは npm レジストリのページ上に表示されます。
+GitHub リポジトリと同様、README は npm レジストリのページ上に表示されます。
 
 :::message
-**npm パッケージの README.md ファイルは、パッケージのルートディレクトリに配置する必要があります。**
+**npm パッケージの `README.md` ファイルは、パッケージのルートディレクトリに配置する必要があります。**
 :::
 
 :::message
@@ -1040,20 +1066,95 @@ GitHub リポジトリと同様、`README.md` ファイルは npm レジスト�
 `.gitignore` と同じ形式で、**除外したいファイルやディレクトリ**を指定します。
 
 ```.npmignore: .npmignore
-node_modules/
 src/
-.gitignore
 tsconfig.json
 ```
 
 :::message
 **`.npmignore` が存在しない場合、`.gitignore` の内容が適用されます。**
-`.npmignore` が存在する場合は、`.gitignore` は無視されます。
+`.npmignore` が存在する場合、`.gitignore` は無視されます。
 :::
 
 ### ② `package.json` の `files` フィールドを指定する
 
+`.npmignore` とは逆で、**パッケージに含めたいファイルやディレクトリ**を指定します。
+
+```diff json: package.json
+  {
+    "name": "@yuu/rext",
+    "version": "0.1.0",
+    "description": "Simple text reverse library",
+    "main": "./dist/index.js",
+    "scripts": {
+      "build": "tsc",
+      "prepare": "npm run build"
+    },
+    "bin": {
+      "create-rext": "./dist/bin/create-rext.js",
+      "rext": "./dist/bin/rext.js",
+    },
++   "files": [
++     "dist",
++     "template",
++   ],
+    ....
+  }
+```
+
+:::message
+
+**省略した場合**
+
+`["*"]` として解釈され、すべてのファイルが対象となります。
+よって、省略する場合は `.npmignore` で指定する必要があります。
+
+:::
+
+:::message
+
+**`.npmignore` と併用した場合**
+
+- ルートディレクトリの場合 → `files` フィールドが優先されます
+- サブディレクトリの場合 → `.npmignore` が優先されます
+
+:::
+
 ### 絶対に含まれるファイル・含まれないファイル
+
+`.npmignore` や `files` フィールドの設定に関わらず、必ずパッケージに含まれるファイル・含まれないファイルが存在します。
+下記ファイルの設定はしてもしなくても構いません。
+
+:::details 絶対に含まれるファイル
+
+- `package.json`
+- `README`
+- `LICENSE` / `LICENCE`
+- `CHANGELOG`
+- `package.json` の `main` フィールドに指定したファイル
+
+:::
+
+:::details 絶対に含まれないファイル
+
+- `.DS_Store`
+- `.git`
+- `.gitignore`
+- `node_modules/`
+- `.npmignore`
+- `.npmrc`
+- `package-lock.json`（公開したい場合は、`.npm-shrinkwrap.json` を使用する）
+- `.hg`
+- `.lock-wscript`
+- `.svn`
+- `.wafpickle-*`
+- `CVS`
+- `config.gypi`
+- `npm-debug.log`
+- `.*.swp`
+- `._*`
+- `*.orig`
+
+:::
 
 ## 作成したパッケージをローカルで動作検証する
 
@@ -1065,13 +1166,9 @@ tsconfig.json
 
 https://www.freecodecamp.org/news/how-to-create-and-publish-your-first-npm-package/
 
-https://docs.npmjs.com/creating-node-js-modules
-
-https://zenn.dev/k0kishima/articles/d75f4dc5bd1a26
-
-https://zenn.dev/taroshun32/articles/npm-package-original
-
 https://dev.to/mikhaelesa/create-your-own-npm-create-cli-like-create-vite-3ig7
+
+https://docs.npmjs.com/creating-node-js-modules
 
 https://docs.npmjs.com/cli/v8/commands/npm-init
 
@@ -1079,6 +1176,14 @@ https://docs.npmjs.com/about-package-readme-files
 
 https://docs.npmjs.com/cli/v11/using-npm/developers
 
+https://docs.npmjs.com/cli/v7/configuring-npm/package-json#files
+
 https://qiita.com/hoshimado/items/c6f1484297d974f44f19
 
 https://qiita.com/masato_makino/items/656f4fbb1595cbcdc23d
+
+https://zenn.dev/k0kishima/articles/d75f4dc5bd1a26
+
+https://zenn.dev/taroshun32/articles/npm-package-original
+
+https://dev.classmethod.jp/articles/github-packages-private/
