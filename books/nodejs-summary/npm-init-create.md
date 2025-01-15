@@ -1158,6 +1158,26 @@ tsconfig.json
 
 ## 作成したパッケージをローカルで動作検証する
 
+作成したパッケージを検証します。
+ただ、`rext` はまだ npm レジストリへ公開されていません。どのようにパッケージをインストールするのでしょうか？
+
+`npm link` を利用します。
+`npm link` とは、**ローカル開発中のパッケージを他のプロジェクトで簡単に利用できるようにするコマンド**です。
+
+自作したパッケージのルート直下（`package.json` と同階層）で以下のコマンドを実行します。
+
+```shell
+npm link
+```
+
+すると、グローバルの `node_modules` に対し、`npm link` したパッケージへのシンボリックリンクが作成されます。
+
+```shell
+{グローバル}/lib/node_modules/<package> →
+```
+
+また、
+
 ## npm レジストリへ公開する
 
 ## GitHub Packages へ公開する
@@ -1177,6 +1197,8 @@ https://docs.npmjs.com/about-package-readme-files
 https://docs.npmjs.com/cli/v11/using-npm/developers
 
 https://docs.npmjs.com/cli/v7/configuring-npm/package-json#files
+
+https://docs.npmjs.com/cli/v7/commands/npm-link
 
 https://qiita.com/hoshimado/items/c6f1484297d974f44f19
 
