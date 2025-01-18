@@ -1161,6 +1161,8 @@ tsconfig.json
 作成したパッケージを検証します。
 ただ、`rext` はまだ npm レジストリへ公開されていません。どのようにパッケージをインストールするのでしょうか？
 
+### `npm link` でシンボリックリンクを作成する
+
 `npm link` を利用します。
 `npm link` とは、**ローカル開発中のパッケージを他のプロジェクトで簡単に利用できるようにするコマンド**です。
 
@@ -1173,10 +1175,33 @@ npm link
 すると、グローバルの `node_modules` に対し、`npm link` したパッケージへのシンボリックリンクが作成されます。
 
 ```shell
-{グローバル}/lib/node_modules/<package> →
+# 例
+/usr/local/lib/node_modules/@yuu/rext -> ~/workspace
 ```
 
-また、
+また、bin においても同様、グローバル環境にリンクされます。
+
+```shell
+# 例
+/usr/local/bin/create-rext -> /usr/local/lib/node_modules/@yuu/rext/bin/create-rext.js
+```
+
+\
+
+### `npm link {パッケージ名}` でパッケージを擬似インストールする
+
+では、適当なディレクトリを作成して動作検証を行います。
+
+```shell
+mkdir test-rext
+cd test-rext
+```
+
+`npm link {パッケージ名}` を実行します。
+
+```shell
+npm link @yuu/rext
+```
 
 ## npm レジストリへ公開する
 
