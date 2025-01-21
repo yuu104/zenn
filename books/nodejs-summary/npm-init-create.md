@@ -671,7 +671,7 @@ function main() {
   }
 
   // テンプレートのパスを取得 (自身のプロジェクト内 template/ を想定)
-  const templatePath = path.resolve(__dirname, "..", "template");
+  const templatePath = path.resolve(__dirname, "../../", "template");
 
   // テンプレート一式をコピー
   fse.copySync(templatePath, projectPath);
@@ -1159,7 +1159,7 @@ tsconfig.json
 ## 作成したパッケージをローカルで動作検証する
 
 作成したパッケージを検証します。
-ただ、`rext` はまだ npm レジストリへ公開されていません。どのようにパッケージをインストールするのでしょうか？
+`rext` はまだ npm レジストリへ公開されていません。どのようにパッケージをインストールするのでしょうか？
 
 ### `npm link` でシンボリックリンクを作成する
 
@@ -1176,17 +1176,15 @@ npm link
 
 ```shell
 # 例
-/usr/local/lib/node_modules/@yuu/rext -> ~/workspace
+/usr/local/lib/node_modules/@yuu/rext → ~/workspace
 ```
 
 また、bin においても同様、グローバル環境にリンクされます。
 
 ```shell
 # 例
-/usr/local/bin/create-rext -> /usr/local/lib/node_modules/@yuu/rext/bin/create-rext.js
+/usr/local/bin/create-rext → /usr/local/lib/node_modules/@yuu/rext/bin/create-rext.js
 ```
-
-\
 
 ### `npm link {パッケージ名}` でパッケージを擬似インストールする
 
@@ -1197,11 +1195,13 @@ mkdir test-rext
 cd test-rext
 ```
 
-`npm link {パッケージ名}` を実行します。
+`` を実行します。
 
 ```shell
 npm link @yuu/rext
 ```
+
+すると、
 
 ## npm レジストリへ公開する
 
