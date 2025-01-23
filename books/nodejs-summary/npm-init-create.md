@@ -1188,7 +1188,7 @@ npm link
 
 ### `npm link {パッケージ名}` でパッケージを擬似インストールする
 
-では、適当なディレクトリを作成して動作検証を行います。
+適当なディレクトリを作成して動作検証を行います。
 
 ```shell
 mkdir test-rext
@@ -1201,7 +1201,89 @@ cd test-rext
 npm link @yuu/rext
 ```
 
-すると、
+すると、`node_modules` にシンボリックリンクが作成されます。
+
+```shell
+# 例
+/test-rext/node_modules/@yuu/rext → /usr/local/bin/node_modules/@yuu/rext
+```
+
+これで、`rext` の動作検証が可能になります。
+
+しかし、本当は `create-rext` コマンドでプロジェクトを作成したいです...
+
+### `create-rext` コマンドを検証する
+
+`npm link` したので、現時点で `create-rext` コマンドを利用することは可能です。
+しかし、現状ではコマンドの実行中にエラーとなり、プロジェクトの立ち上げに失敗します。
+
+何故でしょうか？
+`create-rext` コマンドの実行スクリプトである `create-rext.ts` を確認してみます。
+
+```ts: create-rext.ts
+function main() {
+  // ...
+
+  // テンプレートのパスを取得 (自身のプロジェクト内 template/ を想定)
+  const templatePath = path.resolve(__dirname, "../../", "template");
+
+  // テンプレート一式をコピー
+  fse.copySync(templatePath, projectPath);
+
+  // プロジェクト名を package.json の name フィールドに反映
+  updatePackageJson(projectPath, projectName);
+
+  // npm install を実行して依存関係をインストール
+  try {
+    console.log("Installing dependencies. This may take a while...");
+    execSync("npm install", { cwd: projectPath, stdio: "inherit" });
+    console.log("Dependencies installed successfully.");
+  } catch (err) {
+    console.error("Failed to install dependencies:", err);
+    process.exit(1);
+  }
+
+  // ...
+}
+```
+
+最後に `npm install` していますね。
+`template/package.json` の `dependencies` には、`@yuu/rext` が含まれています。
+これが原因です。
+`@yuu/rext` は npm レジストリには存在しないため、`npm install` しても失敗するのです...
+
+ではどうすれば良いのでしょうか？
+[Local Paths](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#local-paths) を使用します。
+
+Local Paths は、`package.json` の `dependencies` を指定する際に、ローカルのディレクトリを直接参照する方法です。
+`file:` の後に続けて、パッケージへの相対パスを指定します。
+
+```diff ts: template/package.json
+ {
+   "dependencies": {
+-     "rext": "^0.1.0"
++     "rext": "file:../path-to-my-local-package"
+   }
+ }
+```
+
+この状態で `npm install` すると、`node_modules/@yuu/rext` にシンボリックリンクが作成されます。
+
+```shell
+# 例
+/test-rext/node_modules/@yuu/rext → ~/workspace
+```
+
+:::message
+
+npm link を使用した場合、参照元の変更が即座に反映されます。
+しかし、Local Paths を使用した場合は異なります。
+変更を反映させるには `npm install` を再実行する必要があります。
+
+npm link と Local Paths の違いについては、下記リンクが参考になります。
+https://zenn.dev/ttskch/articles/0fa9bb8934f1ef
+
+:::
 
 ## npm レジストリへ公開する
 
