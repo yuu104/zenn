@@ -1195,7 +1195,7 @@ mkdir test-rext
 cd test-rext
 ```
 
-`` を実行します。
+`npm link` を実行します。
 
 ```shell
 npm link @yuu/rext
@@ -1258,11 +1258,11 @@ function main() {
 Local Paths は、`package.json` の `dependencies` を指定する際に、ローカルのディレクトリを直接参照する方法です。
 `file:` の後に続けて、パッケージへの相対パスを指定します。
 
-```diff ts: template/package.json
+```diff json: template/package.json
  {
    "dependencies": {
 -     "rext": "^0.1.0"
-+     "rext": "file:../path-to-my-local-package"
++     "rext": "file:../workspace"
    }
  }
 ```
@@ -1277,6 +1277,7 @@ Local Paths は、`package.json` の `dependencies` を指定する際に、ロ�
 :::message
 
 npm link を使用した場合、参照元の変更が即座に反映されます。
+
 しかし、Local Paths を使用した場合は異なります。
 変更を反映させるには `npm install` を再実行する必要があります。
 
@@ -1284,6 +1285,31 @@ npm link と Local Paths の違いについては、下記リンクが参考に�
 https://zenn.dev/ttskch/articles/0fa9bb8934f1ef
 
 :::
+
+これでローカルでの検証環境が整いました 👍
+`create-rext` コマンドでプロジェクトを作成してみましょう！
+
+### 後片付けをする
+
+検証が完了したので、次は公開です！
+...とその前に、npm link や Local Paths で設定した内容を元に戻しておきます。
+
+1. **`npm unlink` でシンボリックリンクを削除する**
+   ```shell
+   # `npm link` で作成したシンボリックリンクを削除する
+   cd ~/workspace
+   npm unlink
+   ```
+2. **Local Paths の設定を解除**
+
+   ```diff json: template/package.json
+    {
+      "dependencies": {
+   -     "rext": "file:../workspace"
+   +     "rext": "^0.1.0"
+      }
+    }
+   ```
 
 ## npm レジストリへ公開する
 
