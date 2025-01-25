@@ -31,6 +31,8 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 - **TypeScript に対応**
   型定義を提供します。
 
+https://www.npmjs.com/package/@yuu104/rext
+
 ### 提供する機能
 
 1. **セットアップコマンド: `npx create-rext [プロジェクト名]`**
@@ -49,7 +51,7 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 
    ```json: texts/sample.json
    {
-     "texts": ["hello", "world", "typescript"]
+     "texts": ["hello", "world"]
    }
    ```
 
@@ -333,7 +335,7 @@ const rext = require("rext");
 {
   "repository": {
     "type": "git",
-    "url": "https://github.com/username/rext.git"
+    "url": "git+https://github.com/yuu104/rext.git"
   }
 }
 ```
@@ -395,15 +397,19 @@ npm 検索でパッケージが見つかりやすくなります。
 
 ```json: package.json
 {
-  "name": "@yuu/rext",
+  "name": "@yuu104/rext",
   "version": "0.1.0",
   "description": "Simple text reverse library",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuu104/rext.git"
+  },
   "keywords": ["reverse", "text", "cli"],
-  "author": "yuu",
+  "author": "yuu104",
   "license": "ISC"
 }
 ```
@@ -441,7 +447,7 @@ npm 検索でパッケージが見つかりやすくなります。
 
    ```diff json: package.json
      {
-       "name": "@yuu/rext",
+       "name": "@yuu104/rext",
        "version": "0.1.0",
        "description": "Simple text reverse library",
    -   "main": "index.js",
@@ -452,7 +458,7 @@ npm 検索でパッケージが見つかりやすくなります。
    +     "prepare": "npm run build",
        },
        "keywords": ["reverse", "text", "cli"],
-       "author": "yuu",
+       "author": "yuu104",
        "license": "ISC"
        ....
      }
@@ -533,7 +539,7 @@ npm 検索でパッケージが見つかりやすくなります。
   "name": "placeholder", // `create-rext`コマンド実行時に、動的に[プロジェクト名]へ変更します
   "version": "1.0.0",
   "dependencies": {
-    "@yuu/rext": "^0.1.0" // モジュール関数を利用するため、依存関係に含めます
+    "@yuu104/rext": "^0.1.0" // モジュール関数を利用するため、依存関係に含めます
   },
   "license": "UNLICENSED"
 }
@@ -568,7 +574,7 @@ npm パッケージで CLI を提供する場合、`package.json` の `bin` フ�
 
 ```diff json: package.json
   {
-    "name": "@yuu/rext",
+    "name": "@yuu104/rext",
     "version": "0.1.0",
     "description": "Simple text reverse library",
     "main": "./dist/index.js",
@@ -599,9 +605,9 @@ bin の設定があるパッケージを依存関係に含めると、`node_modu
 ```
 node_modules/
 ├── .bin/
-|   └── create-rext → ../@yuu/rext/dist/bin/create-rext.js
+|   └── create-rext → ../@yuu104/rext/dist/bin/create-rext.js
 │
-└── @yuu/
+└── @yuu104/
     └── rext/
         └── dist/
             └── bin/
@@ -619,7 +625,7 @@ node_modules/
 　 ↓
 `node_modules/.bin/create-rext`
 　 ↓
-`node_modules/@yuu/rext/dist/bin/create-rext.js`
+`node_modules/@yuu104/rext/dist/bin/create-rext.js`
 
 :::
 
@@ -985,7 +991,7 @@ main();
 
 ```diff json: package.json
   {
-    "name": "@yuu/rext",
+    "name": "@yuu104/rext",
     "version": "0.1.0",
     "description": "Simple text reverse library",
     "main": "./dist/index.js",
@@ -1002,7 +1008,7 @@ main();
 ```
 
 \
-以上でロジックの実装は完了です 🎉
+以上でロジックの実装は完了です ✨✨
 
 ## README を作成する
 
@@ -1046,14 +1052,6 @@ GitHub リポジトリと同様、README は npm レジストリのページ上�
   └── tsconfig.json
 ```
 
-:::details README.md
-
-```md: README.md
-
-```
-
-:::
-
 ## パッケージに含めるファイルを指定する
 
 パッケージを公開する際に、不要なファイルやディレクトリが含まれないようにするため、公開対象のファイルを明示的に指定します。
@@ -1081,7 +1079,7 @@ tsconfig.json
 
 ```diff json: package.json
   {
-    "name": "@yuu/rext",
+    "name": "@yuu104/rext",
     "version": "0.1.0",
     "description": "Simple text reverse library",
     "main": "./dist/index.js",
@@ -1176,14 +1174,14 @@ npm link
 
 ```shell
 # 例
-/usr/local/lib/node_modules/@yuu/rext → ~/workspace
+/usr/local/lib/node_modules/@yuu104/rext → ~/workspace
 ```
 
 また、bin においても同様、グローバル環境にリンクされます。
 
 ```shell
 # 例
-/usr/local/bin/create-rext → /usr/local/lib/node_modules/@yuu/rext/bin/create-rext.js
+/usr/local/bin/create-rext → /usr/local/lib/node_modules/@yuu104/rext/bin/create-rext.js
 ```
 
 ### `npm link {パッケージ名}` でパッケージを擬似インストールする
@@ -1198,14 +1196,14 @@ cd test-rext
 `npm link` を実行します。
 
 ```shell
-npm link @yuu/rext
+npm link @yuu104/rext
 ```
 
 すると、`node_modules` にシンボリックリンクが作成されます。
 
 ```shell
 # 例
-/test-rext/node_modules/@yuu/rext → /usr/local/bin/node_modules/@yuu/rext
+/test-rext/node_modules/@yuu104/rext → /usr/local/bin/node_modules/@yuu104/rext
 ```
 
 これで、`rext` の動作検証が可能になります。
@@ -1248,9 +1246,9 @@ function main() {
 ```
 
 最後に `npm install` していますね。
-`template/package.json` の `dependencies` には、`@yuu/rext` が含まれています。
+`template/package.json` の `dependencies` には、`@yuu104/rext` が含まれています。
 これが原因です。
-`@yuu/rext` は npm レジストリには存在しないため、`npm install` しても失敗するのです...
+`@yuu104/rext` は npm レジストリには存在しないため、`npm install` しても失敗するのです...
 
 ではどうすれば良いのでしょうか？
 [Local Paths](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#local-paths) を使用します。
@@ -1267,11 +1265,11 @@ Local Paths は、`package.json` の `dependencies` を指定する際に、ロ�
  }
 ```
 
-この状態で `npm install` すると、`node_modules/@yuu/rext` にシンボリックリンクが作成されます。
+この状態で `npm install` すると、`node_modules/@yuu104/rext` にシンボリックリンクが作成されます。
 
 ```shell
 # 例
-/test-rext/node_modules/@yuu/rext → ~/workspace
+/test-rext/node_modules/@yuu104/rext → ~/workspace
 ```
 
 :::message
@@ -1313,7 +1311,87 @@ https://zenn.dev/ttskch/articles/0fa9bb8934f1ef
 
 ## npm レジストリへ公開する
 
+さあ、いよいよ公開です 🔥🔥
+
+### LICENSE ファイルを作成する
+
+公開する npm パッケージのライセンスについて明記したファイルを作成します。
+今回は ISC ライセンスなので、[ISC LICENSE](https://choosealicense.com/licenses/isc/)から記載内容をコピーし、ルートディレクトリ直下に `LICENSE` ファイルを作成します。
+
+`Copyright (c) [year] [fullname]` の `[year]` と `fullname` だけ書き換えます。
+
+```LICENSE: LICENSE
+ISC License
+
+Copyright (c) 2025 yuu104
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+```
+
+### npm アカウントの作成
+
+npm レジストリにパッケージを公開するには、アカウントが必要です。
+アカウントを持っていない場合は作成します。
+
+https://www.npmjs.com/signup
+
+### 公開されるファイル群を確認する
+
+最後の確認として、公開されるファイルを確認します。
+
+```shell
+npm pack
+```
+
+上記コマンドを実行すると、`<name>-<version>.tgz` ファイルが生成されます。
+こちらを展開し、以下のファイルのみが入っていることをチェックします。
+
+- `package.json` の `files` に指定したファイル
+- `README.md` や `LICENSE` 等、絶対に含まれるファイル
+
+### npm コマンドで公開
+
+作成したアカウントで npm レジストリへログインします。
+
+```shell
+npm login
+```
+
+`publish` コマンドで公開します。
+
+```shell
+npm publish --access public
+```
+
+スコープ付きパッケージの場合、デフォルトだとプライベート公開になってしまします。
+そのため、`--access public` を指定してパブリックに公開するようにします。
+
+\
+以上で公開が完了しました 🎉🎉
+
 ## GitHub Packages へ公開する
+
+npm レジストリでプライベートパッケージを公開する場合、[Pro プランへの加入](https://www.npmjs.com/products?utm_source=chatgpt.com)が必要になり料金が発生します...
+
+そんな時に便利なのが GitHub Packages です。
+https://github.co.jp/features/packages
+
+GitHub Packages とは、ソフトウェアパッケージをパブリックまたはプライベートにホストして利用することができるホスティングサービスです。
+特定の org 内でのみ利用可能なパッケージをホストすることができます。
+
+nmp、RubyGems、Apache Maven、Gradle、Docker、NuGet といった、広く使われているパッケージマネージャーに対する様々なパッケージレジストリを提供しています。
+
+GitHub Packages を使えば、GitHub リポジトリと統合された形で[プライベートパッケージをある程度、無料で](https://docs.github.com/ja/enterprise-cloud@latest/packages/learn-github-packages/introduction-to-github-packages#github-packages-%E3%81%AE%E8%AB%8B%E6%B1%82%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6)ホスティングできます。
 
 ## 参考リンク
 
