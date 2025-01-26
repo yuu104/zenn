@@ -8,17 +8,16 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
 これらのコマンドは、たった数秒でプロジェクトをセットアップし、開発の第一歩を大きく加速させてくれます。
 ただ、その裏側を「どうやって作られているのだろう？」と考えたことがある方もいるのではないでしょうか。
 
-本記事では、そんな「`npx create-xxx` で始める npm パッケージの自作方法」について私が学んだ内容を言語化したものです。
-以下の内容について、シンプルなパッケージの自作をしながら解説します。
+本記事では、そんな「`npx create-xxx` で始める npm パッケージの自作方法」について、シンプルなパッケージの自作をしながら解説します。
 
 1. `npx create-xxx` によるセットアップコマンドを作成する方法
 2. モジュール関数を提供する方法
 3. プロジェクト内で利用できる CLI ツールを提供する方法
-4. 作成したパッケージを npm レジストリへ公開する方法
+4. 作成したパッケージを公開する方法
 
 ## 今回自作する npm パッケージについて
 
-文字列をリバースするシンプルな npm パッケージ「`rext`」を作成します。
+文字列をリバースするシンプルな npm パッケージ「rext」を作成します。
 このパッケージは、以下の特徴を備えています。
 
 - **`npx create-xxx` によるセットアップ**
@@ -30,8 +29,6 @@ title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
   プロジェクト内で実行できるコマンドを提供します。
 - **TypeScript に対応**
   型定義を提供します。
-
-https://www.npmjs.com/package/@yuu104/rext
 
 ### 提供する機能
 
@@ -59,7 +56,7 @@ https://www.npmjs.com/package/@yuu104/rext
 
 2. **モジュール関数**
    `reverseText` 関数をモジュールとして提供します。
-   TypeScript の型定義も含まれて
+   TypeScript の型定義も含まれています。
 
    ```ts: index.d.ts
    /**
@@ -122,10 +119,62 @@ https://www.npmjs.com/package/@yuu104/rext
        }
        ```
 
-## 新規パッケージの作成
+### パッケージを分割して提供する
 
-npm パッケージを自作する第一歩として、新規のプロジェクトを作成し、`package.json` を準備します。
-この章では、以下の手順を解説します。
+今回作成する「rext」ですが、下記 2 つのパッケージに分割して提供します。
+
+1. **`rext`**
+   コア機能である「モジュール関数」及び「CLI ツール」を提供します。
+2. **`create-rext`**
+   `rext` プロジェクトのセットアップ専用パッケージです。
+
+このように複数のパッケージに分割した提供方針は Next.js や Playwright などでも採用されています。
+
+:::details Next.js
+
+https://www.npmjs.com/package/nextjs
+
+https://www.npmjs.com/package/create-next-app
+
+:::
+
+:::details Playwright
+
+https://www.npmjs.com/package/playwright
+https://www.npmjs.com/package/create-playwright
+
+:::
+
+:::message
+
+**🤔 なぜパッケージを分割するのか？**
+
+1. **`npx` を使って `create-rext` を実現するため**
+   `npx` はコマンド名（`create-rext`）とパッケージ名（`create-rext`）が一致している場合にのみ、そのパッケージを検索して実行します。
+   もし `create-rext` コマンドを `rext` パッケージ内に含めてしまうと、`npx create-rext` は動作しません。（`npm install -g rext` した後、`npx create-rext` する必要がある）
+
+2. **依存関係の最適化**
+   セットアップツール（`create-rext`）は開発環境でしか使いません。
+   これをコア機能（`rext`）に統合してしまうと、本番環境に不要な依存関係が含まれる可能性があります。
+   本番環境に不要な依存関係を含めないことで、以下の利点が生まれます。
+
+   - ビルド内容の軽量化
+   - セキュリティリスクの軽減
+
+   例として、`create-rext` ではテンプレートファイルの生成に `fs-extra` という外部パッケージを利用しますが、これはセットアップ時にしか必要ありません。
+
+3. **メンテナンス性の向上**
+   メンテナンス性において、特に恩恵を受けるのが**バージョニング**です。
+   npm では、パッケージ更新時に必ずバージョンアップが必要です。
+   同一パッケージにまとめた場合、セットアップ機能に関する小さな変更だけで、コア機能に変更がなくてもバージョンアップを余儀なくされます。
+   パッケージ単位の更新頻度が多くなると、利用者側のメンテナンス性も低下させてしまいます。
+
+:::
+
+## 新規パッケージ用プロジェクト作成
+
+npm パッケージを自作する第一歩として、`rext` パッケージ用の新規のプロジェクトを作成します。
+以下の手順を実施します。
 
 1. パッケージ名を決める
 2. パッケージ開発用の新規プロジェクトを作成する
@@ -142,16 +191,10 @@ npm パッケージを自作する第一歩として、新規のプロジェク�
 1. 他のユニークな名前を使用する
 2. **スコープをつける**
 
-「スコープ」とは、名前にプレフィックスを追加することで、パッケージをグループ化する方法です。
+「スコープ」とは、名前にプレフィックスを追加することでパッケージをグループ化する方法です。
 
 ```
 @[スコープ名]/[パッケージ名]
-```
-
-例えば、スコープ名が `my-org` でパッケージ名が `my-package` の場合、次のようになります。
-
-```
-@my-org/my-package
 ```
 
 スコープは主に次の目的で使用されます。
@@ -191,18 +234,19 @@ npm でパッケージ名を選ぶ際には、以下の点を考慮してくだ�
 
 - 他のパッケージ名と紛らわしくない名前を選ぶ
 - 著者について混乱を招かない名前を選ぶ
-  :::
+
+:::
 
 ### ② パッケージ開発用の新規プロジェクトを作成する
 
-次に、パッケージ用の新しいフォルダーを作成し、Git リポジトリーを初期化します。
+次に、パッケージ用の新しいフォルダーを作成し、Git リポジトリを初期化します。
 
 1. **新規フォルダーの作成**
    ```shell
    mkdir rext
    cd rext
    ```
-2. **Git リポジトリーを初期化する**
+2. **Git リポジトリを初期化する**
    ```shell
    git init
    ```
@@ -328,8 +372,8 @@ const rext = require("rext");
 
 `repository` フィールドに該当します。
 \
-パッケージのソースコードがホストされているリポジトリーを指定します。
-通常、Git リポジトリーの URL を記載します。
+パッケージのソースコードがホストされているリポジトリを指定します。
+通常、Git リポジトリの URL を記載します。
 
 ```json
 {
@@ -353,7 +397,7 @@ npm 検索でパッケージが見つかりやすくなります。
 
 ```json
 {
-  "keywords": ["reverse", "text", "cli"]
+  "keywords": ["reverse", "text"]
 }
 ```
 
@@ -408,7 +452,7 @@ npm 検索でパッケージが見つかりやすくなります。
     "type": "git",
     "url": "git+https://github.com/yuu104/rext.git"
   },
-  "keywords": ["reverse", "text", "cli"],
+  "keywords": ["reverse", "text"],
   "author": "yuu104",
   "license": "ISC"
 }
@@ -481,305 +525,9 @@ npm 検索でパッケージが見つかりやすくなります。
 └── tsconfig.json
 ```
 
-## `npx create-xxx` の実装
-
-この章では、`create-rext` コマンドを実装し、プロジェクトのテンプレートを生成する仕組みを構築します。
-
-### セットアップコマンドの概要
-
-セットアップコマンドは、開発者が以下のような手順を短縮するために使用します。
-
-- 必要なディレクトリやファイルを作成
-- デフォルトの設定ファイル（`package.json`、`tsconfig.json` など）を用意
-- プロジェクトのベースを整備し、すぐに開発を開始できる状態を提供
-
-具体例を挙げると、
-
-- Next.js では [`npx create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)
-- Playwright では [`npm init playwright`](https://playwright.dev/docs/intro#installing-playwright)
-
-でプロジェクのセットアップが可能ですよね。
-
-### パッケージのディレクトリ構成
-
-セットアップコマンドを実現するため、`rext` パッケージのディレクトリを次のように構成します。
-
-```diff
-  .
-  ├── node_modules/
-+ ├── src
-+ │   └── bin
-+ │       └── create-rext.ts  # セットアップコマンドのエントリーポイント
-+ ├── template
-+ │   ├── package.json
-+ │   ├── reverse-output
-+ |   |   └── .gitkeep
-+ │   └── texts
-+ │       └── sample.json
-  ├── .gitignore
-  ├── package-lock.json
-  ├── package.json
-  └── tsconfig.json
-```
-
-- **`template/`** : `npx create-rext` 実行時に生成されるプロジェクト
-- **`src/bin/`** : CLI のエントリーポイント
-
-### テンプレートファイルの準備
-
-`npx create-rext` によるプロジェクト生成時に用意されるディレクトリ構成を `template/` フォルダーに作成します。
-`npx create-rext [プロジェクト名]` コマンドを実行した際、`template/` 配下のファイル群が `[プロジェクト名]/` にコピーされます。
-
-以下を `template/` に配置します。
-
-:::details package.json
-
-```json: package.json
-{
-  "name": "placeholder", // `create-rext`コマンド実行時に、動的に[プロジェクト名]へ変更します
-  "version": "1.0.0",
-  "dependencies": {
-    "@yuu104/rext": "^0.1.0" // モジュール関数を利用するため、依存関係に含めます
-  },
-  "license": "UNLICENSED"
-}
-```
-
-:::
-
-:::details reverse-output
-
-空フォルダーなので、`.gitkeep` を入れます。
-
-:::
-
-:::details texts/sample.json
-
-リバース処理の対象となる文字列データを格納するサンプルファイルです。
-
-```json: texts/sample.json
-{
-  "texts": []
-}
-```
-
-:::
-
-### bin の設定
-
-npm パッケージで CLI を提供する場合、`package.json` の `bin` フィールドを設定する必要があります。
-この設定により、npm CLI や npx を使用してコマンドを実行できるようになります。
-
-`create-rext` コマンドを追加するために、以下の設定を行います。
-
-```diff json: package.json
-  {
-    "name": "@yuu104/rext",
-    "version": "0.1.0",
-    "description": "Simple text reverse library",
-    "main": "./dist/index.js",
-    "scripts": {
-      "build": "tsc",
-      "prepare": "npm run build"
-    },
-+   "bin": {
-+     "create-rext": "./dist/bin/create-rext.js",
-+   },
-    ....
-  }
-```
-
-- **キー（`create-rext`）**
-  コマンド名を指定します。
-- **値（`./dist/bin/create-rext.js`）**
-  実行されるスクリプトファイルのパスを指定します。
-
-この設定により、`create-rext` コマンドに対し、`./dist/bin/create-rext.js` がマッピングされます。
-
-:::message
-
-**bin の仕組み**
-\
-bin の設定があるパッケージを依存関係に含めると、`node_modules/.bin/` にシンボリックリンクが作成されます。
-
-```
-node_modules/
-├── .bin/
-|   └── create-rext → ../@yuu104/rext/dist/bin/create-rext.js
-│
-└── @yuu104/
-    └── rext/
-        └── dist/
-            └── bin/
-                ├── create-rext.js
-                └── rext.js
-```
-
-\
-「シンボリックリンク」とは、ファイルやディレクトリへのショートカットや参照のようなものです。
-ローカルモードの場合、`npm run` や `npx` を実行すると `node_modules/.bin/` が優先的に参照され、該当するスクリプトファイルを実行してくれます。
-
-\
-よって、流れとしては以下になります。
-`npx create-rext`
-　 ↓
-`node_modules/.bin/create-rext`
-　 ↓
-`node_modules/@yuu104/rext/dist/bin/create-rext.js`
-
-:::
-
-### セットアップコマンドのスクリプト実装
-
-ファイル操作を便利にしてくれるライブラリ `fs-extra` をインストールします。
-
-```shell: shell
-npm install fs-extra
-npm install --save-dev @types/fs-extra
-```
-
-\
-`src/bin/create-rext.ts` を作成し、以下のロジックを実装します。
-
-1. コマンド入力のバリデーション
-2. `template/` をコピーしてプロジェクトフォルダーに配置
-3. `package.json` の `name` フィールドを変更
-4. `npm install` 実行
-
-:::details src/bin/create-rext.ts
-
-````ts: src/bin/create-rext.ts
-#!/usr/bin/env node
-
-import * as path from "path";
-import * as fs from "fs";
-import * as fse from "fs-extra";
-import { execSync } from "child_process";
-
-/**
- * `create-rext` コマンドのエントリーポイント
- */
-function main() {
-  // ユーザが指定したプロジェクト名を取得
-  const args = process.argv.slice(2);
-  if (args.length < 1) {
-    console.error("Usage: npx create-rext <project-name>");
-    process.exit(1);
-  }
-
-  const projectName = args[0]; // プロジェクト名
-  const projectPath = path.resolve(process.cwd(), projectName); // 作成先ディレクトリの絶対パス
-
-  // プロジェクト用フォルダが既に存在していればエラーにする
-  if (fs.existsSync(projectPath)) {
-    console.error(`Directory "${projectName}" already exists.`);
-    process.exit(1);
-  }
-
-  // テンプレートのパスを取得 (自身のプロジェクト内 template/ を想定)
-  const templatePath = path.resolve(__dirname, "../../", "template");
-
-  // テンプレート一式をコピー
-  fse.copySync(templatePath, projectPath);
-
-  // プロジェクト名を package.json の name フィールドに反映
-  updatePackageJson(projectPath, projectName);
-
-  // npm install を実行して依存関係をインストール
-  try {
-    console.log("Installing dependencies. This may take a while...");
-    execSync("npm install", { cwd: projectPath, stdio: "inherit" });
-    console.log("Dependencies installed successfully.");
-  } catch (err) {
-    console.error("Failed to install dependencies:", err);
-    process.exit(1);
-  }
-
-  // 完了メッセージを表示
-  console.log(`\nProject "${projectName}" has been created successfully!`);
-  console.log(`Navigate to the project directory with:\n  cd ${projectName}`);
-  console.log(`Then start using the rext CLI tool.`);
-}
-
-/**
- * 指定されたプロジェクトディレクトリ内の `package.json` を更新し、
- * プロジェクト名を設定します。
- *
- * この関数は、テンプレートからコピーされた `package.json` を
- * ユーザ指定のプロジェクト名にカスタマイズします。
- *
- * @param projectPath - `package.json` が存在するプロジェクトディレクトリの絶対パス
- * @param projectName - `package.json` に設定するプロジェクト名
- *
- * @throws `package.json` が指定されたディレクトリに存在しない場合、エラーをスローします。
- *
- * @example
- * ```ts
- * updatePackageJson('/path/to/project', 'my-new-project')
- * ```
- */
-function updatePackageJson(projectPath: string, projectName: string): void {
-  const packageJsonPath = path.join(projectPath, "package.json");
-  // package.json が存在するか確認
-  if (!fs.existsSync(packageJsonPath)) {
-    console.error("package.json not found in template. Exiting...");
-    process.exit(1);
-  }
-
-  // package.json を読み込み、JSON オブジェクトとして解析
-  const raw = fs.readFileSync(packageJsonPath, "utf-8");
-  const obj = JSON.parse(raw);
-
-  // プロジェクト名を上書き
-  obj.name = projectName;
-
-  // 更新された JSON オブジェクトをファイルに上書き保存
-  const updated = JSON.stringify(obj, null, 2);
-  fs.writeFileSync(packageJsonPath, updated);
-}
-
-main();
-````
-
-:::
-
-### `npx create-xxx` と `npm init xxx` の関連性
-
-パッケージによって、セットアップコマンドが `npx create-xxx` と `npm init xxx` だったりします。
-例えば、
-
-- Next.js では [`npx create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)
-- Playwright では [`npm init playwright`](https://playwright.dev/docs/intro#installing-playwright)
-
-でセットアップを行うようにと記載されています。
-
-違いは何でしょうか？
-↓↓↓
-**両者に違いはなく、同じです。**
-
-実は、`npm init xxx` は内部的に `npx create-xxx` へ変換しています。
-
-- `npm init foo` -> `npx create-foo`
-- `npm init @usr/foo` -> `npx @usr/create-foo`
-- `npm init @usr` -> `npx @usr/create`
-- `npm init @usr@2.0.0` -> `npx @usr/create@2.0.0`
-- `npm init @usr/foo@2.0.0` -> `npx @usr/create-foo@2.0.0`
-
-\
-また、npm v7 以降では、`npx` は内部的に `npm exec` を実行するようになりました。
-そのため、以下のような関係となります。
-
-- `npm init foo` -> `npx create-foo` -> `npm exec create-foo`
-- `npm init @usr/foo` -> `npx @usr/create-foo` -> `npm exec @usr/create-foo`
-- `npm init @usr` -> `npx @usr/create` -> `npm exec @usr/create`
-- `npm init @usr@2.0.0` -> `npx @usr/create@2.0.0` -> `npm exec @usr/create@2.0.0`
-- `npm init @usr/foo@2.0.0` -> `npx @usr/create-foo@2.0.0` -> `npm exec @usr/create-foo@2.0.0`
-
-つまり、**内部的にはどちらも `npm exec` を実行するため、違いはない**ということです。
-
 ## モジュール関数の実装
 
-続いて、引数に指定した文字列をリバースした文字列を返却する関数 `reverseText()` を実装します。
+引数に指定した文字列をリバースした文字列を返却する関数 `reverseText()` を実装します。
 
 以下のように、`reverseText` をパッケージ名である `rext` からインポートして利用されるようにします。
 
@@ -791,23 +539,15 @@ const reversed = reverseText(original);
 console.log(reversed); // => "tpircsepyt"
 ```
 
-`rext` が指し示すのは、`package.json` の `main` フィールドに指定した `./dist/index.js` です。この場所がエントリーポイントとなります。
+`import` 文の `rext` が指し示すのは、`package.json` の `main` フィールドに指定した `./dist/index.js` です。この場所がエントリーポイントとなります。
 
 そのため、`src/index.ts` に `reverseText` を実装します。
 
 ```diff
   .
   ├── node_modules/
-  ├── src
-  │   ├── bin
-  │   |    └── create-rext.ts  # セットアップコマンドのエントリーポイント
++ ├── src
 + |   └── index.ts
-  ├── template
-  │   ├── package.json
-  │   ├── reverse-output
-  |   |   └── .gitkeep
-  │   └── texts
-  │       └── sample.json
   ├── .gitignore
   ├── package-lock.json
   ├── package.json
@@ -829,17 +569,24 @@ export function reverseText(text: string): string {
 \
 ビルド（`npm run build`）すると、`dist/index.js` が生成されます。
 
-```
-.
-└── dist
-    ├── index.d.ts
-    ├── index.d.ts.map
-    └── index.js
+```diff
+  .
+  ├── node_modules/
++ └── dist
++ |   ├── index.d.ts
++ |   ├── index.d.ts.map
++ |   └── index.js
+  ├── src
+  |   └── index.ts
+  ├── .gitignore
+  ├── package-lock.json
+  ├── package.json
+  └── tsconfig.json
 ```
 
 ## CLI ツールの実装
 
-最後に、`rext` コマンドによる以下の CLI ツールを実装します。
+続いて、`rext` コマンドによる以下の CLI ツールを実装します。
 
 1. **`rext reverse-console` :**
    指定した JSON ファイルに記載された文字列をリバースし、その結果を標準出力する。
@@ -848,7 +595,70 @@ export function reverseText(text: string): string {
 3. **`rext reverse-json` :**
    指定した JSON ファイルに記載された文字列をリバースし、その結果を JSON ファイルとして保存する。
 
-### スクリプトの実装
+### ① bin の設定
+
+npm パッケージで CLI を提供する場合、`package.json` の `bin` フィールドを設定する必要があります。
+この設定により、npm CLI や npx を使用してコマンドを実行できるようになります。
+
+`rext` コマンドを追加するために、以下の設定を行います。
+
+```diff json: package.json
+  {
+    "name": "@yuu104/rext",
+    "version": "0.1.0",
+    "description": "Simple text reverse library",
+    "main": "./dist/index.js",
+    "scripts": {
+      "build": "tsc",
+      "prepare": "npm run build"
+    },
++   "bin": {
++     "rext": "./dist/bin/index.js"
++   },
+    ....
+  }
+```
+
+- **キー（`rext`）**
+  コマンド名を指定します。
+- **値（`./dist/bin/index.js`）**
+  実行されるスクリプトファイルのパスを指定します。
+
+この設定により、`rext` コマンドに対し `./dist/bin/index.js` がマッピングされます。
+
+:::message
+
+**bin の仕組み**
+\
+bin の設定があるパッケージを依存関係に含めると、`node_modules/.bin/` にシンボリックリンクが作成されます。
+
+```
+node_modules/
+├── .bin/
+|   └──rext → ../@yuu104/rext/dist/bin/index.js
+│
+└── @yuu104/
+    └── rext/
+        └── dist/
+            └── bin/
+                └── index.js
+```
+
+\
+「シンボリックリンク」とは、ファイルやディレクトリへのショートカットや参照のようなものです。
+ローカルモードの場合、`npm run` や `npx` を実行すると `node_modules/.bin/` が優先的に参照され、該当するスクリプトファイルを実行してくれます。
+
+\
+よって、流れとしては以下になります。
+`rext` コマンド
+　 ↓
+`node_modules/.bin/rext`
+　 ↓
+`node_modules/@yuu104/rext/dist/bin/index.js`
+
+:::
+
+### ② スクリプトの実装
 
 `rext` パッケージのプロジェクトに以下を追加します。
 
@@ -856,24 +666,18 @@ export function reverseText(text: string): string {
   .
   ├── node_modules/
   ├── src
-  │   └── bin
-  │       ├── create-rext.ts  # 初期化コマンドのエントリーポイント
-+ |       └── rext.ts
-  ├── template
-  │   ├── package.json
-  │   ├── reverse-output
-  |   |   └── .gitkeep
-  │   └── texts
-  │       └── sample.json
++ |   ├── bin
++ |   |   └── index.ts
+  |   └── index.ts
   ├── .gitignore
   ├── package-lock.json
   ├── package.json
   └── tsconfig.json
 ```
 
-:::details src/bin/rext.ts
+:::details src/bin/index.ts
 
-```ts: src/bin/rext.ts
+```ts: src/bin/index.ts
 #!/usr/bin/env node
 
 import * as fs from "fs";
@@ -985,30 +789,373 @@ main();
 
 :::
 
-### bin の設定
+\
+以上で、`rext` パッケージのロジック部分は完成です ✨
 
-`create-rext` コマンドと同様、`package.json` に追記します。
+## `npx create-xxx` 用のパッケージを作成する
+
+次は、セットアップツールである `create-rext` パッケージを作成します。
+
+`create-xxx` のようなセットアップコマンドは、開発者が以下のような手順を短縮し、すぐに開発できる状態を提供するために用意されます。
+
+- 必要なディレクトリやファイルを作成
+- デフォルトの設定ファイル（`package.json`、`tsconfig.json` など）を用意
+
+### ① パッケージ用のプロジェクトを新規作成
+
+`rext` パッケージと同様に用意します。
+
+1. **新規フォルダーの作成**
+
+   ```shell
+   mkdir create-rext
+   cd create-rext
+   ```
+
+2. **Git の設定**
+
+   ```shell
+   git init
+   ```
+
+   ```.gitignore: .gitignore
+   node_module/
+   ```
+
+3. **`package.json` の設定**
+
+   ```json: package.json
+   {
+      "name": "@yuu104/create-rext",
+      "version": "0.1.0",
+      "description": "Create rext project with one command",
+      "main": "index.js",
+      "scripts": {
+       "test": "echo \"Error: no test specified\" && exit 1"
+      },
+      "repository": {
+       "type": "git",
+       "url": "git+https://github.com/yuu104/create-rext.git"
+      },
+      "keywords": [
+       "rext",
+       "reverse",
+       "text",
+       "cli"
+      ],
+      "author": "yuu",
+      "license": "ISC",
+   }
+   ```
+
+4. **TypeScript のセットアップ**
+
+   ```shell
+   npm install --save-dev typescript @types/node @tsconfig/node22
+   ```
+
+   ```json: tsconfig.json
+   {
+      "extends": "@tsconfig/node22/tsconfig.json",
+      "compilerOptions": {
+       "outDir": "./dist",
+       "rootDir": "./src",
+       "declaration": true,
+       "declarationMap": true
+      },
+      "include": ["src/**/*.ts"]
+   }
+   ```
+
+   ```diff json: package.json
+      {
+        "name": "@yuu104/create-rext",
+        "version": "0.1.0",
+        "description": "Create rext project with one command",
+   -    "main": "index.js",
+   +    "main": "./dist/index.js",
+        "scripts": {
+   -      "test": "echo \"Error: no test specified\" && exit 1"
+   +      "build": "tsc",
+   +      "prepare": "npm run build"
+        },
+        ...
+      }
+   ```
+
+   ```diff .gitignore: .gitignore
+     node_module/
+   + dist/
+   ```
+
+ここまでのディレクトリ構成は以下になります。
+
+```
+.
+├── node_modules/
+├── .gitignore
+├── package-lock.json
+├── package.json
+└── tsconfig.json
+```
+
+### ② テンプレートファイルの準備
+
+`npx create-rext` によるプロジェクト生成時に用意されるディレクトリ構成を `template/` フォルダーに作成します。
+`npx create-rext [プロジェクト名]` コマンドを実行した際、`template/` 配下のファイル群が `[プロジェクト名]/` にコピーされます。
+
+以下を `template/` に配置します。
+
+```diff
+  .
+  ├── node_modules/
+  ├── src
+  |   ├── bin
+  |   |   └── rext.ts
+  |   └── index.ts
++ ├── template
++ │   ├── package.json
++ │   ├── reverse-output
++ |   |   └── .gitkeep
++ │   └── texts
++ │       └── sample.json
+  ├── .gitignore
+  ├── package-lock.json
+  ├── package.json
+  └── tsconfig.json
+```
+
+:::details package.json
+
+```json: package.json
+{
+  "name": "placeholder", // `create-rext`コマンド実行時に、動的に[プロジェクト名]へ変更します
+  "version": "1.0.0",
+  "dependencies": {
+    "@yuu104/rext": "^0.1.0" // モジュール関数を利用するため、依存関係に含めます
+  },
+  "license": "UNLICENSED"
+}
+```
+
+:::
+
+:::details reverse-output
+
+空フォルダーなので、`.gitkeep` を入れます。
+
+:::
+
+:::details texts/sample.json
+
+リバース処理の対象となる文字列データを格納するサンプルファイルです。
+
+```json: texts/sample.json
+{
+  "texts": []
+}
+```
+
+:::
+
+### ③ bin の設定
+
+`rext` パッケージと同様に設定します。
 
 ```diff json: package.json
   {
-    "name": "@yuu104/rext",
+    "name": "@yuu104/create-rext",
     "version": "0.1.0",
-    "description": "Simple text reverse library",
+    "description": "Create rext project with one command",
     "main": "./dist/index.js",
     "scripts": {
       "build": "tsc",
       "prepare": "npm run build"
     },
-    "bin": {
-      "create-rext": "./dist/bin/create-rext.js",
-+     "rext": "./dist/bin/rext.js",
-    },
-    ....
++   "bin": {
++     "create-rext": "./dist/bin/index.js"
++   },
+    ...
   }
 ```
 
+### ④ セットアップコマンドのスクリプト実装
+
+```diff
+  .
+  ├── node_modules/
++ ├── src
++ |   └── bin
++ |       └── rext.ts
+  ├── template
+  │   ├── package.json
+  │   ├── reverse-output
+  |   |   └── .gitkeep
+  │   └── texts
+  │       └── sample.json
+  ├── .gitignore
+  ├── package-lock.json
+  ├── package.json
+  └── tsconfig.json
+```
+
 \
-以上でロジックの実装は完了です ✨✨
+ファイル操作を便利にしてくれるライブラリ `fs-extra` をインストールします。
+
+```shell
+npm install fs-extra
+npm install --save-dev @types/fs-extra
+```
+
+\
+`src/bin/create-rext.ts` を作成し、以下のロジックを実装します。
+
+1. コマンド入力のバリデーション
+2. `template/` をコピーしてプロジェクトフォルダーに配置
+3. `package.json` の `name` フィールドを変更
+4. `npm install` 実行
+
+:::details src/bin/create-rext.ts
+
+````ts: src/bin/create-rext.ts
+#!/usr/bin/env node
+
+import * as path from "path";
+import * as fs from "fs";
+import * as fse from "fs-extra";
+import { execSync } from "child_process";
+
+/**
+ * `create-rext` コマンドのエントリーポイント
+ */
+function main() {
+  // ユーザが指定したプロジェクト名を取得
+  const args = process.argv.slice(2);
+  if (args.length < 1) {
+    console.error("Usage: npx create-rext <project-name>");
+    process.exit(1);
+  }
+
+  const projectName = args[0]; // プロジェクト名
+  const projectPath = path.resolve(process.cwd(), projectName); // 作成先ディレクトリの絶対パス
+
+  // プロジェクト用フォルダが既に存在していればエラーにする
+  if (fs.existsSync(projectPath)) {
+    console.error(`Directory "${projectName}" already exists.`);
+    process.exit(1);
+  }
+
+  // テンプレートのパスを取得 (自身のプロジェクト内 template/ を想定)
+  const templatePath = path.resolve(__dirname, "../../", "template");
+
+  // テンプレート一式をコピー
+  fse.copySync(templatePath, projectPath);
+
+  // プロジェクト名を package.json の name フィールドに反映
+  updatePackageJson(projectPath, projectName);
+
+  // npm install を実行して依存関係をインストール
+  try {
+    console.log("Installing dependencies. This may take a while...");
+    execSync("npm install", { cwd: projectPath, stdio: "inherit" });
+    console.log("Dependencies installed successfully.");
+  } catch (err) {
+    console.error("Failed to install dependencies:", err);
+    process.exit(1);
+  }
+
+  // 完了メッセージを表示
+  console.log(`\nProject "${projectName}" has been created successfully!`);
+  console.log(`Navigate to the project directory with:\n  cd ${projectName}`);
+  console.log(`Then start using the rext CLI tool.`);
+}
+
+/**
+ * 指定されたプロジェクトディレクトリ内の `package.json` を更新し、
+ * プロジェクト名を設定します。
+ *
+ * この関数は、テンプレートからコピーされた `package.json` を
+ * ユーザ指定のプロジェクト名にカスタマイズします。
+ *
+ * @param projectPath - `package.json` が存在するプロジェクトディレクトリの絶対パス
+ * @param projectName - `package.json` に設定するプロジェクト名
+ *
+ * @throws `package.json` が指定されたディレクトリに存在しない場合、エラーをスローします。
+ *
+ * @example
+ * ```ts
+ * updatePackageJson('/path/to/project', 'my-new-project')
+ * ```
+ */
+function updatePackageJson(projectPath: string, projectName: string): void {
+  const packageJsonPath = path.join(projectPath, "package.json");
+  // package.json が存在するか確認
+  if (!fs.existsSync(packageJsonPath)) {
+    console.error("package.json not found in template. Exiting...");
+    process.exit(1);
+  }
+
+  // package.json を読み込み、JSON オブジェクトとして解析
+  const raw = fs.readFileSync(packageJsonPath, "utf-8");
+  const obj = JSON.parse(raw);
+
+  // プロジェクト名を上書き
+  obj.name = projectName;
+
+  // 更新された JSON オブジェクトをファイルに上書き保存
+  const updated = JSON.stringify(obj, null, 2);
+  fs.writeFileSync(packageJsonPath, updated);
+}
+
+main();
+````
+
+:::
+
+\
+\
+以上で `create-rext` の実装は完了です ✨
+
+:::message
+
+**🤔 npx create-xxx と npm init xxx の関連性**
+
+パッケージによって、セットアップコマンドが `npx create-xxx` と `npm init xxx` だったりします。
+例えば、
+
+- Next.js では [`npx create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)
+- Playwright では [`npm init playwright`](https://playwright.dev/docs/intro#installing-playwright)
+
+でセットアップを行うようにと記載されています。
+
+\
+違いは何でしょうか？
+↓↓↓
+**両者に違いはなく、同じです。**
+
+\
+実は、`npm init xxx` は内部的に `npx create-xxx` へ変換しています。
+
+- `npm init foo` -> `npx create-foo`
+- `npm init @usr/foo` -> `npx @usr/create-foo`
+- `npm init @usr` -> `npx @usr/create`
+- `npm init @usr@2.0.0` -> `npx @usr/create@2.0.0`
+- `npm init @usr/foo@2.0.0` -> `npx @usr/create-foo@2.0.0`
+
+\
+また、npm v7 以降では、`npx` は内部的に `npm exec` を実行するようになりました。
+そのため、以下のような関係となります。
+
+- `npm init foo` -> `npx create-foo` -> `npm exec create-foo`
+- `npm init @usr/foo` -> `npx @usr/create-foo` -> `npm exec @usr/create-foo`
+- `npm init @usr` -> `npx @usr/create` -> `npm exec @usr/create`
+- `npm init @usr@2.0.0` -> `npx @usr/create@2.0.0` -> `npm exec @usr/create@2.0.0`
+- `npm init @usr/foo@2.0.0` -> `npx @usr/create-foo@2.0.0` -> `npm exec @usr/create-foo@2.0.0`
+
+\
+つまり、**内部的にはどちらも `npm exec` を実行するため、違いはない**ということです。
+
+:::
 
 ## README を作成する
 
@@ -1031,26 +1178,6 @@ GitHub リポジトリと同様、README は npm レジストリのページ上�
 :::message
 **README の更新を npm レジストリのページに反映するためには、パッケージのバージョンの更新も必要です。**
 :::
-
-```diff
-  .
-  ├── node_modules/
-  ├── src
-  │   └── bin
-  │       ├── create-rext.ts  # 初期化コマンドのエントリーポイント
-  |       └── rext.ts
-  ├── template
-  │   ├── package.json
-  │   ├── reverse-output
-  |   |   └── .gitkeep
-  │   └── texts
-  │       └── sample.json
-  ├── .gitignore
-  ├── package-lock.json
-  ├── package.json
-+ ├── README.md
-  └── tsconfig.json
-```
 
 ## パッケージに含めるファイルを指定する
 
@@ -1077,7 +1204,34 @@ tsconfig.json
 
 `.npmignore` とは逆で、**パッケージに含めたいファイルやディレクトリ**を指定します。
 
-```diff json: package.json
+:::details rext パッケージ
+
+```diff json: rext/package.json
+  {
+    "name": "@yuu104/rext",
+    "version": "0.1.0",
+    "description": "Simple text reverse library",
+    "main": "./dist/index.js",
+    "scripts": {
+      "build": "tsc",
+      "prepare": "npm run build"
+    },
+    "bin": {
+      "create-rext": "./dist/bin/create-rext.js",
+      "rext": "./dist/bin/rext.js",
+    },
++   "files": [
++     "dist",
++   ],
+    ....
+  }
+```
+
+:::
+
+:::details create-rext パッケージ
+
+```diff json: create-rext/package.json
   {
     "name": "@yuu104/rext",
     "version": "0.1.0",
@@ -1098,6 +1252,8 @@ tsconfig.json
     ....
   }
 ```
+
+:::
 
 :::message
 
@@ -1157,16 +1313,17 @@ tsconfig.json
 ## 作成したパッケージをローカルで動作検証する
 
 作成したパッケージを検証します。
-`rext` はまだ npm レジストリへ公開されていません。どのようにパッケージをインストールするのでしょうか？
+「rext」 はまだ npm レジストリへ公開されていません。どのようにパッケージをインストールするのでしょうか？
 
 ### `npm link` でシンボリックリンクを作成する
 
 `npm link` を利用します。
 `npm link` とは、**ローカル開発中のパッケージを他のプロジェクトで簡単に利用できるようにするコマンド**です。
 
-自作したパッケージのルート直下（`package.json` と同階層）で以下のコマンドを実行します。
+`rext` パッケージのプロジェクトルート直下（`package.json` と同階層）で以下のコマンドを実行します。
 
 ```shell
+cd ~/workspace/rext
 npm link
 ```
 
@@ -1174,14 +1331,14 @@ npm link
 
 ```shell
 # 例
-/usr/local/lib/node_modules/@yuu104/rext → ~/workspace
+/usr/local/lib/node_modules/@yuu104/create-rext → ~/workspace/rext
 ```
 
 また、bin においても同様、グローバル環境にリンクされます。
 
 ```shell
 # 例
-/usr/local/bin/create-rext → /usr/local/lib/node_modules/@yuu104/rext/bin/create-rext.js
+/usr/local/bin/rext → /usr/local/lib/node_modules/@yuu104/rext/bin/rext.js
 ```
 
 ### `npm link {パッケージ名}` でパッケージを擬似インストールする
@@ -1212,7 +1369,7 @@ npm link @yuu104/rext
 
 ### `create-rext` コマンドを検証する
 
-`npm link` したので、現時点で `create-rext` コマンドを利用することは可能です。
+`create-rext` パッケージにおいても、`npm link` 利用して検証を行います。
 しかし、現状ではコマンドの実行中にエラーとなり、プロジェクトの立ち上げに失敗します。
 
 何故でしょうか？
@@ -1260,7 +1417,7 @@ Local Paths は、`package.json` の `dependencies` を指定する際に、ロ�
  {
    "dependencies": {
 -     "rext": "^0.1.0"
-+     "rext": "file:../workspace"
++     "rext": "file:../rext"
    }
  }
 ```
@@ -1269,7 +1426,7 @@ Local Paths は、`package.json` の `dependencies` を指定する際に、ロ�
 
 ```shell
 # 例
-/test-rext/node_modules/@yuu104/rext → ~/workspace
+/test-rext/node_modules/@yuu104/rext → ~/workspace/rext
 ```
 
 :::message
@@ -1295,12 +1452,11 @@ https://zenn.dev/ttskch/articles/0fa9bb8934f1ef
 1. **`npm unlink` でシンボリックリンクを削除する**
    ```shell
    # `npm link` で作成したシンボリックリンクを削除する
-   cd ~/workspace
    npm unlink
    ```
 2. **Local Paths の設定を解除**
 
-   ```diff json: template/package.json
+   ```diff json: ~/workspace/create-rext/template/package.json
     {
       "dependencies": {
    -     "rext": "file:../workspace"
@@ -1378,6 +1534,10 @@ npm publish --access public
 
 \
 以上で公開が完了しました 🎉🎉
+`npx @yuu104/create-rext [プロジェクト名]` でプロジェクトを開始できます！
+
+https://www.npmjs.com/package/@yuu104/rext
+https://www.npmjs.com/package/@yuu104/create-rext
 
 ## GitHub Packages へ公開する
 
