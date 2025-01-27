@@ -1562,6 +1562,9 @@ _↑ とりあえずこれ読めば基本的な使い方を把握できる_
 https://qiita.com/marumaru0113/items/21b600c21caf5d9b9775
 _↑ プライベートパッケージのインストールには Access Token が必要で、それを良い感じに取り扱って運用する Tips が解説されている_
 
+https://docs.github.com/ja/packages
+_↑ 公式 Doc はこれ_
+
 ## 参考リンク
 
 https://www.freecodecamp.org/news/how-to-create-and-publish-your-first-npm-package/
