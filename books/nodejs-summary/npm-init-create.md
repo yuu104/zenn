@@ -166,14 +166,14 @@ https://www.npmjs.com/package/create-playwright
 3. **メンテナンス性の向上**
    メンテナンス性において、特に恩恵を受けるのが**バージョニング**です。
    npm では、パッケージ更新時に必ずバージョンアップが必要です。
-   同一パッケージにまとめた場合、セットアップ機能に関する小さな変更だけで、コア機能に変更がなくてもバージョンアップを余儀なくされます。
+   同一パッケージにまとめた場合、セットアップ機能に関する小さな変更だけでコア機能に変更がなくても、バージョンアップを余儀なくされます。
    パッケージ単位の更新頻度が多くなると、利用者側のメンテナンス性も低下させてしまいます。
 
 :::
 
 ## 新規パッケージ用プロジェクト作成
 
-npm パッケージを自作する第一歩として、`rext` パッケージ用の新規のプロジェクトを作成します。
+npm パッケージを自作する第一歩として、`rext` パッケージ用の新規プロジェクトを作成します。
 以下の手順を実施します。
 
 1. パッケージ名を決める
@@ -265,7 +265,7 @@ npm でパッケージ名を選ぶ際には、以下の点を考慮してくだ�
 :::
 
 `npm init` を実行すると、以下のプロンプトが表示されます。
-こちらのプロンプトに回答することで、`package.json` の主要フィールドが指定されます。
+プロンプトに回答することで、`package.json` の主要フィールドが指定されます。
 
 :::details package-name（必須）
 
@@ -467,7 +467,7 @@ npm 検索でパッケージが見つかりやすくなります。
    ```
 2. **`tsconfig.json` の作成**
    プロジェクトルートに TypeScript の設定ファイル `tsconfig.json` を作成します。
-   今回は、[TSConfig bases](https://github.com/tsconfig/bases) を利用してサクッと設定します。
+   今回は[TSConfig bases](https://github.com/tsconfig/bases) を利用してサクッと設定します。
 
    ```shell
    npm install --save-dev @tsconfig/node22
@@ -527,9 +527,9 @@ npm 検索でパッケージが見つかりやすくなります。
 
 ## モジュール関数の実装
 
-引数に指定した文字列をリバースした文字列を返却する関数 `reverseText()` を実装します。
+引数に指定した文字列をリバースして返却する関数 `reverseText()` を実装します。
 
-以下のように、`reverseText` をパッケージ名である `rext` からインポートして利用されるようにします。
+以下のように、`reverseText` をパッケージ名である `rext` からインポートして利用できるようにします。
 
 ```ts
 import { reverseText } from "rext";
@@ -598,9 +598,9 @@ export function reverseText(text: string): string {
 ### ① bin の設定
 
 npm パッケージで CLI を提供する場合、`package.json` の `bin` フィールドを設定する必要があります。
-この設定により、npm CLI や npx を使用してコマンドを実行できるようになります。
+この設定により、npm CLI や npx を使用たコマンドの実行が可能になります。
 
-`rext` コマンドを追加するために、以下の設定を行います。
+`rext` コマンドを追加するために以下の設定を行います。
 
 ```diff json: package.json
   {
@@ -650,7 +650,7 @@ node_modules/
 
 \
 よって、流れとしては以下になります。
-`rext` コマンド
+`npx rext`
 　 ↓
 `node_modules/.bin/rext`
 　 ↓
@@ -790,7 +790,7 @@ main();
 :::
 
 \
-以上で、`rext` パッケージのロジック部分は完成です ✨
+以上で、`rext` パッケージのロジック実装は完了です ✨
 
 ## `npx create-xxx` 用のパッケージを作成する
 
@@ -822,7 +822,7 @@ main();
    node_module/
    ```
 
-3. **`package.json` の設定**
+3. **`package.json` の作成**
 
    ```json: package.json
    {
@@ -952,7 +952,7 @@ main();
 
 ```json: texts/sample.json
 {
-  "texts": []
+  "texts": [ "hello", "world" ]
 }
 ```
 
@@ -986,7 +986,7 @@ main();
   ├── node_modules/
 + ├── src
 + |   └── bin
-+ |       └── rext.ts
++ |       └── index.ts
   ├── template
   │   ├── package.json
   │   ├── reverse-output
@@ -1114,7 +1114,7 @@ main();
 
 \
 \
-以上で `create-rext` の実装は完了です ✨
+以上で `create-rext` のロジック実装は完了です ✨
 
 :::message
 
@@ -1176,13 +1176,13 @@ GitHub リポジトリと同様、README は npm レジストリのページ上�
 :::
 
 :::message
-**README の更新を npm レジストリのページに反映するためには、パッケージのバージョンの更新も必要です。**
+**README の更新を npm レジストリのページに反映するためには、パッケージのバージョン更新が必要です。**
 :::
 
 ## パッケージに含めるファイルを指定する
 
 パッケージを公開する際に、不要なファイルやディレクトリが含まれないようにするため、公開対象のファイルを明示的に指定します。
-これにより、パッケージのサイズが最適化され、不要なファイルの公開を防ぐことができます。
+これによりパッケージのサイズが最適化され、不要なファイルの公開を防ぐことができます。
 
 設定方法としては 2 通り存在します。
 
@@ -1338,7 +1338,7 @@ npm link
 
 ```shell
 # 例
-/usr/local/bin/rext → /usr/local/lib/node_modules/@yuu104/rext/bin/rext.js
+/usr/local/bin/rext → /usr/local/lib/node_modules/@yuu104/rext/bin/index.js
 ```
 
 ### `npm link {パッケージ名}` でパッケージを擬似インストールする
@@ -1503,7 +1503,7 @@ https://www.npmjs.com/signup
 
 ### 公開されるファイル群を確認する
 
-最後の確認として、公開されるファイルを確認します。
+最終確認として、公開されるファイルを確認します。
 
 ```shell
 npm pack
@@ -1529,8 +1529,8 @@ npm login
 npm publish --access public
 ```
 
-スコープ付きパッケージの場合、デフォルトだとプライベート公開になってしまします。
-そのため、`--access public` を指定してパブリックに公開するようにします。
+スコープ付きパッケージの場合、デフォルトだとプライベート公開（有料）になってしまします。
+そのため、`--access public` でパブリック公開を指定します。
 
 \
 以上で公開が完了しました 🎉🎉
@@ -1549,9 +1549,18 @@ https://github.co.jp/features/packages
 GitHub Packages とは、ソフトウェアパッケージをパブリックまたはプライベートにホストして利用することができるホスティングサービスです。
 特定の org 内でのみ利用可能なパッケージをホストすることができます。
 
-nmp、RubyGems、Apache Maven、Gradle、Docker、NuGet といった、広く使われているパッケージマネージャーに対する様々なパッケージレジストリを提供しています。
+npm、RubyGems、Apache Maven、Gradle、Docker、NuGet といった、広く使われているパッケージマネージャーに対する様々なパッケージレジストリを提供しています。
 
-GitHub Packages を使えば、GitHub リポジトリと統合された形で[プライベートパッケージをある程度、無料で](https://docs.github.com/ja/enterprise-cloud@latest/packages/learn-github-packages/introduction-to-github-packages#github-packages-%E3%81%AE%E8%AB%8B%E6%B1%82%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6)ホスティングできます。
+GitHub Packages を使えば、GitHub リポジトリと統合された形で[プライベートパッケージをある程度無料で](https://docs.github.com/ja/enterprise-cloud@latest/packages/learn-github-packages/introduction-to-github-packages#github-packages-%E3%81%AE%E8%AB%8B%E6%B1%82%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6)ホスティングできます。
+
+\
+公開手順 & 配布方法は下記リンクが分かりやすいので参考にしてください。
+
+https://zenn.dev/moneyforward/articles/20230620-github-packages
+_↑ とりあえずこれ読めば基本的な使い方を把握できる_
+
+https://qiita.com/marumaru0113/items/21b600c21caf5d9b9775
+_↑ プライベートパッケージのインストールには Access Token が必要で、それを良い感じに取り扱って運用する Tips が解説されている_
 
 ## 参考リンク
 
