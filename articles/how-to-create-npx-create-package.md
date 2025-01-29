@@ -1,9 +1,9 @@
 ---
 title: "「npx create-xxx」で始めるnpmパッケージを自作したい"
-emoji: "😺"
+emoji: "🛠️"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: [npm, typescript, javascript, nodejs, github]
-published: false
+published: true
 ---
 
 ## はじめに
