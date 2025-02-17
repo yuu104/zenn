@@ -32,3 +32,4 @@ chapters:
   - anti-pattern-state
   - anti-pattern-json
   - gray-know-how-in-logic-design
+  - postgresql-sequence
