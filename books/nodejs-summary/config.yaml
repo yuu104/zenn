@@ -10,3 +10,4 @@ chapters:
   - pnpm
   - monorepo
   - npm-init-create
+  - esm-cjs-typescript
