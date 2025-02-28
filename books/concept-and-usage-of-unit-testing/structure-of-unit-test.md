@@ -976,15 +976,376 @@ public class CustomerTests : IntegrationTests
 ただし、この例外は「すべてのテストケースで同じ初期状態が必要」な場合に限られます。
 テストケースによって異なる初期状態が必要な場合は、やはり各テストメソッド内で明示的に設定するほうが適切です。
 
-## 命名
+## テストケースの命名
 
-「どんな振る舞いを検証するのか？」をテストケースのメソッド名から把握できるようにすべき。
+テストケースの命名は、テストの意図を明確に伝える重要な役割を担います。
+適切な命名は、コードの読み手がテストの目的を瞬時に理解することを助け、テストの保守性を高めることにつながります。
 
-### アンチパターン
+### 良い命名の原則
 
-次のような命名規則は役に立たない。
+テストケースを命名する際に最も重要なのは、**「どのような振る舞いを検証しているのか」**が一目で分かることです。
+これは、テストコードの可読性を高め、テストが失敗した際の原因特定を容易にします。
 
-- **`{テスト対象メソッド}_{事前条件}_{想定する結果}`**
+### 【アンチパターン】機械的な命名規則
 
-何故か？
-→ 「振る舞い」ではなく「実装の詳細」に着目しているから
+次のような形式的な命名規則は、一見整っているように見えますが、実際には役に立ちません。
+
+```
+{テスト対象メソッド}_{事前条件}_{想定する結果}
+```
+
+例えば：
+
+```java
+// isDeliveryValid_withInvalidDate_returnsFalse
+public void isDeliveryValid_withInvalidDate_returnsFalse()
+```
+
+#### 問題点
+
+この命名方法には次のような問題があります：
+
+1. **実装の詳細に依存している**
+
+   - メソッド名が変更されると、テスト名も変更が必要になる
+   - 内部実装の詳細に焦点を当てており、ビジネス上の振る舞いが見えにくい
+
+2. **認知的負荷が高い**
+
+   - パターンに従おうとするあまり、名前が長く複雑になりがち
+   - 本質的な振る舞いよりも、形式に注目してしまう
+
+3. **意図が伝わりにくい**
+   - 非開発者（ドメインエキスパートや QA 担当者など）には理解しづらい
+   - テストが何を検証しているのか、本質が見えづらい
+
+### 効果的な命名の指針
+
+より効果的なテストケース命名の指針は以下の通りです：
+
+1. **厳格な命名規則に縛られない**
+
+   - テストの本質を伝えることを最優先する
+   - 複雑な振る舞いを無理に定型的なパターンに押し込めない
+
+2. **ドメイン言語を使用する**
+
+   - 技術的な表現よりもビジネスドメインの言葉を優先する
+   - 非開発者にも伝わる表現を心がける
+
+3. **読みやすさを重視する**
+   - （英語の場合）単語の区切りにはアンダースコア(`_`)を使用する
+   - 簡潔さと明確さのバランスを取る
+
+### テストコードの命名における具体例の改善
+
+#### ステップ 0: 機械的な命名規則によるアンチパターン
+
+まず、機械的な命名規則に従った典型的なアンチパターンの例を見てみましょう：
+
+```java
+// isDeliveryValid_withInvalidDate_returnsFalse
+public void isDeliveryValid_withInvalidDate_returnsFalse()
+```
+
+この命名パターンには以下の問題があります：
+
+- メソッド名、条件、戻り値を機械的に並べただけで、テストの本質的な意味が伝わりにくい
+- 実装の詳細に依存しているため、メソッド名が変更されると修正が必要になる
+- 非開発者には理解しづらい表現になっている
+
+#### ステップ 1: 具体性が不足した命名の問題点
+
+```java
+// 不正な日付が指定された配達は不正だと見なされるべきである
+public void Delivery_with_invalid_date_should_be_considered_invalid()
+```
+
+この命名には 2 つの主要な問題があります：
+
+1. **曖昧さ**: 「不正な日付」とは具体的にどういう状態なのかが明確ではありません。開発者がこのテストの目的を理解するには、実装を確認する必要があります。
+
+2. **テスト対象メソッドの欠落**: テスト対象メソッド名（`isDeliveryValid`）がテスト名に含まれていないため、何をテストしているのか把握しづらくなっています。
+
+これらの問題点は、テストコードの可読性を低下させ、保守が難しくなる原因となります。
+
+#### ステップ 2: 具体性を高める改善
+
+より明確な情報を提供するように改善してみましょう：
+
+```java
+// 過去の日付が指定された配達は不正だと見なされるべきである
+public void Delivery_with_past_date_should_be_considered_invalid()
+```
+
+この変更で明確になった点：
+
+- 「不正な日付」が「過去の日付」という具体的な条件に変わり、テストの意図が明確になりました
+- 過去の日付の配達が不正と見なされるべきという仕様が伝わるようになりました
+
+#### ステップ 3: 冗長な表現の削除
+
+テスト名をさらに洗練させます：
+
+```java
+// 過去の日付が指定された配達は不正とすべきである
+public void Delivery_with_past_date_should_be_invalid()
+```
+
+「considered（見なされる）」という冗長な表現を削除しても、テストの意図は変わりません。より簡潔になりました。
+
+#### ステップ 4: 命令形から叙述形への変換
+
+テストケースの名前は「何が起きるべきか」ではなく「何が起きるか」を表現すべきです：
+
+```java
+// 過去の日付が指定された配達は不正である
+public void Delivery_with_past_date_is_invalid()
+```
+
+「should be（べきである）」を「is（である）」に変更することで、テストは事実を述べるものになります。
+単体テストは 1 つの振る舞いの事実を検証するものであり、期待や要望を含めるべきではありません。
+
+### ステップ 5: 英語の文法的な洗練
+
+最後に、英語の文法に従ってより自然な表現にします：
+
+```java
+// 過去の日付が指定された配達は不正である
+public void Delivery_with_a_past_date_is_invalid()
+```
+
+冠詞「a」を追加することで、英語としてより正確になりました。テストコードの読みやすさが向上し、命名規則としての一貫性も保たれます。
+
+#### まとめ
+
+テストケース名は段階的に改善され、以下の変化がありました：
+
+1. 機械的な命名パターンから意味のある表現へ
+2. 曖昧な「不正な日付」から具体的な「過去の日付」へ
+3. 冗長な表現の削除
+4. 命令形（~すべき）から叙述形（~である）への変換
+5. 文法的な洗練
+
+これらの改善により、テストケースの意図がより明確になり、コードを初めて読む人でも理解しやすくなりました。適切な命名は、テストコードの保守性向上に大きく貢献します。
+
+おっしゃる通りです。重要な指摘をありがとうございます。修正します。
+
+## パラメータ化テスト
+
+通常、1 つのテストケースだけでは 1 単位の振る舞いを完全に表現することはできません。
+なぜなら、1 単位の**振る舞い**には複数の検証すべき**事実**が存在するのが普通だからです。
+
+例えば、配達サービスにおいて「有効な配達日付」という振る舞いを考えてみましょう。
+この振る舞いは以下のような複数の事実で構成されます：
+
+- 過去の日付が指定された配達は不正である
+- 当日が指定された配達は不正である
+- 翌日が指定された配達は不正である
+- 最短の配達日は当日から 2 日後である
+
+これらすべての事実を個別のテストケースとして実装すると、コードは以下のようになります：
+
+```java
+// Java/JUnit
+// 過去の日付が指定された配達は不正である
+public void Delivery_with_a_past_date_is_invalid() {
+    // テストコード
+    // 期待結果: isValid == false
+}
+
+// 当日が指定された配達は不正である
+public void Delivery_for_today_is_invalid() {
+    // テストコード
+    // 期待結果: isValid == false
+}
+
+// 翌日が指定された配達は不正である
+public void Delivery_for_tomorrow_is_invalid() {
+    // テストコード
+    // 期待結果: isValid == false
+}
+
+// 最短の配達日は当日から2日後である
+public void The_soonest_delivery_date_is_two_days_from_now() {
+    // テストコード
+    // 期待結果: isValid == true
+}
+```
+
+これらのテストケース間の違いは「指定された配達日」と「期待される結果」です。
+しかし、テストロジック自体（配達日を設定し、検証するという流れ）はほぼ同一です。
+このような場合、テストコードの重複を避け、保守性を高めるために、パラメータ化テストが有効です。
+
+## 目的と利点
+
+パラメータ化テストは、同じテストロジックで複数の入力値と期待される結果をテストするための機能です。
+同種の事実をグループ化し、1 つのテストメソッドでテストすることが可能になります。
+
+パラメータ化テストの主な利点は以下の通りです：
+
+1. **コード量の削減** - 同じロジックを複数回書く必要がなくなります
+2. **可読性の向上** - 関連するテストケースが一箇所にまとまり、一覧性が向上します
+3. **保守性の向上** - テストロジックの変更が 1 箇所で済みます
+4. **テストケースの追加が容易** - 新しいケースはパラメータとして追加するだけで済みます
+
+### 実装例
+
+:::details JUnit
+
+JUnit では、`@ParameterizedTest` と `@ValueSource` や `@CsvSource` などのアノテーションを組み合わせて使用します。
+
+```java
+public class DeliveryServiceTests {
+    // 配達日の有効性を検証する
+    @ParameterizedTest
+    @CsvSource({
+        "-1, false", // 過去の日付 -> 不正
+        "0, false",  // 当日 -> 不正
+        "1, false",  // 翌日 -> 不正
+        "2, true"    // 2日後 -> 有効
+    })
+    public void Can_detect_an_invalid_delivery_date(int daysFromNow, boolean expected) {
+        DeliveryService sut = new DeliveryService();
+        LocalDate deliveryDate = LocalDate.now().plusDays(daysFromNow);
+
+        Delivery delivery = new Delivery();
+        delivery.setDate(deliveryDate);
+
+        boolean isValid = sut.isDeliveryValid(delivery);
+
+        assertEquals(expected, isValid);
+    }
+}
+```
+
+:::
+
+:::details Vitest
+
+Vitest では、`test.each`を使用してパラメータ化テストを実装します。
+
+```typescript
+import { test, expect } from "vitest";
+import { DeliveryService } from "./DeliveryService";
+import { Delivery } from "./Delivery";
+import { addDays } from "date-fns";
+
+test.each([
+  [-1, false], // 過去の日付 -> 不正
+  [0, false], // 当日 -> 不正
+  [1, false], // 翌日 -> 不正
+  [2, true], // 2日後 -> 有効
+])(
+  "delivery with %i days from now has validity: %s",
+  (daysFromNow, expected) => {
+    const sut = new DeliveryService();
+    const deliveryDate = addDays(new Date(), daysFromNow);
+
+    const delivery = new Delivery({ date: deliveryDate });
+
+    const isValid = sut.isDeliveryValid(delivery);
+
+    expect(isValid).toBe(expected);
+  }
+);
+```
+
+より読みやすい形式として、オブジェクト配列を使用することもできます：
+
+```typescript
+test.each([
+  { days: -1, valid: false, description: "過去の日付" },
+  { days: 0, valid: false, description: "当日" },
+  { days: 1, valid: false, description: "翌日" },
+  { days: 2, valid: true, description: "2日後以降" },
+])("$description: $days日後の配達は$validである", ({ days, valid }) => {
+  const sut = new DeliveryService();
+  const deliveryDate = addDays(new Date(), days);
+
+  const delivery = new Delivery({ date: deliveryDate });
+
+  const isValid = sut.isDeliveryValid(delivery);
+
+  expect(isValid).toBe(valid);
+});
+```
+
+:::
+
+### パラメータ化テストの使い分け
+
+パラメータ化テストは常に最適というわけではありません。特に注意すべき点として：
+
+1. **正常系と異常系の分離**
+   両方を 1 つのパラメータ化テストにまとめると、テストの意図が分かりにくくなることがあります。
+   以下の例では、正常系と異常系を別々のテストメソッドに分けています：
+
+   :::details JUnit
+
+   ```java
+   public class DeliveryServiceTests {
+       // 不正な配達日を検出する
+       @ParameterizedTest
+       @ValueSource(ints = {-1, 0, 1})
+       public void Detects_an_invalid_delivery_date(int daysFromNow) {
+           DeliveryService sut = new DeliveryService();
+           LocalDate deliveryDate = LocalDate.now().plusDays(daysFromNow);
+           Delivery delivery = new Delivery();
+           delivery.setDate(deliveryDate);
+
+           boolean isValid = sut.isDeliveryValid(delivery);
+
+           assertFalse(isValid);
+       }
+
+       // 最短の配達日は当日から2日後である
+       @Test
+       public void The_soonest_delivery_date_is_two_days_from_now() {
+           DeliveryService sut = new DeliveryService();
+           LocalDate deliveryDate = LocalDate.now().plusDays(2);
+           Delivery delivery = new Delivery();
+           delivery.setDate(deliveryDate);
+
+           boolean isValid = sut.isDeliveryValid(delivery);
+
+           assertTrue(isValid);
+       }
+   }
+   ```
+
+   :::
+
+   :::details Vitest
+
+   ```typescript
+   // 不正な配達日を検出する
+   test.each([-1, 0, 1])(
+     "detects an invalid delivery date: %i days from now",
+     (daysFromNow) => {
+       const sut = new DeliveryService();
+       const deliveryDate = addDays(new Date(), daysFromNow);
+       const delivery = new Delivery({ date: deliveryDate });
+
+       const isValid = sut.isDeliveryValid(delivery);
+
+       expect(isValid).toBe(false);
+     }
+   );
+
+   // 最短の配達日は当日から2日後である
+   test("the soonest delivery date is two days from now", () => {
+     const sut = new DeliveryService();
+     const deliveryDate = addDays(new Date(), 2);
+     const delivery = new Delivery({ date: deliveryDate });
+
+     const isValid = sut.isDeliveryValid(delivery);
+
+     expect(isValid).toBe(true);
+   });
+   ```
+
+   :::
+
+2. **複雑な振る舞いへの適用**
+   テスト対象の振る舞いが複雑すぎる場合は、パラメータ化テストを避け、個別のテストケースとして実装する方が理解しやすくなることがあります。
