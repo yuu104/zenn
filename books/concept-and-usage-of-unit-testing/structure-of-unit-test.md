@@ -2,16 +2,6 @@
 title: "単体テストの構造"
 ---
 
-:::message
-**Summary**
-
-- テストケースの構造
-- テストケースのメソッド命名におけるベストプラクティス
-- パラメータ化のテスト
-- リーダブルなアサーションの書き方
-
-:::
-
 ## AAA パターン
 
 「AAA」とは、テストケースの構造に関するパターンのことです。
@@ -69,17 +59,17 @@ public class CalculatorTest { // 関連性のあるテストケースを集め�
 
 1. **準備（Arrange）**
    - テストに使用する値（`first = 10`、`second = 20`）を用意
-   - テスト対象の `Calculator` インスタンスを生成
+   - テスト対象の「振る舞い」を実行する `Calculator` インスタンスを生成
 2. **実行（Act）**
    - Arrange で用意したテスト対象の `sum` メソッドを実行
-   - Arrange で用意した値を使用
+   - Arrange で用意した値（`first`, `second`）を使用
    - 実行結果を `result` 変数に保持し、次のフェーズで使用できるようにする
 3. **確認（Assert）**
    - `assertEquals` を使用して、期待値 `30` と実際の結果 `result` を比較
    - `assertEquals` は、引数に指定した 2 つの値が等しいことを検証するメソッド
 
 \
-このように、AAA パターンを用いることで、すべてのテストケースに対し、簡潔で統一された構造を持たせられるようになります。
+このように、AAA パターンを用いることで、すべてのテストケースに対し簡潔で統一された構造を持たせられるようになります。
 「統一性がある」ことは「可読性が高まる」ことに繋がるため、構造を理解し実践することは、テスト実装者だけでなくチーム全体にも利益をもたらします。
 
 ## 【アンチパターン】同じフェーズを複数用意する
@@ -105,7 +95,7 @@ public class CalculatorTest { // 関連性のあるテストケースを集め�
 - テスト対象の実行結果が、次のテストケースの事前条件として使えることに気づいてしまう
 
 \
-下記は以下 2 つの「振る舞い」の検証を同じテストケースに詰め込んでいます。
+次の例では、以下 2 つの「振る舞い」の検証を同じテストケースに詰め込んでいます。
 
 - ユーザー情報の登録
 - ユーザー情報の取得
@@ -347,6 +337,21 @@ public void ユーザー登録のテスト() {
 - 定型的なデータが多い → Object Mother
 - カスタマイズが多い → Test Data Builder
 
+:::message
+**テストフィクスチャ**
+
+このように、Arrange フェーズで用意するオブジェクトやデータのことを「テストフィクスチャ」と呼びます。
+名前の由来は「固定された(fixed)」という意味からきており、テストが毎回同じ状態から始められるようにするためのものです。
+
+テストフィクスチャには以下のようなものが含まれます：
+
+- テスト対象コンポーネント
+- 依存コンポーネント
+- テストデータ
+- 必要な環境設定
+
+:::
+
 ### 実行（Act）のコードが 2 行以上の場合は注意
 
 通常、実行（Act）フェーズは 1 行で十分です。
@@ -373,7 +378,7 @@ public void 商品を注文できる() {
 ```
 
 一方で、以下のようなテストコードを見かけることがあります。
-同じ「注文の受け付け」という振る舞いを検証していますが、、複数のステップに分かれています。
+同じ「注文の受け付け」という振る舞いを検証していますが、複数のステップに分かれています。
 
 ```java
 @Test
@@ -393,7 +398,8 @@ public void 商品を注文できる_悪い例() {
 }
 ```
 
-**🤔 なぜ問題なのか？**
+#### 🤔 なぜ問題なのか？
+
 2 つ目の例では、「注文を受け付ける」という 1 単位の振る舞いを検証していることに変わりはありません。
 そのため、テスト自体が悪いわけではありません。
 
@@ -403,10 +409,10 @@ public void 商品を注文できる_悪い例() {
 2. 注文作成の方法を知っていないといけない
 3. 在庫の更新方法を知っていないといけない
 
-これはロダクションコードの設計を見直すべきという警告サインとなります。
+これはプロダクションコードの設計を見直すべきという警告サインとなります。
 
-\
-**🚀 改善の方向性**
+#### 🚀 改善の方向性
+
 プロダクションコードは以下のように改善できます。
 
 ```java
@@ -456,7 +462,8 @@ public class Shop {
 しかし、これは誤解です。
 大切なのは「1 単位の振る舞い」を検証することであり、その振る舞いから複数の結果が生じるのであれば、それら全てを確認するのは自然なことです。
 
-**ex.）ユーザー登録機能**
+#### ex.）ユーザー登録機能
+
 ユーザー登録という 1 つの振る舞いを検証するテストを見てみましょう。
 この振る舞いからは複数の結果が生じます。
 
@@ -559,24 +566,8 @@ public void ユーザー情報を検証する_改善例() {
 
 ## テスト後の後始末（第４のフェーズ）
 
-場合によっては、確認（Assert）の次のフェーズとして**後始末**が必要になる。
-
-ex.）
-
-- テスト時に生成したファイルを削除する
-- DB の接続を切断する
-
-このような後始末の処理は個別のメソッドに切り出し、テストケースのメソッドから呼び出す。
-
-しかし、単体テストの場合、**後始末の処理は必要ないケースがほとんど**。
-なぜなら、「後始末」は大抵プロセス外依存になり、そのほとんどは共有依存となるため、単体テストでは扱わない。（テストダブルに置き換える）
-
-よって、後始末が必要になるようなテストは結合テスト以降になるケースが多い。
-
-## テスト後の後始末（第４のフェーズ）
-
 AAA パターンで説明した 3 つのフェーズの他に、**後始末（Cleanup）** が必要になるケースがあります。
-これは主にテスト実行後に、使用したリソースを適切に解放するためのフェーズです。
+これテスト実行後に、使用したリソースを適切に解放するためのフェーズです。
 
 例えば以下のような場合です。
 
@@ -645,11 +636,9 @@ public class FileWriterTest {
 
 ### テスト対象コンポーネントと依存コンポーネントを区別しやすくする
 
-テスト対象システム（System Under Test: SUT）は重要な役割を担っています。アプリケーション全体の中で「どの部分の振る舞いを検証するのか」を提供するのがテスト対象システムだからです。
-
 テストコードの可読性を高めるために、テスト対象システムと依存コンポーネントを明確に区別できるようにしましょう。
 
-一般的な方法として、テスト対象システムを示す変数名には `sut` という名前を使用します：
+一般的な方法として、テスト対象コンポーネントを示す変数名には `sut` という名前を使用します。
 
 ```java
 @Test
@@ -671,41 +660,331 @@ public void Sum_of_two_numbers() {
 
 テストコードの構造を理解しやすくするために、AAA の各フェーズを視覚的に区別することも重要です。
 
-以下のいずれかの方法を採用しましょう：
+以下のいずれかの方法を採用しましょう。
 
-1. コメントと空行で区切る
+1. **コメントと空行で区切る**
+
+   ```java
+   @Test
+   public void Sum_of_two_numbers() {
+       // Arrange
+       double first = 10;
+       double second = 20;
+       Calculator sut = new Calculator();
+
+       // Act
+       double result = sut.sum(first, second);
+
+       // Assert
+       assertEquals(30, result);
+   }
+   ```
+
+2. **空行のみで区切る（コードが十分シンプルな場合）**
+
+   ```java
+   @Test
+   public void Sum_of_two_numbers() {
+       double first = 10;
+       double second = 20;
+       Calculator sut = new Calculator();
+
+       double result = sut.sum(first, second);
+
+       assertEquals(30, result);
+   }
+   ```
+
+   :::message
+   **必要以上に空行を入れすぎないように注意してください。**
+   例えば、Arrange フェーズ内で複数の設定を行う場合、それらの間には空行を入れる必要はありません。
+   :::
+
+重要なのは、各フェーズの区切りが一目で分かることです。
+テストケースのサイズが大きくなった場合でも、コードの構造が理解しやすくなります。
+
+## テストフィクスチャの共有
+
+複数のテストケースで同じようなテストフィクスチャを必要とする場合、コードの重複を避けるためにフィクスチャを共有したくなるのは自然なことです。
+しかし、フィクスチャの共有方法によってはテストの質が損なわれてしまいます。
+
+### 【アンチパターン】コンストラクタや beforeEach でテストフィクスチャを配置する
+
+:::details JUnit（Java）でのコンストラクタ使用例
 
 ```java
-@Test
-public void Sum_of_two_numbers() {
-    // Arrange
-    double first = 10;
-    double second = 20;
-    Calculator sut = new Calculator();
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
+public class CustomerTests
+{
+    // 共通して使われるテスト・フィクスチャ
+    private final Store _store;
+    private final Customer _sut;
+
+    // コンストラクタでフィクスチャを初期化（各テスト実行前に呼び出される）
+    public CustomerTests()
+    {
+        _store = new Store();
+        _store.addInventory(Product.SHAMPOO, 10);
+        _sut = new Customer();
+    }
+
+    // 在庫が十分にある場合、購入は成功する
+    @Test
+    public void purchase_succeeds_when_enough_inventory()
+    {
+        // Act
+        boolean success = _sut.purchase(_store, Product.SHAMPOO, 5);
+
+        // Assert
+        assertTrue(success);
+        assertEquals(5, _store.getInventory(Product.SHAMPOO));
+    }
+
+    // 在庫が十分にない場合、購入は失敗する
+    @Test
+    public void purchase_fails_when_not_enough_inventory()
+    {
+        // Act
+        boolean success = _sut.purchase(_store, Product.SHAMPOO, 15);
+
+        // Assert
+        assertFalse(success);
+        assertEquals(10, _store.getInventory(Product.SHAMPOO));
+    }
+}
+```
+
+:::
+
+:::details Vitest（TypeScript）での beforeEach 使用例
+
+```ts
+import { beforeEach, test, expect } from "vitest";
+
+describe("Customer", () => {
+  // 共通して使われるテスト・フィクスチャ
+  let store: Store;
+  let sut: Customer;
+
+  // beforeEachでフィクスチャを初期化（各テスト実行前に呼び出される）
+  beforeEach(() => {
+    store = new Store();
+    store.addInventory(Product.SHAMPOO, 10);
+    sut = new Customer();
+  });
+
+  // 在庫が十分にある場合、購入は成功する
+  test("purchase succeeds when enough inventory", () => {
     // Act
-    double result = sut.sum(first, second);
+    const success = sut.purchase(store, Product.SHAMPOO, 5);
 
     // Assert
-    assertEquals(30, result);
-}
+    expect(success).toBe(true);
+    expect(store.getInventory(Product.SHAMPOO)).toBe(5);
+  });
+
+  // 在庫が十分にない場合、購入は失敗する
+  test("purchase fails when not enough inventory", () => {
+    // Act
+    const success = sut.purchase(store, Product.SHAMPOO, 15);
+
+    // Assert
+    expect(success).toBe(false);
+    expect(store.getInventory(Product.SHAMPOO)).toBe(10);
+  });
+});
 ```
 
-2. 空行のみで区切る（コードが十分シンプルな場合）
+:::
+
+コンストラクタや `beforeEach` に配置することで、2 つのテストケースは Arrange するロジックを共通化しています。
+これにより、各テストケースでは Arrange フェーズのコードを省略できます。
+
+しかし、このアプローチには重大な欠点が 2 つあります。
+
+#### ① テストケース間の結合度が高くなる
+
+テストケース間に強い結合が生まれます。
+これにより、あるテストケースのために設定を変更すると、他のテストケースにも影響します。
+
+ex.）初期在庫数を 10 → 15 に変更する場合：
+
+```diff java
+   // コンストラクタでフィクスチャを初期化（各テスト実行前に呼び出される）
+   public CustomerTests() // または beforeEach(() => {
+   {
+     _store = new Store();
+-    _store.addInventory(Product.SHAMPOO, 10);
++    _store.addInventory(Product.SHAMPOO, 15);
+     _sut = new Customer();
+   }
+```
+
+2 つ目のテストケース（`purchase_fails_when_not_enough_inventory`）が期待通りに動作しなくなります。
+購入しようとする数量（15 個）が在庫数（15 個）と等しくなり、テストの前提条件が変わってしまうためです。
+
+:::message
+**1 つのテストケースに関する修正が、他のテストケースに影響をあたえてはいけない。**
+:::
+
+#### ② テストケースの可読性が下がる
+
+テストケースのメソッドだけを見ても、何を検証したいのかを完全に理解することが難しくなります。
+
+初期状態の設定がコンストラクタに分離されているため、テストの全体像を把握するには、`メソッド本体` + `コンストラクタ（beforeEach）` の両方を確認する必要があります。
+
+:::message
+
+**良いテストは自己完結的であり、テストメソッドを読むだけでテストの意図と前提条件が明確にわかるべき。**
+
+:::
+
+### 適切な共有方法
+
+テストクラスに private なファクトリメソッドを用意する方法が効果的です。
 
 ```java
-@Test
-public void Sum_of_two_numbers() {
-    double first = 10;
-    double second = 20;
-    Calculator sut = new Calculator();
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-    double result = sut.sum(first, second);
+public class CustomerTests {
 
-    assertEquals(30, result);
+    // 在庫が十分にある場合、購入は成功する
+    @Test
+    public void purchase_succeeds_when_enough_inventory() {
+        // Arrange
+        Store store = createStoreWithInventory(Product.SHAMPOO, 10);
+        Customer sut = createCustomer();
+
+        // Act
+        boolean success = sut.purchase(store, Product.SHAMPOO, 5);
+
+        // Assert
+        assertTrue(success);
+        assertEquals(5, store.getInventory(Product.SHAMPOO));
+    }
+
+    // 在庫が十分にない場合、購入は失敗する
+    @Test
+    public void purchase_fails_when_not_enough_inventory() {
+        // Arrange
+        Store store = createStoreWithInventory(Product.SHAMPOO, 10);
+        Customer sut = createCustomer();
+
+        // Act
+        boolean success = sut.purchase(store, Product.SHAMPOO, 15);
+
+        // Assert
+        assertFalse(success);
+        assertEquals(10, store.getInventory(Product.SHAMPOO));
+    }
+
+    // 指定した在庫を抱える店を作成する
+    private Store createStoreWithInventory(Product product, int quantity) {
+        Store store = new Store();
+        store.addInventory(product, quantity);
+        return store;
+    }
+
+    // 顧客を作成する
+    private static Customer createCustomer() {
+        return new Customer();
+    }
 }
 ```
 
-ただし、**必要以上に空行を入れすぎないように注意**してください。例えば、Arrange フェーズ内で複数の設定を行う場合、それらの間には空行を入れる必要はありません。
+共通化できるフィクスチャをファクトリメソッドとして定義することで、次のような利点が得られます：
 
-重要なのは、各フェーズの区切りが一目で分かることです。テストケースのサイズが大きくなった場合でも、コードの構造が理解しやすくなります。
+- テストコードを削減できる
+- テストケースのメソッド側でフィクスチャの呼び出しを制御できるため、テストケース間の結合度を低くできる
+- テストケースのメソッド内だけで、何を検証しているのかを把握できる
+
+\
+さらに、以下の利点も享受できます：
+
+1. **Arrange フェーズの可読性が高くなる**
+
+   ```diff java
+   - // コンストラクタでArrange
+   - public CustomerTests() {
+   -     _store = new Store();
+   -     _store.addInventory(Product.SHAMPOO, 10);
+   -     _sut = new Customer();
+   - }
+
+   + // ファクトリメソッドを使用してArrange
+   + Store store = createStoreWithInventory(Product.SHAMPOO, 10);
+   + Customer sut = createCustomer();
+   ```
+
+   メソッド名と引数を見ることで、店（`Store`）オブジェクトがどのように生成されるのかを一目で理解できるようになります。
+
+2. **テストフィクスチャコードが共有しやすくなる**
+
+   ```java
+   Store store = createStoreWithInventory(Product.SHAMPOO, 10);
+   ```
+
+   「⚪︎⚪︎ 商品の在庫を〇〇個持っている店を作成する」というロジックは共通化しつつも、「商品の種類」と「在庫数」はテストケース側で自由にパラメータ化できます。
+   これにより、柔軟性を保ちながらコードの重複を避けることができます。
+
+### 結合テストでは例外
+
+コンストラクタや beforeEach でのフィクスチャ設定はアンチパターンと説明しましたが、例外的なケースも存在します。
+それは、**すべてのテストケースで同一のフィクスチャ設定が必要な結合テスト**の場合です。
+
+特にデータベースを使用する結合テストでは、テストクラス間で共通のセットアップロジックを共有するために基底クラスを活用する方法が効果的です。
+
+```java
+// 基底クラス
+public abstract class IntegrationTests implements IDisposable
+{
+    protected readonly Database _database;
+
+    protected IntegrationTests()
+    {
+        _database = new Database();
+    }
+
+    public void Dispose()
+    {
+        _database.Dispose();
+    }
+}
+
+// 派生テストクラス
+public class CustomerTests : IntegrationTests
+{
+    @Test
+    public void purchase_succeeds_when_enough_inventory()
+    {
+        // ここでは、基底クラスで初期化された _database を使ってデータベースに関する
+        // 処理を行う
+        // ...
+    }
+}
+```
+
+この方法では、`CustomerTests`クラスには独自のコンストラクタがなく、基底クラスの`IntegrationTests`でデータベースが初期化されます。これにより:
+
+1. データベース接続などの共通ロジックを一箇所にまとめられる
+2. リソースの適切な解放（Dispose）が保証される
+3. 複数のテストクラスで同じセットアップコードを繰り返し書く必要がない
+
+ただし、この例外は「すべてのテストケースで同じ初期状態が必要」な場合に限られます。
+テストケースによって異なる初期状態が必要な場合は、やはり各テストメソッド内で明示的に設定するほうが適切です。
+
+## 命名
+
+「どんな振る舞いを検証するのか？」をテストケースのメソッド名から把握できるようにすべき。
+
+### アンチパターン
+
+次のような命名規則は役に立たない。
+
+- **`{テスト対象メソッド}_{事前条件}_{想定する結果}`**
+
+何故か？
+→ 「振る舞い」ではなく「実装の詳細」に着目しているから
