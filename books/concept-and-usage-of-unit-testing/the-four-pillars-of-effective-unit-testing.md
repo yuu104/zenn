@@ -76,9 +76,7 @@ title: "価値の高い単体テストを構成する4本の柱"
    });
    ```
 
-   このテストは、実装と全く同じロジックで期待値を計算しているため、実装に誤りがあってもそれを検出できません。
-   テストと実装が同じ間違いを犯しているため、常に成功してしまいます。これは典型的な偽陰性の例です。
-
+   このテストは、実装と全く同じロジックで期待値を計算しているため、実装に誤りがあってもそれを検出できません。テストと実装が同じ間違いを犯しているため、常に成功してしまいます。
    実装とは独立した方法で期待値を定義し、実装の正しさを客観的に検証すべきです。
 
    ```ts
@@ -467,3 +465,182 @@ public OrderResult processOrder(Order order) {
    - テストダブルの多用はテストの難易度を上げる
 
 ## 4 つの柱を軸にテストケースを評価する
+
+テストケースの価値は４つの柱の掛け算です。
+
+```txt
+テストケースの価値 = [リグレッションに対する保護] × [リファクタリングへの退行] × [迅速なフィードバック] × [保守コストの評価指標]
+```
+
+１つでも `0` が存在するとテストケースの価値は `0` となります。
+
+:::message
+**テストケースは 4 本の柱をすべて備える必要がある**
+
+※ すべて最大限に備える必要はない。 `0` にならないことが重要。
+:::
+
+**コードは負債**という観点からも、テストケースとして含める基準は高くあるべきです。
+とりあえずで価値の低いテストケースを追加することは避けましょう。
+
+## 柱はトレードオフの関係にある
+
+4 本すべてを最大限に備えることは不可能です。
+なぜなら、次の３本の柱は互いに排反の関係にあるからです。
+
+- リグレッションに対する保護
+- リファクタリングへの耐性
+- 迅速なフィードバック
+
+どれか一つを犠牲にしないと、他の 2 本を最大限に備えることはできません。
+よって、重要なのは各柱の比率をバランスよく配分することです。
+
+![](https://storage.googleapis.com/zenn-user-upload/623d8ba002de-20250425.png)
+
+:::message
+**「保守のしやすさ」**は他の柱に影響しません。
+むしろ、他の柱を強化してくれます。
+
+したがって、最大限備えるようにしましょう。
+:::
+
+### 極端な例 ① 「リグレッションに対する保護」×「リファクタリングへの耐性」
+
+「リグレッションに対する保護」を備えるための方法は以下でした。
+
+- カバレッジを増やす
+- 重要性の高いビジネスロジックをテストする
+- 複雑性の高いコードをテストする
+
+上記を極端に満たすようなテストはどのようなテストでしょうか？
+→ **E2E テスト**です
+
+E2E は基本的にテストダブルを使用しません。
+そのためカバレッジが高いです。
+
+また、E2E はユーザーシナリオをテストするため、重要性の高いビジネスロジックをテストしていることにもなります。
+カバレッジが高い & 重要性の高いビジネスロジックをテストできているのであれば、自然と複雑性の高いコードもカバーできているでしょう。
+
+加えて、E2E はユーザーシナリオ（ユーザーから観察可能な振る舞い）に着目したテストであるため、偽陽性を持ち込みにくく、「リファクタリングへの耐性」も備わりやすいテストであると言えます。
+
+しかし、「迅速なフィードバック」は備わっていません。
+![](https://storage.googleapis.com/zenn-user-upload/cf63de6aee94-20250425.png)
+
+### 極端な例 ② 「リファクタリングへの耐性」・「迅速なフィードバック」を最大限備える
+
+以下はクラスの setter を対象にテストしたコードです。
+
+```java
+// プロダクションコード
+public class User {
+    public String name { get; set; }
+}
+
+// テストコード
+@Test
+public void user_name_should_be_updatable() {
+    // Arrange
+    User user = new User();
+    user.name = "Initial Name";
+    String newName = "Updated Name";
+
+    // Act
+    user.name = newName;
+
+    // Assert
+    assertEquals(newName, user.name);
+}
+```
+
+- テスト結果に着目してアサートしているため、偽陽性は低く、「リファクタリングへの耐性」が備わっています
+- テスト実行時間も非常に短く、「迅速なフィードバック」が備わっています
+
+しかし、「リグレッションに対する保護」という観点では高い価値を持つとは言えません。
+なぜなら：
+
+- 重要なビジネスロジックが含まれていない
+- 複雑なコードを対象としたテストではない
+- バグが入り込む余地が存在しない
+
+:::message
+**「取るに足らないテスト」は検証していないのと同じ。**
+:::
+
+![](https://storage.googleapis.com/zenn-user-upload/82f952938e79-20250425.png)
+
+### 極端な例 ③ 「リグレッションに対する保護」×「迅速なフィードバック」
+
+次のようなテストケースは偽陽性を引き起こします。
+テスト対象のメソッド呼び出し順序を検証しているからです。
+
+```java
+// プロダクションコード
+public class OrderProcessor {
+    private InventoryService inventoryService;
+    private PaymentService paymentService;
+
+    public OrderProcessor(InventoryService inventoryService, PaymentService paymentService) {
+        this.inventoryService = inventoryService;
+        this.paymentService = paymentService;
+    }
+
+    public boolean processOrder(Order order) {
+        if (inventoryService.isAvailable(order.getItemId())) {
+            inventoryService.decreaseStock(order.getItemId(), order.getQuantity());
+            paymentService.charge(order.getAmount());
+            return true;
+        }
+        return false;
+    }
+}
+
+// テストコード
+@Test
+public void processOrder_should_call_methods_in_specific_order() {
+    // Arrange
+    InventoryService mockInventory = mock(InventoryService.class);
+    PaymentService mockPayment = mock(PaymentService.class);
+    OrderProcessor processor = new OrderProcessor(mockInventory, mockPayment);
+    Order order = new Order("item123", 2, 100.0);
+
+    when(mockInventory.isAvailable("item123")).thenReturn(true);
+
+    // Act
+    processor.processOrder(order);
+
+    // Assert - 実装の詳細（メソッドの呼び出し順序）を検証
+    InOrder inOrder = inOrder(mockInventory, mockPayment);
+    inOrder.verify(mockInventory).isAvailable("item123");
+    inOrder.verify(mockInventory).decreaseStock("item123", 2);
+    inOrder.verify(mockPayment).charge(100.0);
+}
+```
+
+しかし、他 2 本の柱はどうでしょうか？
+
+**リグレッションに対する保護**
+→ 複雑なロジックを検証している
+
+**迅速なフィードバック**
+→ プロセス外依存を使用しているわけでもないので、実行時間は速い
+
+### 「リファクタリングへの耐性」は絶対に犠牲にできない
+
+以下 3 本は互いに排反であり、2 つを最大限備えると１つが犠牲になります。
+![](https://storage.googleapis.com/zenn-user-upload/623d8ba002de-20250425.png)
+
+しかし、「リファクタリングへの耐性」を犠牲にすることはできません。
+
+何故でしょうか？
+→ **備える or 備えない の二元論だから**
+
+中間状態は存在せず、「少しだけ備える」ようなことはできないのです。
+
+### 結局、どうすれば良いの？
+
+![](https://storage.googleapis.com/zenn-user-upload/df89bb1a92b4-20250425.png)
+
+最終的には以下 2 つのトレードオフとなります。
+
+- リグレッションに対する保護
+- 迅速なフィードバック
