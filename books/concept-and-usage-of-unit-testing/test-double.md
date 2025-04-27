@@ -150,3 +150,44 @@ public void レポートが正しく作成される() {
 ## スタブを Assert に使用しない
 
 スタブは依存コンポーネントを**模倣**するために使用しますが、**検証（Assert）**するためには使用しません。
+
+### 何故か？ → 実装方法をテストすることになるから
+
+実装方法をテストすると偽陽性を招くことになります。
+
+テストで検証すべきは「最終的な結果」であり、「結果を導くための途中処理」ではありません。
+
+- ❌ テスト対象が結果を算出するまでに必要な途中処理を Assert している
+- ✅ テスト対象の最終的な結果を Assert すべき
+
+具体的なコード例で見てみましょう：
+
+```java
+@Test
+public void レポートが正しく作成される_誤った例() {
+    // Arrange
+    Database stub = mock(Database.class);
+    when(stub.getNumberOfUsers()).thenReturn(10);
+    Controller sut = new Controller(stub);
+
+    // Act
+    Report report = sut.createReport();
+
+    // Assert
+    assertEquals(10, report.getNumberOfUsers()); // ✅ 最終的な結果の検証
+    verify(stub).getNumberOfUsers();             // ❌ スタブの呼び出しを検証（途中処理の検証）
+}
+```
+
+この例で、`verify(stub).getNumberOfUsers()`は不要です。
+なぜなら：
+
+1. **最終的な結果は正しく検証できている（`report.getNumberOfUsers()` が `10` であること）**
+2. **どのようにデータを取得したかは実装方法（DB から取得するのか、キャッシュから取得するのかは本質ではない）**
+
+:::message
+**スタブの呼び出しを検証すると、テストが実装に強く依存してしまいます。**
+
+実装方法を変更するたびにテストも修正が必要になり、テストが脆弱になります。
+これは「過剰検証（over-specification）」と呼ばれるアンチパターンです。
+:::
