@@ -92,7 +92,7 @@ public void ユーザー情報を正しく処理できる() {
 
 1. **テストダブルにおける「モック」**
 
-- 前章で解説した通り
+   - 前章で解説した通り
 
 2. **ライブラリにおける「モック」**
    - テストダブルを実現するためのライブラリ
@@ -100,3 +100,53 @@ public void ユーザー情報を正しく処理できる() {
    - ライブラリを利用して「モックオブジェクト」を作成する
 
 ### ライブラリにおける「モック」
+
+モックオブジェクトとは、モックライブラリによって生成される**テストダブルの実装**です。
+同じモックオブジェクトを、モックとしてもスタブとしても使用できます。
+
+**モックオブジェクトをモックとして使用する例**
+
+```java
+@Test
+public void 挨拶メールが送信される() {
+    // Arrange
+    // モックオブジェクトを生成
+    EmailGateway mockEmailGateway = mock(EmailGateway.class);
+    Controller sut = new Controller(mockEmailGateway);
+
+    // Act
+    sut.greetUser("user@email.com");
+
+    // Assert
+    // モックとして使用：外部への呼び出しを検証
+    verify(mockEmailGateway).sendGreetingsEmail("user@email.com");
+}
+```
+
+**モックオブジェクトをスタブとして使用する例**
+
+```java
+@Test
+public void レポートが正しく作成される() {
+    // Arrange
+    // モックオブジェクトを生成
+    Database stubDatabase = mock(Database.class);
+    // スタブとして使用：戻り値を設定
+    when(stubDatabase.getNumberOfUsers()).thenReturn(10);
+    Controller sut = new Controller(stubDatabase);
+
+    // Act
+    Report report = sut.createReport();
+
+    // Assert
+    assertEquals(10, report.getNumberOfUsers());
+}
+```
+
+:::message
+**モックライブラリが生成する単一のオブジェクトが、用途に応じてモックにもスタブにもなり得る**という点が「モック」という言葉の混乱を招く要因の一つとなっています。
+:::
+
+## スタブを Assert に使用しない
+
+スタブは依存コンポーネントを**模倣**するために使用しますが、**検証（Assert）**するためには使用しません。
