@@ -399,7 +399,278 @@ expect(service.doSomething()).toBe(true);
 
 ### 古典学派の「単体」
 
-- 「単体」= 「１単位の振る舞い」
+古典学派における「単体」の単位は「**振る舞い**」です。
+
+テスト対象の「振る舞い」をテストします。
+
+### 「振る舞い」とは何か？
+
+この言葉に補足を入れると、
+「**（クライアントから観察可能な）振る舞い**」となります。
+
+:::message
+
+**「クライアント」って何？**
+\
+テスト対象を利用するコンポーネントのことです。
+
+- コード（テストコードも含む）
+- 外部アプリケーション
+- UI
+
+:::
+
+そのため「振る舞い」とは
+「**クライアントが自身の目標を達成するために、テスト対象が提供する観察可能な機能**」
+を指します。
+
+クライアントには何かしらの目標があり、達成のためにテスト対象を利用します。
+例えば次のような目標です：
+
+- ユーザー情報を取得したい
+- 商品を購入したい
+
+テスト対象はこのような目標達成を可能にするための機能を提供します。
+
+![](https://storage.googleapis.com/zenn-user-upload/a10e93b1255a-20250509.png =550x)
+
+上記では少し抽象的なのでより具体的に示すと、「振る舞い」は次の２つに分類されます。
+
+1. **操作（Operations）**：クライアントが呼び出すメソッド
+   - **結果**を返すメソッド（例：`getUser()`）
+   - **副作用**を引き起こすメソッド（例：`sendEmail()`）
+2. **状態（State）**：クライアントが参照する状態
+   - 公開されたプロパティ（例： `user.name`）
+   - 状態を返すメソッド（例：`is:LoggedIn()`）
+
+\
+そのため「振る舞いをテストする」というのは、次の要素を検証（Assert）するということを指します。
+
+- **どんな値を返すか？（結果）**
+- **どんな影響を与えるのか？（副作用）**
+- **どんな状態か？（状態）**
+
+![](https://storage.googleapis.com/zenn-user-upload/496c87456bd6-20250509.png =550x)
+
+:::details どんな値を返すか？（結果）
+メソッドが返す値を検証するテストです。
+最も一般的で基本的な振る舞いの検証方法です。
+
+```ts
+// テスト対象：買い物かごの合計金額を計算する関数
+function calculateTotal(items: Item[]): number {
+  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+// テストコード
+import { test, expect } from "vitest";
+
+test("空の買い物かごの合計金額は0円である", () => {
+  // Arrange
+  const emptyCart: Item[] = [];
+
+  // Act
+  const total = calculateTotal(emptyCart);
+
+  // Assert：関数の戻り値を検証
+  expect(total).toBe(0);
+});
+
+test("複数商品の合計金額が正しく計算される", () => {
+  // Arrange
+  const cart: Item[] = [
+    { name: "りんご", price: 100, quantity: 2 },
+    { name: "バナナ", price: 80, quantity: 3 },
+  ];
+
+  // Act
+  const total = calculateTotal(cart);
+
+  // Assert：関数の戻り値を検証
+  expect(total).toBe(440); // (100×2) + (80×3) = 440
+});
+```
+
+このテストでは「買い物かごに含まれる商品から合計金額がいくらになるか」というテスト対象メソッドの**結果**を検証しています。
+内部実装（`reduce` メソッドを使っているなど）には一切言及せず、入力と出力の関係だけをテストしています。
+:::
+
+:::details どんな影響を与えるか？（副作用）
+
+テスト対象が外部に及ぼす影響（副作用）を検証するテストです。
+例えば、メール送信、データベース更新、ファイル出力などの処理が正しく行われたかを確認します。
+
+```ts
+// テスト対象：ユーザー登録サービス
+class UserService {
+  constructor(
+    private emailSender: EmailSender,
+    private userRepository: UserRepository
+  ) {}
+
+  async registerUser(email: string, password: string): Promise<User> {
+    // メールアドレスのバリデーションなど
+    if (!this.isValidEmail(email)) {
+      throw new Error("Invalid email format");
+    }
+
+    // ユーザー登録
+    const user = new User(email, password);
+    await this.userRepository.save(user);
+
+    // ウェルカムメール送信（副作用）
+    await this.emailSender.sendWelcomeEmail(email);
+
+    return user;
+  }
+
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+}
+
+// テストコード
+import { test, expect, vi } from "vitest";
+
+test("ユーザー登録成功時にウェルカムメールが送信される", async () => {
+  // Arrange
+  const mockEmailSender = {
+    sendWelcomeEmail: vi.fn().mockResolvedValue(undefined),
+  };
+  const mockUserRepository = {
+    save: vi.fn().mockResolvedValue({ id: "user-123" }),
+  };
+
+  const userService = new UserService(mockEmailSender, mockUserRepository);
+
+  // Act
+  await userService.registerUser("test@example.com", "password123");
+
+  // Assert：外部への影響（副作用）を検証
+  expect(mockEmailSender.sendWelcomeEmail).toHaveBeenCalledWith(
+    "test@example.com"
+  );
+});
+```
+
+このテストでは「ユーザー登録時にウェルカムメールが送信される」という**副作用**を検証しています。
+内部実装ではなく、外部から観察可能な振る舞い（メール送信が行われたか）だけをテストしています。
+
+:::
+
+:::details どんな状態か？（状態）
+テスト対象の内部状態の変化を検証するテストです。
+ただし、これは公開されているプロパティやメソッドを通じて観察可能な状態に限ります。
+
+```java
+// テスト対象：電子書籍リーダー
+public class EbookReader {
+    private Book currentBook;
+    private int currentPage = 0;
+    private boolean isBookOpen = false;
+
+    public void openBook(Book book) {
+        this.currentBook = book;
+        this.currentPage = 0;
+        this.isBookOpen = true;
+    }
+
+    public void closeBook() {
+        this.isBookOpen = false;
+    }
+
+    public void nextPage() {
+        if (isBookOpen && currentPage < currentBook.getTotalPages() - 1) {
+            currentPage++;
+        }
+    }
+
+    public void previousPage() {
+        if (isBookOpen && currentPage > 0) {
+            currentPage--;
+        }
+    }
+
+    public int getCurrentPage() {
+        return currentPage;
+    }
+
+    public boolean isBookOpen() {
+        return isBookOpen;
+    }
+
+    public Book getCurrentBook() {
+        return currentBook;
+    }
+}
+
+// テストコード
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class EbookReaderTest {
+
+    @Test
+    public void 本を開くと最初のページが表示される() {
+        // Arrange
+        EbookReader reader = new EbookReader();
+        Book book = new Book("プログラミング入門", 200);
+
+        // Act
+        reader.openBook(book);
+
+        // Assert：オブジェクトの状態を検証
+        assertEquals(0, reader.getCurrentPage());
+        assertTrue(reader.isBookOpen());
+        assertEquals(book, reader.getCurrentBook());
+    }
+
+    @Test
+    public void 次のページに進める() {
+        // Arrange
+        EbookReader reader = new EbookReader();
+        Book book = new Book("プログラミング入門", 200);
+        reader.openBook(book);
+
+        // Act
+        reader.nextPage();
+
+        // Assert：オブジェクトの状態を検証
+        assertEquals(1, reader.getCurrentPage());
+    }
+
+    @Test
+    public void 最後のページで次のページに進もうとしても変化しない() {
+        // Arrange
+        EbookReader reader = new EbookReader();
+        Book book = new Book("プログラミング入門", 2);
+        reader.openBook(book);
+        reader.nextPage(); // 1ページ目（最後のページ）に移動
+
+        // Act
+        reader.nextPage(); // これ以上進めない
+
+        // Assert：オブジェクトの状態を検証
+        assertEquals(1, reader.getCurrentPage()); // ページが変わっていないことを確認
+    }
+}
+```
+
+このテストでは「本を開く」「ページを進める」などの操作後の**状態**を検証しています。
+内部変数の実装詳細ではなく、公開 API を通じて観察可能な状態（現在のページ番号、本が開いているかなど）だけをテストしています。
+:::
+
+:::message
+**副作用と振る舞いの関係**
+\
+副作用をテストする際には注意が必要です。
+副作用は「観察可能な振る舞い」の一種でありながら、同時に「実装の詳細」の側面も持ち合わせています。
+
+どの副作用をテストすべきかは、その副作用がクライアントにとってどれだけ重要であるかによって判断します。
+API 仕様に明記された副作用や機能要件として期待される副作用は「振る舞い」として検証すべきですが、内部実装として存在するだけの副作用をテストすると偽陽性につながる可能性があります。
+
+「この副作用は何のために存在するのか？」という問いを常に念頭に置きながら、真に重要な振る舞いだけを検証することが重要です。
+:::
 
 ## 古典学派 vs ロンドン学派
 
