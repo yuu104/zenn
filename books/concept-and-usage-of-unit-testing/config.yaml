@@ -11,5 +11,5 @@ chapters:
   - structure-of-unit-test
   - the-four-pillars-of-effective-unit-testing
   - test-double
-  - how-to-write-testable-production-code
   - assert-of-behavior
+  - how-to-write-testable-production-code
